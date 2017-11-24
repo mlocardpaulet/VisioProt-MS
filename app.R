@@ -49,7 +49,7 @@ ui <- fluidPage(
   sidebarLayout( 
     sidebarPanel(
       # File selection:
-      fileInput("file", "Select input files:",  
+      fileInput("file", "Select input file(s):",  
                 accept = c(
                   "text/csv",
                   "text/comma-separated-values,text/plain",
