@@ -62,7 +62,7 @@ ui <- fluidPage(
       # Selection of the colour scales. This depends on the number of input files:
       uiOutput("colourUI"),
       # Parameters for the plot:
-      numericInput("pch", label = "Point size:", value = 1, min = 0),
+      numericInput("pch", label = "Point size:", value = 1, min = 0.01, step = 0.1),
       numericInput("IntensityThresh", label = "Plotting threshold\n(Percentage points with the highest intensity):", value = 0.2, min = 0, max = 1, step = 0.1),
       # Information regarding how to zoom (depends on the plotting type):
       htmlOutput("ZoomParam"),
