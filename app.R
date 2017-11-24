@@ -136,15 +136,15 @@ server <- function(input, output, clientData, session) {
     #This function is repsonsible for loading in the selected file
     if (input$TestFile == "Multiple") { # case with multiple test files
       linput(2)
-      infile <- list.files("files/", pattern = ".csv", full.names = T)
+      infile <- list.files("files/Multiple/", pattern = ".csv", full.names = T)
       lfiles <- list()
       for(i in 1:length(infile)){
         lfiles[[i]] <- read.csv(infile[i], sep = "\t", header = F)
       }
-      names(lfiles) <- c("test data 1", "test data 2", "test data 3")
+      names(lfiles) <- c("test data 1", "test data 2", "test data 3", "test data 4")
     } else if (input$TestFile == "Unique") { # case with a simple test file
       linput(1)
-      infile <- list.files("files/", pattern = ".csv", full.names = T)
+      infile <- list.files("files/Multiple/", pattern = ".csv", full.names = T)
       lfiles <- list()
       for(i in 1){
         lfiles[[i]] <- read.csv(infile[i], sep = "\t", header = F)
