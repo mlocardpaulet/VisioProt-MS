@@ -105,7 +105,7 @@ ui <- fluidPage(
       htmlOutput("ZoomParam"),
       
       # For debugging:
-      #textOutput("info"),
+      textOutput("info"),
       
       br(),
       actionButton("DeZoom", "Unzoom", style='padding:8px; font-size:150%'),
@@ -254,10 +254,6 @@ server <- function(input, output, clientData, session) {
           }
   })
   
-  
-  
-  
-  
   # Create table for plotting:
   filedata <- function() {
           if (is.null(filedata0())) {
@@ -290,7 +286,6 @@ server <- function(input, output, clientData, session) {
           }
   }
   
-  
   # For zoomable plot:
   ranges <- reactiveValues(x = NULL, y = NULL)
   observeEvent(input$DeZoom, {
@@ -301,13 +296,8 @@ server <- function(input, output, clientData, session) {
           if (input$DataPoints) {
                   newdata <- event_data("plotly_selected")
                   if (!is.null(newdata) & class(newdata)=="data.frame") {
-                          if (filetype$BioPharma == 0) {
                                   ranges$x <- range(newdata$x)
-                                  ranges$y <- range(newdata$y)        
-                          } else { # coord_flip in this case...
-                                  ranges$x <- range(newdata$y)
-                                  ranges$y <- range(newdata$x)
-                          }
+                                  ranges$y <- range(newdata$y)       
                   } else {
                           newdata <- NULL
                   }
@@ -342,10 +332,10 @@ server <- function(input, output, clientData, session) {
           if (input$DataPoints == F | is.null(filedata())) {
                   return(NULL)
           } else {
+                  rangesx <- defineranges()[[1]]
+                  rangesy <- defineranges()[[2]]
                   if (filetype$BioPharma == 0) { # Only RoWinPro
                           gtab <- filedata()
-                          rangesx <- defineranges()[[1]]
-                          rangesy <- defineranges()[[2]]
                           if (linput() >= 2) { # if comparing several plots
                                   g <- ggplot(gtab, aes(x = RT, y = Mass, col = File, text = paste0("Intensity: ", intensity))) + 
                                           geom_point(alpha = 0.7, size = input$pch) +
@@ -363,36 +353,31 @@ server <- function(input, output, clientData, session) {
                                           ylab("Protein mass (Da)") + 
                                           xlab("Retention time (min)")
                           }
-                  } else if (filetype$RoWinPro == 0) {
+                  } else if (filetype$RoWinPro == 0) { # Only type BioPharma
                           gtab <- filedata()
-                          rangesx <- defineranges()[[1]]
-                          rangesy <- defineranges()[[2]]
                           if (linput() >= 2) { # if comparing several plots
                                   g <- ggplot(gtab, aes(y = RT, x = Mass, col = File, ymin = PeakStart, ymax = PeakStop, text = paste0("Intensity: ", intensity))) + 
                                           geom_pointrange(alpha = 0.7, size = input$pch) +
-                                          coord_cartesian(xlim = rangesy, ylim = rangesx, expand = TRUE) +
+                                          coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) +
                                           theme_bw() + 
-                                          coord_flip() +
                                           scale_colour_brewer(palette = input$colourscale) + 
-                                          ylab("Protein mass (Da)") + 
-                                          xlab("Retention time (min)")
+                                          xlab("Protein mass (Da)") + 
+                                          ylab("Retention time (min)")
                           } else {
                                   g <- ggplot(gtab, aes(y = RT, x = Mass, ymin = PeakStart, ymax = PeakStop, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
                                           geom_pointrange(alpha = 0.7, size = input$pch) +
-                                          coord_cartesian(xlim = rangesy, ylim = rangesx, expand = TRUE) +
-                                          coord_flip() +
+                                          coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) +
                                           theme_bw() + 
                                           scale_colour_distiller(palette = input$colourscale) + 
-                                          ylab("Protein mass (Da)") + 
-                                          xlab("Retention time (min)")
+                                          xlab("Protein mass (Da)") + 
+                                          ylab("Retention time (min)")
                           }
                   } else { # several types of input format
                           gtabRWP <- filedata()[ftype()=="RoWinPro"][[1]]
                           gtabBP <- filedata()[ftype()=="BioPharma"][[1]]
                           g <- ggplot() + 
                                   geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
-                                  coord_cartesian(xlim = rangesy, ylim = rangesx, expand = TRUE) + 
-                                  coord_flip() +
+                                  coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) +
                                   theme_bw() + 
                                   scale_colour_distiller(palette = input$colourscale) + 
                                   geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity), text = paste0("Intensity: ", intensity)))
@@ -432,36 +417,32 @@ server <- function(input, output, clientData, session) {
                           if (linput() >= 2) { # For plotting multiple plots.
                                   g <- ggplot(gtab, aes(y = RT, x = Mass, col = File)) + 
                                           geom_pointrange(aes(ymin = PeakStart, ymax = PeakStop), alpha = 0.7, size = input$pch) + 
-                                          coord_cartesian(xlim = rangesy, ylim = rangesx, expand = TRUE) + 
-                                          coord_flip() +
+                                          coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) +
                                           theme_bw() + 
                                           scale_colour_brewer(palette = input$colourscale) + 
-                                          ylab("Protein mass (Da)") + 
-                                          xlab("Retention time (min)")
+                                          xlab("Protein mass (Da)") + 
+                                          ylab("Retention time (min)")
                           } else { # For simple plot.
                                   g <- ggplot(gtab, aes(y = RT, x = Mass, col = log10(intensity))) + 
                                           geom_pointrange(aes(ymin = PeakStart, ymax = PeakStop), alpha = 0.7, size = input$pch) + 
-                                          coord_cartesian(xlim = rangesy, ylim = rangesx, expand = TRUE) + 
-                                          coord_flip() +
+                                          coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) +
                                           theme_bw() + 
                                           scale_colour_distiller(palette = input$colourscale) + 
-                                          ylab("Protein mass (Da)") + 
-                                          xlab("Retention time (min)")
+                                          xlab("Protein mass (Da)") + 
+                                          ylab("Retention time (min)")
                           }
                   } else { # two types of plot
                           gtabRWP <- gtab[gtab=="RoWinPro"][[1]]
                           gtabBP <- gtab[gtab=="BioPharma"][[1]]
                           g <- ggplot() + 
                                   geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
-                                  coord_cartesian(xlim = rangesy, ylim = rangesx, expand = TRUE) + 
-                                  coord_flip() + 
+                                  coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) + 
                                   theme_bw() + 
                                   scale_colour_distiller(palette = input$colourscale) + 
                                   geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity), text = paste0("Intensity: ", intensity)))
                   }
                   return(g)
           }
-          
   }
 
   
@@ -508,13 +489,8 @@ server <- function(input, output, clientData, session) {
           if (input$DataPoints == FALSE) {
                   brush <- input$plot_brush
                   if (!is.null(brush)) {
-                          if (filetype$BioPharma > 0) { # to adjust to coord_flip
-                                  ranges$y <- c(brush$xmin, brush$xmax)
-                                  ranges$x <- c(brush$ymin, brush$ymax)              
-                          } else {
                                   ranges$x <- c(brush$xmin, brush$xmax)
                                   ranges$y <- c(brush$ymin, brush$ymax)       
-                          }
                   } else {
                           ranges$x <- NULL
                           ranges$y <- NULL
@@ -549,9 +525,9 @@ server <- function(input, output, clientData, session) {
     })
   
   # For debugging:
-  #output$info <- renderText({
-  #  unlist(defineranges())
-  #})
+  output$info <- renderText({
+    unlist(defineranges())
+  })
 }
 
 ############################################################################
