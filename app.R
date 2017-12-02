@@ -40,6 +40,41 @@ RBindList <- function(l) {
   return(tab)
 }
 
+FilterRenameRoWinPro <- function(tab) {
+        # Filter and rename the tables RoWinPro style
+        tab <- tab[!is.na(tab[,3]),]
+        names(tab)[3] <- "intensity"
+        names(tab)[2] <- "Mass"
+        names(tab)[1] <- "RT"
+        tab
+}
+
+FilterRenameBioPharma <- function(tab) {
+        # Filter and rename the tables BioPharma style
+        tab <- tab[!is.na(tab[,3]),]
+        names(tab)[3] <- "intensity"
+        names(tab)[2] <- "Mass"
+        names(tab)[1] <- "RT"
+        names(tab)[4] <- "PeakStart"
+        names(tab)[5] <- "PeakStop"
+        tab
+}
+
+ThresholdCleaning <- function(l, threshold) {
+        # removes the points with lowest intensity according to the threshold chosen by the user:
+        l1 <- list()
+        for (x in seq_along(l)) {
+                # Filter the intensities according to threshold:
+                temp <- cbind(l[[x]], "File" = rep(names(l)[x], nrow(l[[x]])))
+                temp <- temp[order(temp[,3], decreasing = T),]
+                thresh <- floor(threshold * nrow(temp))
+                temp <- temp[c(1:thresh),]
+                l1[[x]] <- temp
+        }
+        l1
+}
+
+
 ############################################################################
 # App:
 
