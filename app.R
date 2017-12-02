@@ -56,8 +56,8 @@ ui <- fluidPage(
                   ".csv"),
                 multiple = T
       ),
-      radioButtons("TestFile", "Upload test file(s): ", # Choose to work with test data set.
-                   c("None" = "None", "Unique" = "Unique", "Multiple" = "Multiple")),
+      actionButton("TestFile1", "Single test file"),
+      actionButton("TestFile2", "Multiple test files"),
       checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
       # Selection of the colour scales. This depends on the number of input files:
       uiOutput("colourUI"),
@@ -131,44 +131,61 @@ server <- function(input, output, clientData, session) {
     }
   })
   
+  # Test files input:
+  testfileinput <- reactiveVal(0) # 0: no test file; 1: single file; 2: multiple file
+  observeEvent(input$TestFile1, {
+          linput(1)
+          testfileinput(1)
+  })
+  observeEvent(input$TestFile2, {
+          linput(2)
+          testfileinput(2)
+  })
+  observeEvent(input$file, { # Return to 0 when uploading new file
+          testfileinput(0)
+  })
+  
   # Input the data table:
   filedata0 <- reactive({
-    #This function is repsonsible for loading in the selected file
-    if (input$TestFile == "Multiple") { # case with multiple test files
-      linput(2)
-      infile <- list.files("files/Multiple/", pattern = ".csv", full.names = T)
-      lfiles <- list()
-      for(i in 1:length(infile)){
-        lfiles[[i]] <- read.table(infile[i], sep = "\t", header = F)
-      }
-      names(lfiles) <- c("test data 1", "test data 2", "test data 3", "test data 4")
-    } else if (input$TestFile == "Unique") { # case with a simple test file
-      linput(1)
-      infile <- list.files("files/Unique/", pattern = ".csv", full.names = T)
-      lfiles <- list()
-      for(i in 1){
-        lfiles[[i]] <- read.table(infile[i], sep = "\t", header = F)
-      }
-      names(lfiles) <- c("test data")
-    } else if (input$TestFile == "None") { # case with one or multiple test files selected by the user
-      infile <- input$file
-      if (is.null(infile)) {
-        # User has not uploaded a file yet
-        return(NULL)
-      }
-      lfiles <- list()
-      for(i in 1:nrow(input$file)){
-        lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = F)
-      }
-      names(lfiles) <- input$file$name
-      if (length(lfiles) > 1) {
-        linput(2)
-      } else {
-        linput(1)
-      }
-    }
-    lfiles
+          #This function is repsonsible for loading in the selected file
+          if (testfileinput() == 0) { # no input file
+                  infile <- input$file
+                  if (is.null(input$file)) {
+                          # User has not uploaded a file yet
+                          return(NULL)
+                  } else {
+                          lfiles <- list()
+                          for(i in 1:nrow(input$file)){
+                                  lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = F)
+                          }
+                          names(lfiles) <- input$file$name
+                          linput(length(lfiles))
+                          return(lfiles)
+                  }
+          } else if (testfileinput() == 1) { # single file test
+                  infile <- list.files("files/Unique/", pattern = ".csv", full.names = T)
+                  lfiles <- list()
+                  for(i in 1){
+                          lfiles[[i]] <- read.table(infile[i], sep = "\t", header = F)
+                  }
+                  names(lfiles) <- c("test data")
+                  return(lfiles)
+                  testfileinput(0)
+          } else {
+                  infile <- list.files("files/Multiple/", pattern = ".csv", full.names = T)
+                  lfiles <- list()
+                  for(i in 1:length(infile)){
+                          lfiles[[i]] <- read.table(infile[i], sep = "\t", header = F)
+                  }
+                  names(lfiles) <- c("test data 1", "test data 2", "test data 3", "test data 4")
+                  return(lfiles)   
+                  testfileinput(0)
+          }
   })
+  
+  
+  
+  
   
   # Create table for plotting:
   filedata <- function() {
@@ -265,7 +282,7 @@ server <- function(input, output, clientData, session) {
         gtab <- filedata()
         if (linput() == 2) { # For plotting multiple plots.
           ggplot(gtab, aes(x = RT, y = Mass, col = File)) + 
-            geom_point(alpha = 0.8, size = input$pch) + 
+            geom_point(alpha = 0.7, size = input$pch) + 
             coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
             theme_bw() + 
             scale_colour_brewer(palette = input$colourscale) + 
@@ -273,7 +290,7 @@ server <- function(input, output, clientData, session) {
             xlab("Retention time (min)")
         } else { # For simple plot.
           ggplot(gtab, aes(x = RT, y = Mass, col = log10(intensity))) + 
-            geom_point(alpha = 0.8, size = input$pch) + 
+            geom_point(alpha = 0.7, size = input$pch) + 
             coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
             theme_bw() + 
             scale_colour_distiller(palette = input$colourscale) + 
