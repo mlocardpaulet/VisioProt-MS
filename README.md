@@ -1,7 +1,7 @@
 # VisioProt-MS
 Shiny application for visualisation and analysis of intact protein MS 2D maps.
 
-## free access to the application: https://shiny.ipbs.fr/mstools
+## free access to the application: https://masstools.ipbs.fr/visioprot-ms
 
 ## Copyright CNRS 2017
 ## Contributor : Marie Locard-Paulet (21/11/2017)
