@@ -105,7 +105,7 @@ ui <- fluidPage(
       htmlOutput("ZoomParam"),
       
       # For debugging:
-      textOutput("info"),
+      #textOutput("info"),
       
       br(),
       actionButton("DeZoom", "Unzoom", style='padding:8px; font-size:150%'),
@@ -275,9 +275,9 @@ server <- function(input, output, clientData, session) {
                           })
                           return(RBindList(lfiles))
                   } else { # More than one type of files
-                          validate(
-                                  need(filetype$BioPharma == 1 & filetype$RoWinPro == 1), "Can only input one file per type of format"
-                          )
+                          #validate(
+                          #        need(filetype$BioPharma == 1 & filetype$RoWinPro == 1), "Can only input one file per type of format"
+                          #)
                           lfiles <- lapply(lfiles, function(x) {
                                   RenameBioPharma(x)
                           })
@@ -314,7 +314,7 @@ server <- function(input, output, clientData, session) {
                   rangesy <- ranges$y
                   return(list(rangesx, rangesy))
           } else {
-                  if (linput() == 1 | filetype$BioPharma == 0 | filetype$RoWinPro == 0) { # one table
+                  if (filetype$BioPharma == 0 | filetype$RoWinPro == 0) { # one table
                           rangesx <- range(filedata()[,1])
                           rangesy <- range(filedata()[,2])
                           return(list(rangesx, rangesy))
@@ -380,7 +380,7 @@ server <- function(input, output, clientData, session) {
                                   coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) +
                                   theme_bw() + 
                                   scale_colour_distiller(palette = input$colourscale) + 
-                                  geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity), text = paste0("Intensity: ", intensity)))
+                                  geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity)))
                   }
                   return(g)
           }
@@ -432,14 +432,14 @@ server <- function(input, output, clientData, session) {
                                           ylab("Retention time (min)")
                           }
                   } else { # two types of plot
-                          gtabRWP <- gtab[gtab=="RoWinPro"][[1]]
-                          gtabBP <- gtab[gtab=="BioPharma"][[1]]
+                          gtabRWP <- filedata()[ftype()=="RoWinPro"][[1]]
+                          gtabBP <- filedata()[ftype()=="BioPharma"][[1]]
                           g <- ggplot() + 
                                   geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
                                   coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) + 
                                   theme_bw() + 
                                   scale_colour_distiller(palette = input$colourscale) + 
-                                  geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity), text = paste0("Intensity: ", intensity)))
+                                  geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity)))
                   }
                   return(g)
           }
@@ -525,9 +525,9 @@ server <- function(input, output, clientData, session) {
     })
   
   # For debugging:
-  output$info <- renderText({
-    unlist(defineranges())
-  })
+  #output$info <- renderText({
+  #  paste0(defineranges())
+  #})
 }
 
 ############################################################################
