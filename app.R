@@ -175,11 +175,13 @@ server <- function(input, output, clientData, session) {
           linput(1)
           testfileinput(1)
           filetype$RoWinPro <- 1
+          filetype$BioPharma <- 0
   })
   observeEvent(input$TestFile2, {
           linput(4)
           testfileinput(2)
           filetype$RoWinPro <- 4
+          filetype$BioPharma <- 0
   })
   observeEvent(input$file, { # Return to 0 when uploading new file
           testfileinput(0)
@@ -248,7 +250,6 @@ server <- function(input, output, clientData, session) {
                           lfiles[[i]] <- cbind(lfiles[[i]][,1:3], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
                   }
                   names(lfiles) <- c("test data 1", "test data 2", "test data 3", "test data 4")
-                  print(str(lfiles))
                   return(lfiles)   
                   testfileinput(0)
           }
