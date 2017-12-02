@@ -282,7 +282,7 @@ server <- function(input, output, clientData, session) {
         gtab <- filedata()
         if (linput() == 2) { # For plotting multiple plots.
           ggplot(gtab, aes(x = RT, y = Mass, col = File)) + 
-            geom_point(alpha = 0.8, size = input$pch) + 
+            geom_point(alpha = 0.7, size = input$pch) + 
             coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
             theme_bw() + 
             scale_colour_brewer(palette = input$colourscale) + 
@@ -290,7 +290,7 @@ server <- function(input, output, clientData, session) {
             xlab("Retention time (min)")
         } else { # For simple plot.
           ggplot(gtab, aes(x = RT, y = Mass, col = log10(intensity))) + 
-            geom_point(alpha = 0.8, size = input$pch) + 
+            geom_point(alpha = 0.7, size = input$pch) + 
             coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
             theme_bw() + 
             scale_colour_distiller(palette = input$colourscale) + 
