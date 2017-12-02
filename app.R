@@ -56,8 +56,8 @@ ui <- fluidPage(
                   ".csv"),
                 multiple = T
       ),
-      radioButtons("TestFile", "Upload test file(s): ", # Choose to work with test data set.
-                   c("None" = "None", "Unique" = "Unique", "Multiple" = "Multiple")),
+      actionButton("TestFile1", "Single test file"),
+      actionButton("TestFile2", "Multiple test files"),
       checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
       # Selection of the colour scales. This depends on the number of input files:
       uiOutput("colourUI"),
