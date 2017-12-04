@@ -537,4 +537,4 @@ shinyApp(ui = ui, server = server)
 
 ############################################################################
 
-# rsconnect::deployApp('//GANDALF/mloca/RRelatedWork/VisioProt-MS_V0.0')
+# rsconnect::deployApp('/Users/Yoko/Documents/IPBS/RRelatedWorkHome/VisioProt-MS')
