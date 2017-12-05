@@ -385,11 +385,13 @@ server <- function(input, output, clientData, session) {
                           rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
                           
                           g <- ggplot() + 
-                                  geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
-                                  coord_flip(xlim = rangesy, ylim = rangesyB) +
-                                  theme_bw() + 
-                                  scale_colour_distiller(palette = input$colourscale) + 
-                                  geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity)))
+                            geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
+                            coord_flip(xlim = rangesy, ylim = rangesyB) +
+                            theme_bw() + 
+                            scale_colour_distiller(palette = input$colourscale) + 
+                            geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity))) + 
+                            xlab("Protein mass (Da)") + 
+                            ylab("Retention time (min)")
                   }
                   return(g)
           }
@@ -452,11 +454,13 @@ server <- function(input, output, clientData, session) {
                           rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
                           
                           g <- ggplot() + 
-                                  geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
-                                  coord_flip(xlim = rangesy, ylim = rangesyB, expand = TRUE) + 
-                                  theme_bw() + 
-                                  scale_colour_distiller(palette = input$colourscale) + 
-                                  geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity)))
+                            geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
+                            coord_flip(xlim = rangesy, ylim = rangesyB, expand = TRUE) + 
+                            theme_bw() + 
+                            scale_colour_distiller(palette = input$colourscale) + 
+                            geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity))) + 
+                            xlab("Protein mass (Da)") + 
+                            ylab("Retention time (min)")
                   }
                   return(g)
           }
