@@ -383,7 +383,6 @@ server <- function(input, output, clientData, session) {
                           # Define the ranges for margins in the plot:
                           rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.05*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.05*max(gtabBP$PeakStop, na.rm = T))
                           rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
-                          print(rangesyB)
                           
                           g <- ggplot() + 
                                   geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
@@ -424,10 +423,13 @@ server <- function(input, output, clientData, session) {
                           }
                   } else if (filetype$RoWinPro == 0) { # Only one type of plot: BioPharma
                           gtab <- filedata()
+                          # Define the ranges for margins in the plot:
+                          rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.05*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.05*max(gtab$PeakStop, na.rm = T))
+                          
                           if (linput() >= 2) { # For plotting multiple plots.
                                   g <- ggplot(gtab, aes(y = RT, x = Mass, col = File)) + 
                                           geom_pointrange(aes(ymin = PeakStart, ymax = PeakStop), alpha = 0.7, size = input$pch) + 
-                                          coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) +
+                                          coord_flip(xlim = rangesy, ylim = rangesyB, expand = TRUE) +
                                           theme_bw() + 
                                           scale_colour_brewer(palette = input$colourscale) + 
                                           xlab("Protein mass (Da)") + 
@@ -435,7 +437,7 @@ server <- function(input, output, clientData, session) {
                           } else { # For simple plot.
                                   g <- ggplot(gtab, aes(y = RT, x = Mass, col = log10(intensity))) + 
                                           geom_pointrange(aes(ymin = PeakStart, ymax = PeakStop), alpha = 0.7, size = input$pch) + 
-                                          coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) +
+                                          coord_flip(xlim = rangesy, ylim = rangesyB, expand = TRUE) +
                                           theme_bw() + 
                                           scale_colour_distiller(palette = input$colourscale) + 
                                           xlab("Protein mass (Da)") + 
@@ -444,9 +446,14 @@ server <- function(input, output, clientData, session) {
                   } else { # two types of plot
                           gtabRWP <- filedata()[ftype()=="RoWinPro"][[1]]
                           gtabBP <- filedata()[ftype()=="BioPharma"][[1]]
+                          
+                          # Define the ranges for margins in the plot:
+                          rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.05*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.05*max(gtabBP$PeakStop, na.rm = T))
+                          rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
+                          
                           g <- ggplot() + 
                                   geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
-                                  coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) + 
+                                  coord_flip(xlim = rangesy, ylim = rangesyB, expand = TRUE) + 
                                   theme_bw() + 
                                   scale_colour_distiller(palette = input$colourscale) + 
                                   geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity)))
