@@ -220,7 +220,7 @@ server <- function(input, output, clientData, session) {
     
     # Warning if trying to plot several types of data AND several files:
     validate(
-      need((filetype$RoWinPro <= 1 & filetype$BioPharma <= 1), "Can only input one file per type of format for comparison")
+      need((filetype$RoWinPro == 0 & filetype$BioPharma >= 1) | (filetype$RoWinPro >= 1 & filetype$BioPharma == 0) | (filetype$RoWinPro == 1 & filetype$BioPharma == 1) | testfileinput() == 0, "Can only input one file per type of format for comparison")
     )
     
     if (testfileinput() == 0) { # no input test file
