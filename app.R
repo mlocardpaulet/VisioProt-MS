@@ -470,7 +470,7 @@ server <- function(input, output, clientData, session) {
   # Plotly output if DataPoints == T
   output$plot1 <- renderPlotly({
     validate(
-      need(!is.null(plotInput1()), 'Plotting...')
+      need(!is.null(plotInput1()), '')
     )
     if (!is.null(plotInput1)) {p <- ggplotly(plotInput1()) %>%
       layout(height = 800, dragmode = "select") %>%
@@ -485,7 +485,7 @@ server <- function(input, output, clientData, session) {
   # Plotly output if DataPoints == F
   output$plot2 <- renderPlot({
           validate(
-                  need(!is.null(plotInput2()), 'Plotting...')
+                  need(!is.null(plotInput2()), '')
           )
           plotInput2()  
   }, height = 800)
