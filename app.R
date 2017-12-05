@@ -356,10 +356,13 @@ server <- function(input, output, clientData, session) {
                           }
                   } else if (filetype$RoWinPro == 0) { # Only type BioPharma
                           gtab <- filedata()
+                          # Define the ranges for margins in the plot:
+                          rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.05*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.05*max(gtab$PeakStop, na.rm = T))
+                          
                           if (linput() >= 2) { # if comparing several plots
                                   g <- ggplot(gtab, aes(y = RT, x = Mass, col = File, ymin = PeakStart, ymax = PeakStop, text = paste0("Intensity: ", intensity))) + 
                                           geom_pointrange(alpha = 0.7, size = input$pch) +
-                                          coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) +
+                                          coord_flip(xlim = rangesy, ylim = rangesyB) +
                                           theme_bw() + 
                                           scale_colour_brewer(palette = input$colourscale) + 
                                           xlab("Protein mass (Da)") + 
@@ -367,7 +370,7 @@ server <- function(input, output, clientData, session) {
                           } else {
                                   g <- ggplot(gtab, aes(y = RT, x = Mass, ymin = PeakStart, ymax = PeakStop, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
                                           geom_pointrange(alpha = 0.7, size = input$pch) +
-                                          coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) +
+                                          coord_flip(xlim = rangesy, ylim = rangesyB) +
                                           theme_bw() + 
                                           scale_colour_distiller(palette = input$colourscale) + 
                                           xlab("Protein mass (Da)") + 
@@ -376,9 +379,15 @@ server <- function(input, output, clientData, session) {
                   } else { # several types of input format
                           gtabRWP <- filedata()[ftype()=="RoWinPro"][[1]]
                           gtabBP <- filedata()[ftype()=="BioPharma"][[1]]
+                          
+                          # Define the ranges for margins in the plot:
+                          rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.05*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.05*max(gtabBP$PeakStop, na.rm = T))
+                          rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
+                          print(rangesyB)
+                          
                           g <- ggplot() + 
                                   geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
-                                  coord_flip(xlim = rangesy, ylim = rangesx, expand = TRUE) +
+                                  coord_flip(xlim = rangesy, ylim = rangesyB) +
                                   theme_bw() + 
                                   scale_colour_distiller(palette = input$colourscale) + 
                                   geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity)))
@@ -527,7 +536,7 @@ server <- function(input, output, clientData, session) {
   
   # For debugging:
   #output$info <- renderText({
-  #  paste0(defineranges())
+  # print(rangesyB)
   #})
 }
 
