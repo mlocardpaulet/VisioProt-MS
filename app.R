@@ -172,19 +172,23 @@ server <- function(input, output, clientData, session) {
   
   # Test files input:
   testfileinput <- reactiveVal(0) # 0: no test file; 1: single file; 2: multiple file
+  
   filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0) # Number of files of each type
+  
   observeEvent(input$TestFile1, {
     linput(1)
     testfileinput(1)
     filetype$RoWinPro <- 1
     filetype$BioPharma <- 0
   })
+  
   observeEvent(input$TestFile2, {
     linput(4)
     testfileinput(2)
     filetype$RoWinPro <- 4
     filetype$BioPharma <- 0
   })
+  
   observeEvent(input$file, { # Return to 0 when uploading new file
     testfileinput(0)
     if (!is.null(input$file)) {
@@ -207,9 +211,29 @@ server <- function(input, output, clientData, session) {
     } else {
       l <- list()
       for(i in 1:nrow(input$file)){
-        l[[i]] <- substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass"
+        val <- substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass" # T for BioPharma, F for RoWinPro
+        val <- ifelse(val,  "BioPharma", "RoWinPro")
+        # Check it is the correct input format:
+        if (val == "BioPharma") { # Find "Apex RT" in BioPharma files
+          if (!grepl("Apex RT", readLines(input$file[i, 'datapath'])[1])) {
+            val <- "DoNotApply"
+            validate(
+              need(val!="DoNotApply", "Incorrect input format")
+            )
+          }
+        }
+        if (val == "RoWinPro") { # Four columns in RoWinPro files
+          if (length(as.numeric(gregexpr("\t", readLines(input$file[i, 'datapath'])[1])[[1]]))!=3) {
+            val <- "DoNotApply"
+            validate(
+              need(val!="DoNotApply", "Incorrect input format")
+            )
+          }
+        }
+        l[[i]] <- val
       }
-      return(ifelse(unlist(l), "BioPharma", "RoWinPro"))
+      vec <- unlist(l)
+      return(vec)
     }
   })
   
