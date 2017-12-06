@@ -9,9 +9,8 @@
 
 
 
-
-############################################################################
 # Packages:
+############################################################################
 
 library(shiny)
 # devtools::install_github('hadley/ggplot2')
@@ -19,8 +18,8 @@ library(ggplot2)
 library(plotly)
 library(dplyr)
 
-############################################################################
 # Functions:
+############################################################################
 
 RBindList <- function(l) {
   # combine tables of a list l using rbind
@@ -40,8 +39,47 @@ RBindList <- function(l) {
   return(tab)
 }
 
-############################################################################
+RenameRoWinPro <- function(tab) {
+  # Filter and rename the tables RoWinPro style
+  names(tab)[3] <- "intensity"
+  names(tab)[2] <- "Mass"
+  names(tab)[1] <- "RT"
+  tab
+}
+
+RenameBioPharma <- function(tab) {
+  # Filter and rename the tables BioPharma style
+  vec <- names(tab)
+  vec[3] <- "intensity"
+  vec[2] <- "Mass"
+  vec[1] <- "RT"
+  vec[4] <- "PeakStart"
+  vec[5] <- "PeakStop"
+  names(tab) <- vec
+  return(tab)
+}
+
+ThresholdCleaning <- function(l, threshold) {
+  # removes the points with lowest intensity according to the threshold chosen by the user:
+  l1 <- list()
+  for (x in seq_along(l)) {
+    # Filter the intensities according to threshold:
+    temp <- cbind(l[[x]], "File" = rep(names(l)[x], nrow(l[[x]])))
+    temp <- temp[order(temp[,3], decreasing = T),]
+    temp <- temp[!is.na(temp[,3]),]
+    thresh <- floor(threshold * nrow(temp))
+    temp <- temp[c(1:thresh),]
+    l1[[x]] <- temp
+  }
+  names(l1) <- names(l)
+  return(l1)
+}
+
+
 # App:
+############################################################################
+## UI:
+############################################################################
 
 ui <- fluidPage(
   titlePanel("VisioProt-MS"),
@@ -86,17 +124,18 @@ ui <- fluidPage(
   # Footer
   tabsetPanel(
     tabPanel(
-      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V1.0</font></footer>')
+      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V1.1</font></footer>')
     )
   )
 )
 
+## Server:
 ############################################################################
 
 server <- function(input, output, clientData, session) {
   
   # Prevents error message when slow to render:
-
+  
   
   # Text output to describe how to zoom (dependent on the checkbox DataPoints):
   output$ZoomParam <- renderUI({
@@ -107,7 +146,7 @@ server <- function(input, output, clientData, session) {
     }
   })
   
-  # Number of input file(s) :
+  # Number of input file(s) from the same type:
   linput <- reactiveVal(1)
   
   # Define the number of input files to update UI in function:
@@ -133,84 +172,125 @@ server <- function(input, output, clientData, session) {
   
   # Test files input:
   testfileinput <- reactiveVal(0) # 0: no test file; 1: single file; 2: multiple file
+  filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0) # Number of files of each type
   observeEvent(input$TestFile1, {
-          linput(1)
-          testfileinput(1)
+    linput(1)
+    testfileinput(1)
+    filetype$RoWinPro <- 1
+    filetype$BioPharma <- 0
   })
   observeEvent(input$TestFile2, {
-          linput(2)
-          testfileinput(2)
+    linput(4)
+    testfileinput(2)
+    filetype$RoWinPro <- 4
+    filetype$BioPharma <- 0
   })
   observeEvent(input$file, { # Return to 0 when uploading new file
-          testfileinput(0)
+    testfileinput(0)
+    if (!is.null(input$file)) {
+      l <- list()
+      for(i in 1:nrow(input$file)){
+        l[[i]] <- substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass"
+      }
+      l <- unlist(l)
+      filetype$RoWinPro <- length(l[l==F])
+      filetype$BioPharma <- length(l[l==T])
+      linput(max(as.numeric(table(l))))
+    } else {
+      filetype$RoWinPro <- 0
+      filetype$BioPharma <- 0
+    }
   })
+  ftype <- reactive({
+    if (is.null(input$file) & testfileinput() == 0) {
+      return(NULL)
+    } else {
+      l <- list()
+      for(i in 1:nrow(input$file)){
+        l[[i]] <- substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass"
+      }
+      return(ifelse(unlist(l), "BioPharma", "RoWinPro"))
+    }
+  })
+  
   
   # Input the data table:
   filedata0 <- reactive({
-          #This function is repsonsible for loading in the selected file
-          if (testfileinput() == 0) { # no input file
-                  infile <- input$file
-                  if (is.null(input$file)) {
-                          # User has not uploaded a file yet
-                          return(NULL)
-                  } else {
-                          lfiles <- list()
-                          for(i in 1:nrow(input$file)){
-                                  lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = F)
-                          }
-                          names(lfiles) <- input$file$name
-                          linput(length(lfiles))
-                          return(lfiles)
-                  }
-          } else if (testfileinput() == 1) { # single file test
-                  infile <- list.files("files/Unique/", pattern = ".csv", full.names = T)
-                  lfiles <- list()
-                  for(i in 1){
-                          lfiles[[i]] <- read.table(infile[i], sep = "\t", header = F)
-                  }
-                  names(lfiles) <- c("test data")
-                  return(lfiles)
-                  testfileinput(0)
-          } else {
-                  infile <- list.files("files/Multiple/", pattern = ".csv", full.names = T)
-                  lfiles <- list()
-                  for(i in 1:length(infile)){
-                          lfiles[[i]] <- read.table(infile[i], sep = "\t", header = F)
-                  }
-                  names(lfiles) <- c("test data 1", "test data 2", "test data 3", "test data 4")
-                  return(lfiles)   
-                  testfileinput(0)
+    #This function is repsonsible for loading in the selected file
+    
+    # Warning if trying to plot several types of data AND several files:
+    validate(
+      need(!((filetype$RoWinPro >= 2 & filetype$BioPharma >= 1) | (filetype$RoWinPro >= 1 & filetype$BioPharma >= 2)), "Can only input one file per type of format for comparison")
+      )
+    
+    if (testfileinput() == 0) { # no input test file
+      if (is.null(input$file)) {
+        # User has not uploaded a file yet
+        return(NULL)
+      } else {
+        lfiles <- list()
+        for(i in 1:nrow(input$file)){
+          if (ftype()[i] == "BioPharma") { # If the file is from Thermo BioPharma
+            lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
+            lfiles[[i]] <- lfiles[[i]][,c(12,1,2,10,11)] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
+          } else { # Only one other option accepted: as RoWinPro output
+            lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = F)
+            lfiles[[i]] <- cbind(lfiles[[i]][,1:3], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
           }
+        }
+        names(lfiles) <- input$file$name
+        return(lfiles)
+      }
+    } else if (testfileinput() == 1) { # single file test
+      infile <- list.files("files/Unique/", pattern = ".csv", full.names = T)
+      lfiles <- list()
+      for(i in 1){
+        lfiles[[i]] <- read.table(infile[i], sep = "\t", header = F)
+      }
+      names(lfiles) <- c("test data")
+      return(lfiles)
+      testfileinput(0)
+    } else { # Multiple file tests
+      infile <- list.files("files/Multiple/", pattern = ".csv", full.names = T)
+      lfiles <- list()
+      for(i in 1:length(infile)){
+        lfiles[[i]] <- read.table(infile[i], sep = "\t", header = F)
+        lfiles[[i]] <- cbind(lfiles[[i]][,1:3], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
+      }
+      names(lfiles) <- c("test data 1", "test data 2", "test data 3", "test data 4")
+      return(lfiles)   
+      testfileinput(0)
+    }
   })
-  
-  
-  
-  
   
   # Create table for plotting:
   filedata <- function() {
-    if (!is.null(filedata0())) {
+    if (is.null(filedata0())) {
+      return(NULL)
+    } else {
       lfiles <- filedata0()
-      lfiles <- lapply(seq_along(lfiles), function(x) {
-        temp <- cbind(lfiles[[x]], "File" = rep(names(lfiles)[x], nrow(lfiles[[x]])))
-        temp <- temp[order(temp[,3], decreasing = T),]
-        thresh <- floor(input$IntensityThresh * nrow(temp))
-        temp <- temp[c(1:thresh),]
-        temp
-      })
-      if (length(lfiles) == 1) {
-        gtab <- lfiles[[1]]
-      } else {
-        gtab <- RBindList(lfiles)
+      lfiles <- ThresholdCleaning(lfiles, input$IntensityThresh)
+      if (filetype$BioPharma == 0) { # Only RoWinPro files
+        l <- list()
+        for (i in seq_along(lfiles)) {
+          l[[i]] <- RenameBioPharma(lfiles[[i]])
+        }
+        names(l) <- names(lfiles)
+        lfiles <- l
+        return(RBindList(lfiles))
+      } else if (filetype$RoWinPro == 0) { # Only BioPharma
+        lfiles <- lapply(lfiles, function(x) {
+          RenameBioPharma(x)
+        })
+        return(RBindList(lfiles))
+      } else { # More than one type of files
+        lfiles <- lapply(lfiles, function(x) {
+          RenameBioPharma(x)
+        })
+        return(lfiles)
       }
-      gtab <- gtab[!is.na(gtab[,3]),]
-      names(gtab)[3] <- "intensity"
-      names(gtab)[2] <- "Mass"
-      names(gtab)[1] <- "RT"
-      gtab
     }
   }
-  
   
   # For zoomable plot:
   ranges <- reactiveValues(x = NULL, y = NULL)
@@ -223,7 +303,7 @@ server <- function(input, output, clientData, session) {
       newdata <- event_data("plotly_selected")
       if (!is.null(newdata) & class(newdata)=="data.frame") {
         ranges$x <- range(newdata$x)
-        ranges$y <- range(newdata$y)
+        ranges$y <- range(newdata$y)       
       } else {
         newdata <- NULL
       }
@@ -234,54 +314,105 @@ server <- function(input, output, clientData, session) {
   # Plot:
   # For export:
   ## ggplot for the option DataPoints == T:
-  defineranges <- function(){
-    if (!is.null(filedata())) {
-      gtab <- filedata()
-      if (!is.null(ranges$x) & !is.null(ranges$y)) {
-        rangesx <- ranges$x
-        rangesy <- ranges$y
-      } else {
-        rangesx <- range(gtab$RT)
-        rangesy <- range(gtab$Mass)
+  defineranges <- function() {
+    if (!is.null(ranges$x) & !is.null(ranges$y)) {
+      rangesx <- ranges$x
+      rangesy <- ranges$y
+      return(list(rangesx, rangesy))
+    } else {
+      if (filetype$BioPharma == 0 | filetype$RoWinPro == 0) { # one table
+        rangesx <- range(filedata()[,1])
+        rangesy <- range(filedata()[,2])
+        return(list(rangesx, rangesy))
+      } else  { # two tables because two types of files
+        x <- c(filedata()[[1]][,1], filedata()[[2]][,1])
+        y <- c(filedata()[[1]][,2], filedata()[[2]][,2])
+        rangesx <- range(x)
+        rangesy <- range(y)
+        return(list(rangesx, rangesy))
       }
-      list(rangesx, rangesy)
     }
   }
   
   plotInput1 <- function(){
-    if(input$DataPoints) {
-      gtab <- filedata()
+    if (input$DataPoints == F | is.null(filedata())) {
+      return(NULL)
+    } else {
       rangesx <- defineranges()[[1]]
       rangesy <- defineranges()[[2]]
-      if (linput() == 2) { # if comparing several plots
-        ggplot(gtab, aes(x = RT, y = Mass, col = File, text = paste0("Intensity: ", intensity))) + 
-          geom_point(alpha = 0.7, size = input$pch) +
-          coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
-          theme_bw() + 
-          scale_colour_brewer(palette = input$colourscale) + 
-          ylab("Protein mass (Da)") + 
-          xlab("Retention time (min)")
-      } else {
-        ggplot(gtab, aes(x = RT, y = Mass, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
-          geom_point(alpha = 0.7, size = input$pch) +
-          coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
+      if (filetype$BioPharma == 0) { # Only RoWinPro
+        gtab <- filedata()
+        if (linput() >= 2) { # if comparing several plots
+          g <- ggplot(gtab, aes(x = RT, y = Mass, col = File, text = paste0("Intensity: ", intensity))) + 
+            geom_point(alpha = 0.7, size = input$pch) +
+            coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
+            theme_bw() + 
+            scale_colour_brewer(palette = input$colourscale) + 
+            ylab("Protein mass (Da)") + 
+            xlab("Retention time (min)")
+        } else { # only one plot, no overlay
+          g <- ggplot(gtab, aes(x = RT, y = Mass, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
+            geom_point(alpha = 0.7, size = input$pch) +
+            coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
+            theme_bw() + 
+            scale_colour_distiller(palette = input$colourscale) + 
+            ylab("Protein mass (Da)") + 
+            xlab("Retention time (min)")
+        }
+      } else if (filetype$RoWinPro == 0) { # Only type BioPharma
+        gtab <- filedata()
+        # Define the ranges for margins in the plot:
+        rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.05*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.05*max(gtab$PeakStop, na.rm = T))
+        
+        if (linput() >= 2) { # if comparing several plots
+          g <- ggplot(gtab, aes(y = RT, x = Mass, col = File, ymin = PeakStart, ymax = PeakStop, text = paste0("Intensity: ", intensity))) + 
+            geom_pointrange(alpha = 0.7, size = input$pch) +
+            coord_flip(xlim = rangesy, ylim = rangesyB) +
+            theme_bw() + 
+            scale_colour_brewer(palette = input$colourscale) + 
+            xlab("Protein mass (Da)") + 
+            ylab("Retention time (min)")
+        } else {
+          g <- ggplot(gtab, aes(y = RT, x = Mass, ymin = PeakStart, ymax = PeakStop, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
+            geom_pointrange(alpha = 0.7, size = input$pch) +
+            coord_flip(xlim = rangesy, ylim = rangesyB) +
+            theme_bw() + 
+            scale_colour_distiller(palette = input$colourscale) + 
+            xlab("Protein mass (Da)") + 
+            ylab("Retention time (min)")
+        }
+      } else { # several types of input format
+        gtabRWP <- filedata()[ftype()=="RoWinPro"][[1]]
+        gtabBP <- filedata()[ftype()=="BioPharma"][[1]]
+        
+        # Define the ranges for margins in the plot:
+        rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.05*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.05*max(gtabBP$PeakStop, na.rm = T))
+        rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
+        
+        g <- ggplot() + 
+          geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
+          coord_flip(xlim = rangesy, ylim = rangesyB) +
           theme_bw() + 
           scale_colour_distiller(palette = input$colourscale) + 
-          ylab("Protein mass (Da)") + 
-          xlab("Retention time (min)")
+          geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity))) + 
+          xlab("Protein mass (Da)") + 
+          ylab("Retention time (min)")
       }
+      return(g)
     }
   }
   
   ## plotly for the option DataPoints == F:
   plotInput2 <- function(){
-    if (input$DataPoints == F) {
+    if (is.null(filedata()) | input$DataPoints == T) {
+      return(NULL)
+    } else {
       rangesx <- defineranges()[[1]]
       rangesy <- defineranges()[[2]]
-      if (!is.null(filedata())) {
+      if (filetype$BioPharma == 0) { # Only one type of plot: RoWinPro
         gtab <- filedata()
-        if (linput() == 2) { # For plotting multiple plots.
-          ggplot(gtab, aes(x = RT, y = Mass, col = File)) + 
+        if (linput() >= 2) { # For plotting multiple plots.
+          g <- ggplot(gtab, aes(x = RT, y = Mass, col = File)) + 
             geom_point(alpha = 0.7, size = input$pch) + 
             coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
             theme_bw() + 
@@ -289,7 +420,7 @@ server <- function(input, output, clientData, session) {
             ylab("Protein mass (Da)") + 
             xlab("Retention time (min)")
         } else { # For simple plot.
-          ggplot(gtab, aes(x = RT, y = Mass, col = log10(intensity))) + 
+          g <- ggplot(gtab, aes(x = RT, y = Mass, col = log10(intensity))) + 
             geom_point(alpha = 0.7, size = input$pch) + 
             coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
             theme_bw() + 
@@ -297,16 +428,54 @@ server <- function(input, output, clientData, session) {
             ylab("Protein mass (Da)") + 
             xlab("Retention time (min)")
         }
-      } else {
-        plotly_empty()
+      } else if (filetype$RoWinPro == 0) { # Only one type of plot: BioPharma
+        gtab <- filedata()
+        # Define the ranges for margins in the plot:
+        rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.05*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.05*max(gtab$PeakStop, na.rm = T))
+        
+        if (linput() >= 2) { # For plotting multiple plots.
+          g <- ggplot(gtab, aes(y = RT, x = Mass, col = File)) + 
+            geom_pointrange(aes(ymin = PeakStart, ymax = PeakStop), alpha = 0.7, size = input$pch) + 
+            coord_flip(xlim = rangesy, ylim = rangesyB, expand = TRUE) +
+            theme_bw() + 
+            scale_colour_brewer(palette = input$colourscale) + 
+            xlab("Protein mass (Da)") + 
+            ylab("Retention time (min)")
+        } else { # For simple plot.
+          g <- ggplot(gtab, aes(y = RT, x = Mass, col = log10(intensity))) + 
+            geom_pointrange(aes(ymin = PeakStart, ymax = PeakStop), alpha = 0.7, size = input$pch) + 
+            coord_flip(xlim = rangesy, ylim = rangesyB, expand = TRUE) +
+            theme_bw() + 
+            scale_colour_distiller(palette = input$colourscale) + 
+            xlab("Protein mass (Da)") + 
+            ylab("Retention time (min)")
+        }
+      } else { # two types of plot
+        gtabRWP <- filedata()[ftype()=="RoWinPro"][[1]]
+        gtabBP <- filedata()[ftype()=="BioPharma"][[1]]
+        
+        # Define the ranges for margins in the plot:
+        rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.05*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.05*max(gtabBP$PeakStop, na.rm = T))
+        rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
+        
+        g <- ggplot() + 
+          geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
+          coord_flip(xlim = rangesy, ylim = rangesyB, expand = TRUE) + 
+          theme_bw() + 
+          scale_colour_distiller(palette = input$colourscale) + 
+          geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity))) + 
+          xlab("Protein mass (Da)") + 
+          ylab("Retention time (min)")
       }
+      return(g)
     }
   }
+  
   
   # Plotly output if DataPoints == T
   output$plot1 <- renderPlotly({
     validate(
-      need(!is.null(plotInput1()), 'Plotting...')
+      need(!is.null(plotInput1()), '')
     )
     if (!is.null(plotInput1)) {p <- ggplotly(plotInput1()) %>%
       layout(height = 800, dragmode = "select") %>%
@@ -320,6 +489,9 @@ server <- function(input, output, clientData, session) {
   
   # Plotly output if DataPoints == F
   output$plot2 <- renderPlot({
+    validate(
+      need(!is.null(plotInput2()), '')
+    )
     plotInput2()  
   }, height = 800)
   
@@ -344,7 +516,7 @@ server <- function(input, output, clientData, session) {
       brush <- input$plot_brush
       if (!is.null(brush)) {
         ranges$x <- c(brush$xmin, brush$xmax)
-        ranges$y <- c(brush$ymin, brush$ymax)
+        ranges$y <- c(brush$ymin, brush$ymax)       
       } else {
         ranges$x <- NULL
         ranges$y <- NULL
@@ -380,7 +552,7 @@ server <- function(input, output, clientData, session) {
   
   # For debugging:
   #output$info <- renderText({
-  #  unlist(defineranges())
+  # print(rangesyB)
   #})
 }
 
@@ -390,4 +562,4 @@ shinyApp(ui = ui, server = server)
 
 ############################################################################
 
-# rsconnect::deployApp('//GANDALF/mloca/RRelatedWork/VisioProt-MS_V0.0')
+# rsconnect::deployApp('/Users/Yoko/Documents/IPBS/RRelatedWorkHome/VisioProt-MS')
