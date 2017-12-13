@@ -195,14 +195,12 @@ server <- function(input, output, clientData, session) {
       l <- list()
       l2 <- list()
       for(i in 1:nrow(input$file)){
-        
         l[[i]] <- substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass"  | (substr(readLines(input$file[i, 'datapath'])[1], 0, 12) == "Protein Name") # TRUE if Biopharma
         l2[[i]] <- substr(readLines(input$file[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
-        
       }
       l <- unlist(l)
       l2 <- unlist(l2)
-      filetype$RoWinPro <- length(l[l==F & l2==T]) # Bruker files too
+      filetype$RoWinPro <- length(l[l==F | l2==T]) # Bruker files too
       filetype$BioPharma <- length(l[l==T & l2==F])
       linput(max(as.numeric(table(l))))
     } else {
@@ -279,7 +277,6 @@ server <- function(input, output, clientData, session) {
               lfiles[[i]] <- lfiles[[i]][,c("Apex.RT", "Monoisotopic.Mass", "Sum.Intensity", "Start.Time..min.", "Stop.Time..min.")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
             }
           } else if (ftype()[i] == "RoWinPro")  { # RoWinPro output
-            
             lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = F)
             lfiles[[i]] <- cbind(lfiles[[i]][,1:3], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
           } else if (ftype()[i] == "Bruker")  { # Bruker output
