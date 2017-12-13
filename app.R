@@ -106,7 +106,7 @@ ui <- fluidPage(
       htmlOutput("ZoomParam"),
       
       # For debugging:
-      #textOutput("info"),
+      textOutput("info"),
       
       br(),
       actionButton("DeZoom", "Unzoom", style='padding:8px; font-size:150%'),
@@ -428,7 +428,7 @@ server <- function(input, output, clientData, session) {
             ylab("Retention time (min)")
         }
       } else { # several types of input format
-        gtabRWP <- filedata()[ftype()=="RoWinPro"][[1]]
+        gtabRWP <- filedata()[ftype()=="RoWinPro" | ftype()=="Bruker"][[1]]
         gtabBP <- filedata()[ftype()=="BioPharma"][[1]]
         
         # Define the ranges for margins in the plot:
@@ -497,7 +497,7 @@ server <- function(input, output, clientData, session) {
             ylab("Retention time (min)")
         }
       } else { # two types of plot
-        gtabRWP <- filedata()[ftype()=="RoWinPro"][[1]]
+        gtabRWP <- filedata()[ftype()=="RoWinPro" | ftype()=="Bruker"][[1]]
         gtabBP <- filedata()[ftype()=="BioPharma"][[1]]
         
         # Define the ranges for margins in the plot:
@@ -597,9 +597,9 @@ server <- function(input, output, clientData, session) {
     })
   
   # For debugging:
-  #output$info <- renderText({
-  # print(rangesyB)
-  #})
+  output$info <- renderText({
+   print(unlist(defineranges()))
+  })
 }
 
 ############################################################################
