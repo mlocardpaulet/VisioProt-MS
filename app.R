@@ -194,7 +194,7 @@ server <- function(input, output, clientData, session) {
     if (!is.null(input$file)) {
       l <- list()
       for(i in 1:nrow(input$file)){
-        l[[i]] <- substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass"
+        l[[i]] <- (substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass") | (substr(readLines(input$file[i, 'datapath'])[1], 0, 12) == "Protein Name")
       }
       l <- unlist(l)
       filetype$RoWinPro <- length(l[l==F])
@@ -211,7 +211,7 @@ server <- function(input, output, clientData, session) {
     } else {
       l <- list()
       for(i in 1:nrow(input$file)){
-        val <- substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass" # T for BioPharma, F for RoWinPro
+        val <- (substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass") | (substr(readLines(input$file[i, 'datapath'])[1], 0, 12) == "Protein Name") # T for BioPharma, F for RoWinPro
         val <- ifelse(val,  "BioPharma", "RoWinPro")
         # Check it is the correct input format:
         if (val == "BioPharma") { # Find "Apex RT" in BioPharma files
@@ -255,8 +255,14 @@ server <- function(input, output, clientData, session) {
         lfiles <- list()
         for(i in 1:nrow(input$file)){
           if (ftype()[i] == "BioPharma") { # If the file is from Thermo BioPharma
-            lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
-            lfiles[[i]] <- lfiles[[i]][,c(12,1,2,10,11)] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
+            if (substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass") { # No IDs
+              lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
+            lfiles[[i]] <- lfiles[[i]][,c("Apex RT", "Monoisotopic Mass", "Sum Intensity", "Start Time (min)", "Stop Time (min)")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
+            }
+            if (substr(readLines(input$file[i, 'datapath'])[1], 0, 12) == "Protein Name") { # IDs
+              lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
+              lfiles[[i]] <- lfiles[[i]][,c("Apex RT", "Monoisotopic Mass", "Sum Intensity", "Start Time (min)", "Stop Time (min)")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
+            }
           } else { # Only one other option accepted: as RoWinPro output
             lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = F)
             lfiles[[i]] <- cbind(lfiles[[i]][,1:3], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
