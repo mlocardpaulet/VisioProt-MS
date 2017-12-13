@@ -173,7 +173,7 @@ server <- function(input, output, clientData, session) {
   # Test files input:
   testfileinput <- reactiveVal(0) # 0: no test file; 1: single file; 2: multiple file
   
-  filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0) # Number of files of each type
+  filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0) # Number of files of each type. Bruker files fall into the "RoWinPro" category once recognised and opened properly.
   
   observeEvent(input$TestFile1, {
     linput(1)
@@ -193,12 +193,19 @@ server <- function(input, output, clientData, session) {
     testfileinput(0)
     if (!is.null(input$file)) {
       l <- list()
+      l2 <- list()
       for(i in 1:nrow(input$file)){
+<<<<<<< HEAD
         l[[i]] <- (substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass") | (substr(readLines(input$file[i, 'datapath'])[1], 0, 12) == "Protein Name")
+=======
+        l[[i]] <- substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass" # TRUE if Biopharma
+        l2[[i]] <- substr(readLines(input$file[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
+>>>>>>> InputBruker
       }
       l <- unlist(l)
-      filetype$RoWinPro <- length(l[l==F])
-      filetype$BioPharma <- length(l[l==T])
+      l2 <- unlist(l2)
+      filetype$RoWinPro <- length(l[l==F & l2==T]) # Bruker files too
+      filetype$BioPharma <- length(l[l==T & l2==F])
       linput(max(as.numeric(table(l))))
     } else {
       filetype$RoWinPro <- 0
@@ -211,8 +218,14 @@ server <- function(input, output, clientData, session) {
     } else {
       l <- list()
       for(i in 1:nrow(input$file)){
+<<<<<<< HEAD
         val <- (substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass") | (substr(readLines(input$file[i, 'datapath'])[1], 0, 12) == "Protein Name") # T for BioPharma, F for RoWinPro
+=======
+        val <- substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass" # T for BioPharma, F for RoWinPro
+        val2 <- substr(readLines(input$file[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
+>>>>>>> InputBruker
         val <- ifelse(val,  "BioPharma", "RoWinPro")
+        val[val2] <- "Bruker"
         # Check it is the correct input format:
         if (val == "BioPharma") { # Find "Apex RT" in BioPharma files
           if (!grepl("Apex RT", readLines(input$file[i, 'datapath'])[1])) {
@@ -224,6 +237,14 @@ server <- function(input, output, clientData, session) {
         }
         if (val == "RoWinPro") { # Four columns in RoWinPro files
           if (length(as.numeric(gregexpr("\t", readLines(input$file[i, 'datapath'])[1])[[1]]))!=3) {
+            val <- "DoNotApply"
+            validate(
+              need(val!="DoNotApply", "Incorrect input format")
+            )
+          }
+        }
+        if (val == "Bruker") { # First line has no "," and second line contains the column header " RT / min"
+          if (!(!grepl(",", readLines(input$file[i, 'datapath'])[1]) & grepl(" RT", readLines(input$file[i, 'datapath'])[2]))) {
             val <- "DoNotApply"
             validate(
               need(val!="DoNotApply", "Incorrect input format")
@@ -245,7 +266,7 @@ server <- function(input, output, clientData, session) {
     # Warning if trying to plot several types of data AND several files:
     validate(
       need(!((filetype$RoWinPro >= 2 & filetype$BioPharma >= 1) | (filetype$RoWinPro >= 1 & filetype$BioPharma >= 2)), "Can only input one file per type of format for comparison")
-      )
+    )
     
     if (testfileinput() == 0) { # no input test file
       if (is.null(input$file)) {
@@ -255,6 +276,7 @@ server <- function(input, output, clientData, session) {
         lfiles <- list()
         for(i in 1:nrow(input$file)){
           if (ftype()[i] == "BioPharma") { # If the file is from Thermo BioPharma
+<<<<<<< HEAD
             if (substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass") { # No IDs
               lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
             lfiles[[i]] <- lfiles[[i]][,c("Apex RT", "Monoisotopic Mass", "Sum Intensity", "Start Time (min)", "Stop Time (min)")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
@@ -264,8 +286,16 @@ server <- function(input, output, clientData, session) {
               lfiles[[i]] <- lfiles[[i]][,c("Apex RT", "Monoisotopic Mass", "Sum Intensity", "Start Time (min)", "Stop Time (min)")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
             }
           } else { # Only one other option accepted: as RoWinPro output
+=======
+            lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
+            lfiles[[i]] <- lfiles[[i]][,c(12,1,2,10,11)] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
+          } else if (ftype()[i] == "RoWinPro")  { # RoWinPro output
+>>>>>>> InputBruker
             lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = F)
             lfiles[[i]] <- cbind(lfiles[[i]][,1:3], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
+          } else if (ftype()[i] == "Bruker")  { # Bruker output
+            lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = ",", header = F, skip = 2)
+            lfiles[[i]] <- cbind(lfiles[[i]][,2:4], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
           }
         }
         names(lfiles) <- input$file$name
@@ -592,4 +622,4 @@ shinyApp(ui = ui, server = server)
 
 ############################################################################
 
-# rsconnect::deployApp('/Users/Yoko/Documents/IPBS/RRelatedWorkHome/VisioProt-MS')
+# rsconnect::deployApp("T:/RRelatedWork/VisioProt-MS")
