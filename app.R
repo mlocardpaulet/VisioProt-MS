@@ -106,7 +106,7 @@ ui <- fluidPage(
       htmlOutput("ZoomParam"),
       
       # For debugging:
-      textOutput("info"),
+      #textOutput("info"),
       
       br(),
       actionButton("DeZoom", "Unzoom", style='padding:8px; font-size:150%'),
@@ -195,7 +195,7 @@ server <- function(input, output, clientData, session) {
       l <- list()
       l2 <- list()
       for(i in 1:nrow(input$file)){
-        l[[i]] <- substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass"  | (substr(readLines(input$file[i, 'datapath'])[1], 0, 12) == "Protein Name") # TRUE if Biopharma
+        l[[i]] <- grepl("Monoisotopic Mass", readLines(input$file[i, 'datapath'])[1]) & grepl("Apex RT", readLines(input$file[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(input$file[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T)  # TRUE if Biopharma
         l2[[i]] <- substr(readLines(input$file[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
       }
       l <- unlist(l)
@@ -214,7 +214,7 @@ server <- function(input, output, clientData, session) {
     } else {
       l <- list()
       for(i in 1:nrow(input$file)){
-        val <- (substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass") | (substr(readLines(input$file[i, 'datapath'])[1], 0, 12) == "Protein Name") # T for BioPharma, F for RoWinPro
+        val <- grepl("Monoisotopic Mass", readLines(input$file[i, 'datapath'])[1]) & grepl("Apex RT", readLines(input$file[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(input$file[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T) # T for BioPharma, F for RoWinPro
         val2 <- substr(readLines(input$file[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
         val <- ifelse(val,  "BioPharma", "RoWinPro")
         val[val2] <- "Bruker"
@@ -268,11 +268,11 @@ server <- function(input, output, clientData, session) {
         lfiles <- list()
         for(i in 1:nrow(input$file)){
           if (ftype()[i] == "BioPharma") { # If the file is from Thermo BioPharma
-            if (substr(readLines(input$file[i, 'datapath'])[1], 0, 17) == "Monoisotopic Mass") { # No IDs
+            if (!grepl("Protein Name", readLines(input$file[i, 'datapath'])[1])) { # No IDs
               lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
               lfiles[[i]] <- lfiles[[i]][,c("Apex.RT", "Monoisotopic.Mass", "Sum.Intensity", "Start.Time..min.", "Stop.Time..min.")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
             }
-            if (substr(readLines(input$file[i, 'datapath'])[1], 0, 12) == "Protein Name") { # IDs
+            if (grepl("Protein Name", readLines(input$file[i, 'datapath'])[1])) { # IDs
               lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
               lfiles[[i]] <- lfiles[[i]][,c("Apex.RT", "Monoisotopic.Mass", "Sum.Intensity", "Start.Time..min.", "Stop.Time..min.")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
             }
@@ -597,9 +597,9 @@ server <- function(input, output, clientData, session) {
     })
   
   # For debugging:
-  output$info <- renderText({
-   print(unlist(defineranges()))
-  })
+  #output$info <- renderText({
+  # print(unlist(defineranges()))
+  #})
 }
 
 ############################################################################
