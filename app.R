@@ -221,7 +221,7 @@ server <- function(input, output, clientData, session) {
           if (!grepl("Apex RT", readLines(input$file[i, 'datapath'])[1])) {
             val <- "DoNotApply"
             validate(
-              need(val!="DoNotApply", "Incorrect input format")
+              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.")
             )
           }
         }
@@ -229,7 +229,7 @@ server <- function(input, output, clientData, session) {
           if (length(as.numeric(gregexpr("\t", readLines(input$file[i, 'datapath'])[1])[[1]]))!=3) {
             val <- "DoNotApply"
             validate(
-              need(val!="DoNotApply", "Incorrect input format")
+              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.")
             )
           }
         }
@@ -237,7 +237,7 @@ server <- function(input, output, clientData, session) {
           if (!(!grepl(",", readLines(input$file[i, 'datapath'])[1]) & grepl(" RT", readLines(input$file[i, 'datapath'])[2]))) {
             val <- "DoNotApply"
             validate(
-              need(val!="DoNotApply", "Incorrect input format")
+              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.")
             )
           }
         }
