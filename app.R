@@ -122,7 +122,8 @@ ui <- fluidPage(
       br(),
       # Buttons for download:
       downloadButton("Download", "Download .pdf"),
-      downloadButton("Download1", "Download .png")
+      downloadButton("Download1", "Download .png"),
+      downloadButton("Download2", "Download .svg")
     ),
     
     # Main panel for plotting (output different in function of the checkbox DataPoints):
@@ -614,6 +615,20 @@ server <- function(input, output, clientData, session) {
     content = function(file) {
       device <- function(..., width, height) {
         grDevices::png(..., width = 1000, height = 800, res = 120)
+      }
+      if (input$DataPoints) {
+        ggsave(file, plot = plotInput1(), device = device)
+      } else {
+        ggsave(file, plot = plotInput2(), device = device)
+      }
+    })
+  output$Download2 <- downloadHandler(
+    filename = function(){
+      paste0("VisioProt-MS_", substring(input$file$name, first = 1, last = (nchar(input$file$name)-4)), "_", Sys.Date(), ".svg")
+    },
+    content = function(file) {
+      device <- function(..., width, height) {
+        grDevices::svg(..., width = 10, height = 8)
       }
       if (input$DataPoints) {
         ggsave(file, plot = plotInput1(), device = device)
