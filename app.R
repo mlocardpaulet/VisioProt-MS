@@ -95,8 +95,15 @@ ui <- fluidPage(
                   ".csv"),
                 multiple = T
       ),
-      actionButton("TestFile1", "Single test file"),
-      actionButton("TestFile2", "Multiple test files"),
+      
+      checkboxInput("TestModeCheck", "Using test mode (to test the app. whithout input file-s)", FALSE), # to switch from user data to test mode
+      # Modifying output when passing in test mode:
+      conditionalPanel(
+        condition="input.TestModeCheck==true",
+        actionButton("TestFile1", "Single test file"),
+        actionButton("TestFile2", "Multiple test files")
+      ),
+      
       checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
       # Selection of the colour scales. This depends on the number of input files:
       uiOutput("colourUI"),
@@ -117,6 +124,7 @@ ui <- fluidPage(
       downloadButton("Download", "Download .pdf"),
       downloadButton("Download1", "Download .png")
     ),
+    
     # Main panel for plotting (output different in function of the checkbox DataPoints):
     mainPanel(
       uiOutput("plotUI")
@@ -143,6 +151,7 @@ server <- function(input, output, clientData, session) {
       HTML("<h4>Zoom in: select the ranges of interest and double click.<br/>Zoom out: double click.</h4>")
     }
   })
+
   
   # Number of input file(s) from the same type:
   linput <- reactiveVal(1)
@@ -170,6 +179,11 @@ server <- function(input, output, clientData, session) {
   
   # Test files input:
   testfileinput <- reactiveVal(0) # 0: no test file; 1: single file; 2: multiple file
+  
+  # Remove plot when getting out of test mode.
+  observeEvent(input$TestModeCheck, {
+    testfileinput(0)
+  })
   
   filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0) # Number of files of each type. Bruker files fall into the "RoWinPro" category once recognised and opened properly.
   
