@@ -101,7 +101,7 @@ ui <- fluidPage(
       # Selection of the colour scales. This depends on the number of input files:
       uiOutput("colourUI"),
       # Parameters for the plot:
-      numericInput("pch", label = "Point size:", value = 1, min = 0.01, step = 0.1),
+      numericInput("pch", label = "Point size:", value = 1, min = 0.01, step = 0.1, max = 10),
       numericInput("IntensityThresh", label = "Plotting threshold\n(Percentage of plotted data points):", value = 20, min = 0, max = 100, step = 1),
       # Information regarding how to zoom (depends on the plotting type):
       htmlOutput("ZoomParam"),
@@ -134,9 +134,6 @@ ui <- fluidPage(
 ############################################################################
 
 server <- function(input, output, clientData, session) {
-  
-  # Prevents error message when slow to render:
-  
   
   # Text output to describe how to zoom (dependent on the checkbox DataPoints):
   output$ZoomParam <- renderUI({
@@ -312,6 +309,9 @@ server <- function(input, output, clientData, session) {
   
   # Create table for plotting:
   filedata <- function() {
+    validate(
+      need(input$IntensityThresh <= 100, "Threshold value too high")
+    )
     if (is.null(filedata0())) {
       return(NULL)
     } else {
@@ -382,6 +382,9 @@ server <- function(input, output, clientData, session) {
   }
   
   plotInput1 <- function(){
+    validate(
+      need(input$pch <= 10, "Please define a smaller size of points")
+    )
     if (input$DataPoints == F | is.null(filedata())) {
       return(NULL)
     } else {
@@ -451,6 +454,9 @@ server <- function(input, output, clientData, session) {
   
   ## plotly for the option DataPoints == F:
   plotInput2 <- function(){
+    validate(
+      need(input$pch <= 10, "Please define a smaller size of points")
+    )
     if (is.null(filedata()) | input$DataPoints == T) {
       return(NULL)
     } else {
