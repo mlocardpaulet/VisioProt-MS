@@ -123,7 +123,9 @@ ui <- fluidPage(
       # Buttons for download:
       downloadButton("Download", "Download .pdf"),
       downloadButton("Download1", "Download .png"),
-      downloadButton("Download2", "Download .svg")
+      downloadButton("Download2", "Download .svg"),
+      br(),
+      a("VisioProt-MS explained", href="Help/VisioProtHelp.html", target="blank") # Access to help
     ),
     
     # Main panel for plotting (output different in function of the checkbox DataPoints):
@@ -134,7 +136,7 @@ ui <- fluidPage(
   # Footer
   tabsetPanel(
     tabPanel(
-      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V1.1</font></footer>')
+      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V1.2</font></footer>')
     )
   )
 )
@@ -169,11 +171,11 @@ server <- function(input, output, clientData, session) {
     } else {
       selectInput("colourscale", "Colour scale:", # for discete scales 
                   c("Set1" = "Set1",
+                    "Set2" = "Set2",
+                    "Set3" = "Set3",
                     "Dark2" = "Dark2", 
                     "Paired" = "Paired",
-                    "Accent" = "Accent",
-                    "Set2" = "Set2",
-                    "Set3" = "Set3"
+                    "Accent" = "Accent"
                   ))
     }
   })
