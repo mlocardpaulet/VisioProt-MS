@@ -61,6 +61,7 @@ RenameBioPharma <- function(tab) {
 
 ThresholdCleaning <- function(l, threshold) {
   # removes the points with lowest intensity according to the threshold chosen by the user:
+  threshold <- threshold/100
   l1 <- list()
   for (x in seq_along(l)) {
     # Filter the intensities according to threshold:
@@ -101,7 +102,7 @@ ui <- fluidPage(
       uiOutput("colourUI"),
       # Parameters for the plot:
       numericInput("pch", label = "Point size:", value = 1, min = 0.01, step = 0.1),
-      numericInput("IntensityThresh", label = "Plotting threshold\n(Percentage points with the highest intensity):", value = 0.2, min = 0, max = 1, step = 0.1),
+      numericInput("IntensityThresh", label = "Plotting threshold\n(Percentage of plotted data points):", value = 20, min = 0, max = 100, step = 1),
       # Information regarding how to zoom (depends on the plotting type):
       htmlOutput("ZoomParam"),
       
