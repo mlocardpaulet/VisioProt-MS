@@ -114,7 +114,7 @@ ui <- fluidPage(
       htmlOutput("ZoomParam"),
       
       # For debugging:
-      #textOutput("info"),
+      #textOutput("hello"),
       
       br(),
       actionButton("DeZoom", "Unzoom", style='padding:8px; font-size:150%'),
@@ -266,7 +266,7 @@ server <- function(input, output, clientData, session) {
   # Input the data table:
   filedata0 <- reactive({
     #This function is repsonsible for loading in the selected file
-    
+
     # Warning if trying to plot several types of data AND several files:
     validate(
       need(!((filetype$RoWinPro >= 2 & filetype$BioPharma >= 1) | (filetype$RoWinPro >= 1 & filetype$BioPharma >= 2)), "Can only input one file per type of format for comparison")
@@ -592,8 +592,11 @@ server <- function(input, output, clientData, session) {
   })
   
   # For export:
+
   output$Download <- downloadHandler(
-    filename = "VisioProt-MS_Output.pdf",
+    filename = function(){
+      paste0("VisioProt-MS_", substring(input$file$name, first = 1, last = (nchar(input$file$name)-4)), "_", Sys.Date(), ".pdf")
+    },
     content = function(file) {
       device <- function(..., width, height) {
         grDevices::pdf(..., width = 10, height = 8)
@@ -605,7 +608,9 @@ server <- function(input, output, clientData, session) {
       }
     })
   output$Download1 <- downloadHandler(
-    filename = "VisioProt-MS_Output.png",
+    filename = function(){
+      paste0("VisioProt-MS_", substring(input$file$name, first = 1, last = (nchar(input$file$name)-4)), "_", Sys.Date(), ".png")
+    },
     content = function(file) {
       device <- function(..., width, height) {
         grDevices::png(..., width = 1000, height = 800, res = 120)
