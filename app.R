@@ -105,8 +105,16 @@ ui <- fluidPage(
       ),
       
       checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
+      
       # Selection of the colour scales. This depends on the number of input files:
-      uiOutput("colourUI"),
+      # With updateSelectInput:
+      selectInput("colourscale", "Colour scale:", # for continuous scales
+                  c("Spectral" = "Spectral",
+                    "Red/yellow/blue" = "RdYlBu", 
+                    "Red/yellow/green" = "RdYlGn",
+                    "yellow to red" = "YlOrRd"
+                  )),
+      
       # Parameters for the plot:
       numericInput("pch", label = "Point size:", value = 1, min = 0.01, step = 0.1, max = 10),
       numericInput("IntensityThresh", label = "Plotting threshold\n(Percentage of plotted data points):", value = 20, min = 0, max = 100, step = 1),
@@ -145,6 +153,7 @@ ui <- fluidPage(
 ############################################################################
 
 server <- function(input, output, clientData, session) {
+
   
   # Text output to describe how to zoom (dependent on the checkbox DataPoints):
   output$ZoomParam <- renderUI({
@@ -159,25 +168,28 @@ server <- function(input, output, clientData, session) {
   # Number of input file(s) from the same type:
   linput <- reactiveVal(1)
   
-  # Define the number of input files to update UI in function:
-  output$colourUI <- renderUI({
-    if (linput() == 1) {
-      selectInput("colourscale", "Colour scale:", # for continuous scales
-                  c("Spectral" = "Spectral",
-                    "Red/yellow/blue" = "RdYlBu", 
-                    "Red/yellow/green" = "RdYlGn",
-                    "yellow to red" = "YlOrRd"
-                  ))
-    } else {
-      selectInput("colourscale", "Colour scale:", # for discete scales 
-                  c("Set1" = "Set1",
-                    "Set2" = "Set2",
-                    "Set3" = "Set3",
-                    "Dark2" = "Dark2", 
-                    "Paired" = "Paired",
-                    "Accent" = "Accent"
-                  ))
-    }
+  # Change colour scale in function of the number of scales:
+  observe({
+          x <- linput()
+          if (x > 1) {
+                  updateSelectInput(session, "colourscale",
+                                    "Colour scale:",
+                                    c("Set1" = "Set1",
+                                      "Set2" = "Set2",
+                                      "Set3" = "Set3",
+                                      "Dark2" = "Dark2", 
+                                      "Paired" = "Paired",
+                                      "Accent" = "Accent"
+                                    ))
+          } else {
+                  updateSelectInput(session, "colourscale",
+                                    "Colour scale:",
+                                    c("Spectral" = "Spectral",
+                                      "Red/yellow/blue" = "RdYlBu", 
+                                      "Red/yellow/green" = "RdYlGn",
+                                      "yellow to red" = "YlOrRd"
+                                    ))
+          }
   })
   
   # Test files input:
@@ -578,7 +590,7 @@ server <- function(input, output, clientData, session) {
                    resetOnNew = TRUE))
     }
   })
-  
+
   # When a double-click happens, check if there's a brush on the plot.
   # If so, zoom to the brush bounds; if not, reset the zoom.
   observeEvent(input$plot_dblclick, {
