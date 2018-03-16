@@ -166,29 +166,31 @@ server <- function(input, output, clientData, session) {
 
   
   # Number of input file(s) from the same type:
-  linput <- reactiveVal(1)
+  linput <- reactiveVal()
   
   # Change colour scale in function of the number of scales:
   observe({
-          x <- linput()
-          if (x > 1) {
-                  updateSelectInput(session, "colourscale",
-                                    "Colour scale:",
-                                    c("Set1" = "Set1",
-                                      "Set2" = "Set2",
-                                      "Set3" = "Set3",
-                                      "Dark2" = "Dark2", 
-                                      "Paired" = "Paired",
-                                      "Accent" = "Accent"
-                                    ))
-          } else {
-                  updateSelectInput(session, "colourscale",
-                                    "Colour scale:",
-                                    c("Spectral" = "Spectral",
-                                      "Red/yellow/blue" = "RdYlBu", 
-                                      "Red/yellow/green" = "RdYlGn",
-                                      "yellow to red" = "YlOrRd"
-                                    ))
+          if (!is.null(linput())) {
+                  x <- linput()
+                  if (x > 1) {
+                          updateSelectInput(session, "colourscale",
+                                            "Colour scale:",
+                                            c("Set1" = "Set1",
+                                              "Set2" = "Set2",
+                                              "Set3" = "Set3",
+                                              "Dark2" = "Dark2", 
+                                              "Paired" = "Paired",
+                                              "Accent" = "Accent"
+                                            ))
+                  } else {
+                          updateSelectInput(session, "colourscale",
+                                            "Colour scale:",
+                                            c("Spectral" = "Spectral",
+                                              "Red/yellow/blue" = "RdYlBu", 
+                                              "Red/yellow/green" = "RdYlGn",
+                                              "yellow to red" = "YlOrRd"
+                                            ))
+                  }
           }
   })
   
@@ -411,74 +413,76 @@ server <- function(input, output, clientData, session) {
   }
   
   plotInput1 <- function(){
-    validate(
-      need(input$pch <= 10, "Please define a smaller size of points")
-    )
-    if (input$DataPoints == F | is.null(filedata())) {
-      return(NULL)
-    } else {
-      rangesx <- defineranges()[[1]]
-      rangesy <- defineranges()[[2]]
-      if (filetype$BioPharma == 0) { # Only RoWinPro
-        gtab <- filedata()
-        if (linput() >= 2) { # if comparing several plots
-          g <- ggplot(gtab, aes(x = RT, y = Mass, col = File, text = paste0("Intensity: ", intensity))) + 
-            geom_point(alpha = 0.7, size = input$pch) +
-            coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
-            theme_bw() + 
-            scale_colour_brewer(palette = input$colourscale) + 
-            ylab("Protein mass (Da)") + 
-            xlab("Retention time (min)")
-        } else { # only one plot, no overlay
-          g <- ggplot(gtab, aes(x = RT, y = Mass, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
-            geom_point(alpha = 0.7, size = input$pch) +
-            coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
-            theme_bw() + 
-            scale_colour_distiller(palette = input$colourscale) + 
-            ylab("Protein mass (Da)") + 
-            xlab("Retention time (min)")
-        }
-      } else if (filetype$RoWinPro == 0) { # Only type BioPharma
-        gtab <- filedata()
-        # Define the ranges for margins in the plot:
-        rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.05*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.05*max(gtab$PeakStop, na.rm = T))
-        
-        if (linput() >= 2) { # if comparing several plots
-          g <- ggplot(gtab, aes(y = RT, x = Mass, col = File, ymin = PeakStart, ymax = PeakStop, text = paste0("Intensity: ", intensity))) + 
-            geom_pointrange(alpha = 0.7, size = input$pch) +
-            coord_flip(xlim = rangesy, ylim = rangesyB) +
-            theme_bw() + 
-            scale_colour_brewer(palette = input$colourscale) + 
-            xlab("Protein mass (Da)") + 
-            ylab("Retention time (min)")
-        } else {
-          g <- ggplot(gtab, aes(y = RT, x = Mass, ymin = PeakStart, ymax = PeakStop, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
-            geom_pointrange(alpha = 0.7, size = input$pch) +
-            coord_flip(xlim = rangesy, ylim = rangesyB) +
-            theme_bw() + 
-            scale_colour_distiller(palette = input$colourscale) + 
-            xlab("Protein mass (Da)") + 
-            ylab("Retention time (min)")
-        }
-      } else { # several types of input format
-        gtabRWP <- filedata()[ftype()=="RoWinPro" | ftype()=="Bruker"][[1]]
-        gtabBP <- filedata()[ftype()=="BioPharma"][[1]]
-        
-        # Define the ranges for margins in the plot:
-        rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.05*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.05*max(gtabBP$PeakStop, na.rm = T))
-        rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
-        
-        g <- ggplot() + 
-          geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
-          coord_flip(xlim = rangesy, ylim = rangesyB) +
-          theme_bw() + 
-          scale_colour_distiller(palette = input$colourscale) + 
-          geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity))) + 
-          xlab("Protein mass (Da)") + 
-          ylab("Retention time (min)")
-      }
-      return(g)
-    }
+          validate(
+                  need(input$pch <= 10, "Please define a smaller size of points")
+          )
+          if (!is.null(linput())) {
+                  if (input$DataPoints == F | is.null(filedata())) {
+                          return(NULL)
+                  } else {
+                          rangesx <- defineranges()[[1]]
+                          rangesy <- defineranges()[[2]]
+                          if (filetype$BioPharma == 0) { # Only RoWinPro
+                                  gtab <- filedata()
+                                  if (linput() >= 2) { # if comparing several plots
+                                          g <- ggplot(gtab, aes(x = RT, y = Mass, col = File, text = paste0("Intensity: ", intensity))) + 
+                                                  geom_point(alpha = 0.7, size = input$pch) +
+                                                  coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
+                                                  theme_bw() + 
+                                                  scale_colour_brewer(palette = input$colourscale) + 
+                                                  ylab("Protein mass (Da)") + 
+                                                  xlab("Retention time (min)")
+                                  } else { # only one plot, no overlay
+                                          g <- ggplot(gtab, aes(x = RT, y = Mass, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
+                                                  geom_point(alpha = 0.7, size = input$pch) +
+                                                  coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
+                                                  theme_bw() + 
+                                                  scale_colour_distiller(palette = input$colourscale) + 
+                                                  ylab("Protein mass (Da)") + 
+                                                  xlab("Retention time (min)")
+                                  }
+                          } else if (filetype$RoWinPro == 0) { # Only type BioPharma
+                                  gtab <- filedata()
+                                  # Define the ranges for margins in the plot:
+                                  rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.05*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.05*max(gtab$PeakStop, na.rm = T))
+                                  
+                                  if (linput() >= 2) { # if comparing several plots
+                                          g <- ggplot(gtab, aes(y = RT, x = Mass, col = File, ymin = PeakStart, ymax = PeakStop, text = paste0("Intensity: ", intensity))) + 
+                                                  geom_pointrange(alpha = 0.7, size = input$pch) +
+                                                  coord_flip(xlim = rangesy, ylim = rangesyB) +
+                                                  theme_bw() + 
+                                                  scale_colour_brewer(palette = input$colourscale) + 
+                                                  xlab("Protein mass (Da)") + 
+                                                  ylab("Retention time (min)")
+                                  } else {
+                                          g <- ggplot(gtab, aes(y = RT, x = Mass, ymin = PeakStart, ymax = PeakStop, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
+                                                  geom_pointrange(alpha = 0.7, size = input$pch) +
+                                                  coord_flip(xlim = rangesy, ylim = rangesyB) +
+                                                  theme_bw() + 
+                                                  scale_colour_distiller(palette = input$colourscale) + 
+                                                  xlab("Protein mass (Da)") + 
+                                                  ylab("Retention time (min)")
+                                  }
+                          } else { # several types of input format
+                                  gtabRWP <- filedata()[ftype()=="RoWinPro" | ftype()=="Bruker"][[1]]
+                                  gtabBP <- filedata()[ftype()=="BioPharma"][[1]]
+                                  
+                                  # Define the ranges for margins in the plot:
+                                  rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.05*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.05*max(gtabBP$PeakStop, na.rm = T))
+                                  rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
+                                  
+                                  g <- ggplot() + 
+                                          geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
+                                          coord_flip(xlim = rangesy, ylim = rangesyB) +
+                                          theme_bw() + 
+                                          scale_colour_distiller(palette = input$colourscale) + 
+                                          geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity))) + 
+                                          xlab("Protein mass (Da)") + 
+                                          ylab("Retention time (min)")
+                          }
+                          return(g)
+                  }
+          }
   }
   
   ## plotly for the option DataPoints == F:
