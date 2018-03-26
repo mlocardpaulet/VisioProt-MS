@@ -84,28 +84,77 @@ ThresholdCleaning <- function(l, threshold) {
 
 ui <- fluidPage(
   titlePanel("VisioProt-MS"),
+  #checkboxInput("MSModeCheck", "MS data only", TRUE), # to switch from MS data to MS2 mode
+  radioButtons("MSModeCheck", "MS mode:",
+               c("MS data only" = 'MS',
+                 "MS2 overlay" = 'MS2'),
+               selected = 'MS'
+  ), # to switch from MS data to MS2 mode
+  
   # Control side bar:
   sidebarLayout( 
-    sidebarPanel(
-      # File selection:
-      fileInput("file", "Select input file(s):",  
-                accept = c(
-                  "text/csv",
-                  "text/comma-separated-values,text/plain",
-                  ".csv"),
-                multiple = T
+    sidebarPanel( 
+      # Conditional panels:
+      # Part 1:
+      #########
+      conditionalPanel(condition="input.MSModeCheck== 'MS'",
+                       # File selection:
+                       fileInput("file", "Select input file(s):",  
+                                 accept = c(
+                                   "text/csv",
+                                   "text/comma-separated-values,text/plain",
+                                   ".csv"),
+                                 multiple = T
+                       )
       ),
-      
-      checkboxInput("TestModeCheck", "Using test mode (to test the app. whithout input file-s)", FALSE), # to switch from user data to test mode
-      # Modifying output when passing in test mode:
-      conditionalPanel(
-        condition="input.TestModeCheck==true",
-        actionButton("TestFile1", "Single test file"),
-        actionButton("TestFile2", "Multiple test files")
+      ########
+      #########
+      # Part 2:
+      #########
+      conditionalPanel(condition="input.MSModeCheck== 'MS'",
+                       # File selection:
+                       fileInput("file", "Select input file(s):",  
+                                 accept = c(
+                                   "text/csv",
+                                   "text/comma-separated-values,text/plain",
+                                   ".csv"),
+                                 multiple = T
+                       ),
+                       checkboxInput("TestModeCheck", "Using test mode (to test the app. whithout input file-s)", FALSE), # to switch from user data to test mode
+                       # Modifying output when passing in test mode:
+                       conditionalPanel(
+                         condition="input.TestModeCheck==true",
+                         actionButton("TestFile1", "Single test file"),
+                         actionButton("TestFile2", "Multiple test files")
+                       ),
+                       checkboxInput("DataPoints", "Show data labels (slower)", FALSE) # To switch between ggplot and plotly.
       ),
-      
-      checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
-      
+      ########
+      #########
+      # Part 2:
+      #########
+      conditionalPanel(condition="input.MSModeCheck== 'MS2'", 
+                       fileInput("file", "Select input file for MS:",  
+                                 accept = c(
+                                   "text/csv",
+                                   "text/comma-separated-values,text/plain",
+                                   ".csv"),
+                                 multiple = F
+                       ),
+                       fileInput("MS2file", "Choose MS2 File:", 
+                                 accept = c(
+                                   "text/csv",
+                                   "text/comma-separated-values,text/plain",
+                                   ".txt")
+                       ),
+                       fileInput("PSMfile", "Choose PSM File:", 
+                                 accept = c(
+                                   "text/csv",
+                                   "text/comma-separated-values,text/plain",
+                                   ".txt")
+                       )
+                       #checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
+      ),
       # Selection of the colour scales. This depends on the number of input files:
       # With updateSelectInput:
       selectInput("colourscale", "Colour scale:", # for continuous scales
@@ -114,7 +163,6 @@ ui <- fluidPage(
                     "Red/yellow/green" = "RdYlGn",
                     "yellow to red" = "YlOrRd"
                   )),
-      
       # Parameters for the plot:
       numericInput("pch", label = "Point size:", value = 1, min = 0.01, step = 0.1, max = 10),
       numericInput("IntensityThresh", label = "Plotting threshold\n(Percentage of plotted data points):", value = 20, min = 0, max = 100, step = 1),
@@ -136,7 +184,6 @@ ui <- fluidPage(
       br(),
       a("Help", href="Help/VisioProtHelp.html", target="blank") # Access to help
     ),
-    
     # Main panel for plotting (output different in function of the checkbox DataPoints):
     mainPanel(
       uiOutput("plotUI")
@@ -145,10 +192,11 @@ ui <- fluidPage(
   # Footer
   tabsetPanel(
     tabPanel(
-      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V1.2</font></footer>')
+      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V2.0</font></footer>')
     )
   )
 )
+
 
 ## Server:
 ############################################################################
