@@ -125,7 +125,8 @@ ui <- fluidPage(
       #textOutput("hello"),
       
       br(),
-      actionButton("DeZoom", "Unzoom", style='padding:8px; font-size:150%'),
+      actionButton("DeZoom", "Unzoom one step", style='padding:8px; font-size:150%'),
+      actionButton("TotalDeZoom", "Total Unzoom", style='padding:8px; font-size:150%'),
       br(),
       br(),
       # Buttons for download:
@@ -387,10 +388,25 @@ server <- function(input, output, clientData, session) {
   #####################
   ranges <- reactiveValues(x = NULL, y = NULL)
   observeEvent(input$DeZoom, {
-    ranges$x <- NULL
-    ranges$y <- NULL
+    ranges$x <- oldranges$x
+    ranges$y <- oldranges$y
   })
+  observeEvent(input$TotalDeZoom, {
+    if (filetype$BioPharma == 0 | filetype$RoWinPro == 0) { # one table
+      ranges$x <- c(0, range(filedata()[,1])[2])
+      ranges$y <- range(filedata()[,2])
+    } else  { # two tables because two types of files
+      x <- c(filedata()[[1]][,1], filedata()[[2]][,1])
+      y <- c(filedata()[[1]][,2], filedata()[[2]][,2])
+      ranges$x <- c(0, range(x)[0])
+      ranges$y <- range(y)
+    }
+  })
+  
+  oldranges <- reactiveValues(x = NULL, y = NULL)
   observeEvent(event_data("plotly_selected"), {
+    oldranges$x <- ranges$x
+    oldranges$y <- ranges$y
     if (input$DataPoints) {
       newdata <- event_data("plotly_selected")
       if (!is.null(newdata) & class(newdata)=="data.frame") {
@@ -614,6 +630,8 @@ server <- function(input, output, clientData, session) {
   # When a double-click happens, check if there's a brush on the plot.
   # If so, zoom to the brush bounds; if not, reset the zoom.
   observeEvent(input$plot_dblclick, {
+    oldranges$x <- ranges$x
+    oldranges$y <- ranges$y
     if (input$DataPoints == FALSE) {
       brush <- input$plot_brush
       if (!is.null(brush)) {
