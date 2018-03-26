@@ -126,7 +126,7 @@ ui <- fluidPage(
       
       br(),
       actionButton("DeZoom", "Unzoom one step", style='padding:8px; font-size:150%'),
-      actionButton("TotalDeZoom", "Total Unzoom", style='padding:8px; font-size:150%'),
+      actionButton("TotalDeZoom", "Total unzoom", style='padding:8px; font-size:150%'),
       br(),
       br(),
       # Buttons for download:
