@@ -134,7 +134,7 @@ ui <- fluidPage(
       downloadButton("Download1", "Download .png"),
       downloadButton("Download2", "Download .svg"),
       br(),
-      a("VisioProt-MS explained", href="Help/VisioProtHelp.html", target="blank") # Access to help
+      a("Help", href="Help/VisioProtHelp.html", target="blank") # Access to help
     ),
     
     # Main panel for plotting (output different in function of the checkbox DataPoints):
