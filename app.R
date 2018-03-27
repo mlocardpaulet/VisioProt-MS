@@ -203,7 +203,8 @@ ui <- fluidPage(
 
 server <- function(input, output, clientData, session) {
   
-  
+  # UI modifications:
+  ###################
   # Text output to describe how to zoom (dependent on the checkbox DataPoints):
   output$ZoomParam <- renderUI({
     if (input$DataPoints) {
@@ -212,10 +213,6 @@ server <- function(input, output, clientData, session) {
       HTML("<h4>Zoom in: select the ranges of interest and double click.<br/>Zoom out: double click.</h4>")
     }
   })
-  
-  
-  # Number of input file(s) from the same type:
-  linput <- reactiveVal()
   
   # Change colour scale in function of the number of scales:
   observe({
@@ -243,21 +240,22 @@ server <- function(input, output, clientData, session) {
     }
   })
   
-  # Test files input:
-  testfileinput <- reactiveVal(0) # 0: no test file; 1: single file; 2: multiple file
-  
-  # Remove plot when getting out of test mode.
-  observeEvent(input$TestModeCheck, {
-    testfileinput(0)
-  })
-  
-  filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0) # Number of files of each type. Bruker files fall into the "RoWinPro" category once recognised and opened properly.
-  
   colval <- reactiveVal()
   observe({
     x <- input$colourscale
     colval(x)
   })
+  ###################
+  
+  # When input MS file:
+  #####################
+  # Number of input file(s) from the same type:
+  linput <- reactiveVal()
+  
+  # Test files input:
+  testfileinput <- reactiveVal(0) # 0: no test file; 1: single file; 2: multiple file
+  
+  filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0) # Number of files of each type. Bruker files fall into the "RoWinPro" category once recognised and opened properly.
   
   observeEvent(input$TestFile1, {
     linput(1)
@@ -299,6 +297,23 @@ server <- function(input, output, clientData, session) {
       filetype$BioPharma <- 0
     }
   })
+  #####################
+  
+  # Prevent plotting when modifying modes:
+  ########################################
+  # Remove plot when getting out of test mode.
+  observeEvent(input$TestModeCheck, {
+    testfileinput(0)
+    ftype()
+  })
+  
+  # Remove plot when getting out of MS or MS2 mode.
+  observeEvent(input$MSModeCheck, {
+    testfileinput(0)
+    ftype()
+  })
+  ########################################
+  
   ftype <- reactive({
     if (is.null(input$file) & testfileinput() == 0) {
       return(NULL)
@@ -694,7 +709,7 @@ server <- function(input, output, clientData, session) {
   
   # For export:
   ############
-  
+  # pdf output:
   output$Download <- downloadHandler(
     filename = function(){
       paste0("VisioProt-MS_", substring(input$file$name, first = 1, last = (nchar(input$file$name)-4)), "_", Sys.Date(), ".pdf")
@@ -709,6 +724,7 @@ server <- function(input, output, clientData, session) {
         ggsave(file, plot = plotInput2(), device = device)
       }
     })
+  # png output:
   output$Download1 <- downloadHandler(
     filename = function(){
       paste0("VisioProt-MS_", substring(input$file$name, first = 1, last = (nchar(input$file$name)-4)), "_", Sys.Date(), ".png")
@@ -723,6 +739,7 @@ server <- function(input, output, clientData, session) {
         ggsave(file, plot = plotInput2(), device = device)
       }
     })
+  # svg output:
   output$Download2 <- downloadHandler(
     filename = function(){
       paste0("VisioProt-MS_", substring(input$file$name, first = 1, last = (nchar(input$file$name)-4)), "_", Sys.Date(), ".svg")
@@ -737,6 +754,7 @@ server <- function(input, output, clientData, session) {
         ggsave(file, plot = plotInput2(), device = device)
       }
     })
+  ############
   
   # For debugging:
   #output$info <- renderText({
