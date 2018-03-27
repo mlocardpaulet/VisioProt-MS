@@ -99,21 +99,7 @@ ui <- fluidPage(
       #########
       conditionalPanel(condition="input.MSModeCheck== 'MS'",
                        # File selection:
-                       fileInput("file", "Select input file(s):",  
-                                 accept = c(
-                                   "text/csv",
-                                   "text/comma-separated-values,text/plain",
-                                   ".csv"),
-                                 multiple = T
-                       )
-      ),
-      ########
-      #########
-      # Part 2:
-      #########
-      conditionalPanel(condition="input.MSModeCheck== 'MS'",
-                       # File selection:
-                       fileInput("file", "Select input file(s):",  
+                       fileInput("fileMS", "Select input file(s):",  
                                  accept = c(
                                    "text/csv",
                                    "text/comma-separated-values,text/plain",
@@ -134,7 +120,7 @@ ui <- fluidPage(
       # Part 2:
       #########
       conditionalPanel(condition="input.MSModeCheck== 'MS2'", 
-                       fileInput("file", "Select input file for MS:",  
+                       fileInput("fileMS2", "Select input file for MS:",  
                                  accept = c(
                                    "text/csv",
                                    "text/comma-separated-values,text/plain",
@@ -257,6 +243,7 @@ server <- function(input, output, clientData, session) {
   
   filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0) # Number of files of each type. Bruker files fall into the "RoWinPro" category once recognised and opened properly.
   
+  # test mode / test files:
   observeEvent(input$TestFile1, {
     linput(1)
     testfileinput(1)
@@ -273,14 +260,43 @@ server <- function(input, output, clientData, session) {
     colval("Set1")
   })
   
-  observeEvent(input$file, { # Return to 0 when uploading new file
+  # MS plot when uploading an MS file:
+  observeEvent(input$fileMS, { # Return to 0 when uploading new file
+    InputFileMS <- input$fileMS
     testfileinput(0)
-    if (!is.null(input$file)) {
+    if (!is.null(InputFileMS)) {
       l <- list()
       l2 <- list()
-      for(i in 1:nrow(input$file)){
-        l[[i]] <- grepl("Monoisotopic Mass", readLines(input$file[i, 'datapath'])[1]) & grepl("Apex RT", readLines(input$file[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(input$file[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T)  # TRUE if Biopharma
-        l2[[i]] <- substr(readLines(input$file[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
+      for(i in 1:nrow(InputFileMS)){
+        l[[i]] <- grepl("Monoisotopic Mass", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Apex RT", readLines(input$fileMS[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T)  # TRUE if Biopharma
+        l2[[i]] <- substr(readLines(InputFileMS[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
+      }
+      l <- unlist(l)
+      l2 <- unlist(l2)
+      filetype$RoWinPro <- length(l[l==F | l2==T]) # Bruker files too
+      filetype$BioPharma <- length(l[l==T & l2==F])
+      linput(max(as.numeric(table(l))))
+      if (linput() > 1) {
+        colval("Set1")
+      } else {
+        colval("Spectral")
+      }
+    } else {
+      filetype$RoWinPro <- 0
+      filetype$BioPharma <- 0
+    }
+  })
+  # MS plot when uploading an MS file in MS2 mode:
+  # MS plot when uploading an MS file:
+  observeEvent(input$fileMS2, { # Return to 0 when uploading new file
+    InputFileMS <- input$fileMS2
+    testfileinput(0)
+    if (!is.null(InputFileMS)) {
+      l <- list()
+      l2 <- list()
+      for(i in 1:nrow(InputFileMS)){
+        l[[i]] <- grepl("Monoisotopic Mass", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Apex RT", readLines(input$fileMS[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T)  # TRUE if Biopharma
+        l2[[i]] <- substr(readLines(InputFileMS[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
       }
       l <- unlist(l)
       l2 <- unlist(l2)
