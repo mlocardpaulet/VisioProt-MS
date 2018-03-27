@@ -346,9 +346,9 @@ server <- function(input, output, clientData, session) {
           } else if (ftype()[i] == "Bruker")  { # Bruker output
             lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = ",", header = F, skip = 2)
             lfiles[[i]] <- cbind(lfiles[[i]][,2:4], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
-          } else if (ftype()[i] == "ProMex")  { # ProMez output
+          } else if (ftype()[i] == "ProMex")  { # ProMex output
             lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
-            lfiles[[i]] <- cbind("Temp1" = rep(NA, nrow(lfiles[[i]])), lfiles[[i]][,c("MonoMass", "ApexIntensity", "MinElutionTime", "MaxElutionTime")]) # Map the columns as in RoWinPro format, but with start and stop instead of all the points of the peak. I add a first empty column for using the function TresholdCleaning.
+            lfiles[[i]] <- cbind("RT" = (lfiles[[i]]$MinElutionTime + ((lfiles[[i]]$MaxElutionTime - lfiles[[i]]$MinElutionTime)/2)), lfiles[[i]][,c("MonoMass", "ApexIntensity", "MinElutionTime", "MaxElutionTime")]) # Map the columns as in RoWinPro format, but with start and stop instead of all the points of the peak. I add a first column with the middle of the peak for zooming (plotly_select needs points, not ranges).
           }
         }
         names(lfiles) <- input$file$name
@@ -434,6 +434,7 @@ server <- function(input, output, clientData, session) {
     oldranges$y <- ranges$y
     if (input$DataPoints) {
       newdata <- event_data("plotly_selected")
+      print(newdata)
       if (!is.null(newdata) & class(newdata)=="data.frame") {
         ranges$x <- range(newdata$x)
         ranges$y <- range(newdata$y)       
@@ -500,13 +501,14 @@ server <- function(input, output, clientData, session) {
         } else if (filetype$RoWinPro == 0) { # Only type BioPharma/Promex
           gtab <- filedata()
           # Define the ranges for margins in the plot:
-          rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.02*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.02*max(gtab$PeakStop, na.rm = T))
+          rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.002*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.002*max(gtab$PeakStop, na.rm = T))
           
           if (linput() >= 2) { # if comparing several plots
             g <- ggplot(gtab, aes(y = Mass, x = PeakStart, col = File, yend = Mass, xend = PeakStop, text = paste0("Intensity: ", intensity))) + 
               geom_pointrange(alpha = 0.7, size = input$pch) +
-              xlim(rangesyB) +
-              ylim(rangesy) +
+              geom_point(aes(x = RT, y = Mass), alpha = 0, text = "") +
+              scale_x_continuous(limits = rangesyB, expand = c(0,0)) +
+              scale_y_continuous(limits = rangesy, expand = c(0,0)) +
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
               xlab("Protein mass (Da)") + 
@@ -514,8 +516,11 @@ server <- function(input, output, clientData, session) {
           } else {
             g <- ggplot(gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
               geom_segment(alpha = 0.7, size = input$pch) +
-              xlim(rangesyB) +
-              ylim(rangesy) +
+              geom_point(aes(x = RT, y = Mass, text = ""), alpha = 0) +
+              #xlim(rangesyB) +
+              #ylim(rangesy) +
+              scale_x_continuous(limits = rangesyB, expand = c(0,0)) +
+              scale_y_continuous(limits = rangesy, expand = c(0,0)) +
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
               xlab("Protein mass (Da)") + 
@@ -526,13 +531,14 @@ server <- function(input, output, clientData, session) {
           gtabBP <- RBindList(filedata()[ftype()=="BioPharma" | ftype()=="ProMex"])
           
           # Define the ranges for margins in the plot:
-          rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.02*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.02*max(gtabBP$PeakStop, na.rm = T))
+          rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.002*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.002*max(gtabBP$PeakStop, na.rm = T))
           rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
           
           g <- ggplot() + 
             geom_segment(data = gtabBP, aes(x = PeakStart, y = Mass, col = File, xend = PeakStop, yend = Mass), size = input$pch, alpha = 0.7) + 
-            ylim(rangesy) +
-            xlim(rangesyB) +
+            geom_point(data = gtabBP, aes(x = RT, y = Mass), alpha = 0, text = "") +
+            scale_x_continuous(limits = rangesyB, expand = c(0,0)) +
+            scale_y_continuous(limits = rangesy, expand = c(0,0)) +
             theme_bw() + 
             scale_colour_brewer(palette = colval()) + 
             geom_point(data = gtabRWP, aes(y = Mass, x = RT, col = File)) + 
@@ -577,13 +583,15 @@ server <- function(input, output, clientData, session) {
         } else if (filetype$RoWinPro == 0) { # BioPharma/ProMex
           gtab <- filedata()
           # Define the ranges for margins in the plot:
-          rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.02*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.02*max(gtab$PeakStop, na.rm = T)) 
+          rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.002*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.002*max(gtab$PeakStop, na.rm = T)) 
+          
           
           if (linput() >= 2) { # For plotting multiple plots.
             g <- ggplot(gtab, aes(y = Mass, x = PeakStart, yend = Mass, xend = PeakStop, col = File)) + 
               geom_segment(alpha = 0.7, size = input$pch) + 
-              xlim(rangesyB) +
-              ylim(rangesy) +
+              geom_point(aes(x = RT, y = Mass), alpha = 0) +
+              scale_x_continuous(limits = rangesyB, expand = c(0,0)) +
+              scale_y_continuous(limits = rangesy, expand = c(0,0)) +
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
               xlab("Protein mass (Da)") + 
@@ -591,9 +599,10 @@ server <- function(input, output, clientData, session) {
           } else { # For simple plot.
             g <- ggplot(gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity))) + 
               geom_segment(alpha = 0.7, size = input$pch) +
+              geom_point(aes(x = RT, y = Mass), alpha = 0) +
               theme_bw() + 
-              xlim(rangesyB) +
-              ylim(rangesy) +
+              scale_x_continuous(limits = rangesyB, expand = c(0,0)) +
+              scale_y_continuous(limits = rangesy, expand = c(0,0)) +
               scale_colour_distiller(palette = colval()) + 
               xlab("Protein mass (Da)") + 
               ylab("Retention time (min)")
@@ -603,20 +612,22 @@ server <- function(input, output, clientData, session) {
           gtabBP <- RBindList(filedata()[ftype()=="BioPharma" | ftype()=="ProMex"])
           
           # Define the ranges for margins in the plot:
-          rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.02*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.02*max(gtabBP$PeakStop, na.rm = T))
+          rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.002*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.002*max(gtabBP$PeakStop, na.rm = T))
           rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
           
           g <- ggplot() + 
             geom_segment(data = gtabBP, aes(y = Mass, x = PeakStart, col = File, yend = Mass, xend = PeakStop), size = input$pch, alpha = 0.7) + 
-            xlim(rangesyB) +
-            ylim(rangesy) +
+            geom_point(data = gtabBP, aes(x = RT, y = Mass), alpha = 0) +
+            scale_x_continuous(limits = rangesyB, expand = c(0,0)) +
+            scale_y_continuous(limits = rangesy, expand = c(0,0)) +
             theme_bw() + 
             scale_colour_brewer(palette = colval()) + 
             geom_point(data = gtabRWP, aes(y = Mass, x = RT, col = File)) + 
             xlab("Protein mass (Da)") + 
             ylab("Retention time (min)")
         }
-        return(g)
+        #return(g)
+        g
       }
     }
   }
@@ -721,6 +732,7 @@ server <- function(input, output, clientData, session) {
         ggsave(file, plot = plotInput2(), device = device)
       }
     })
+  ############
   
   # For debugging:
   #output$info <- renderText({
