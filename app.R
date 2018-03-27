@@ -166,7 +166,6 @@ server <- function(input, output, clientData, session) {
     }
   })
   
-  
   # Number of input file(s) from the same type:
   linput <- reactiveVal()
   
@@ -195,6 +194,11 @@ server <- function(input, output, clientData, session) {
       }
     }
   })
+  colval <- reactiveVal()
+  observe({
+    x <- input$colourscale
+    colval(x)
+  })
   
   # Test files input:
   testfileinput <- reactiveVal(0) # 0: no test file; 1: single file; 2: multiple file
@@ -205,12 +209,7 @@ server <- function(input, output, clientData, session) {
   })
   
   filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0, ProMex = 0) # Number of files of each type. Bruker files fall into the "RoWinPro" category once recognised and opened properly.
-  
-  colval <- reactiveVal()
-  observe({
-    x <- input$colourscale
-    colval(x)
-  })
+
   
   observeEvent(input$TestFile1, {
     linput(1)
@@ -247,6 +246,9 @@ server <- function(input, output, clientData, session) {
       filetype$ProMex <- sum(l==F & l2==F & l3==T)
       #linput(max(as.numeric(table(l))))
       linput(max(as.numeric(c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex))))
+      if (linput() == 1 & length(c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex)[c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex)!=0])>1) {
+        linput(sum(as.numeric((c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex)))))
+      }
       if (linput() > 1) {
         colval("Set1")
       } else {
@@ -318,7 +320,7 @@ server <- function(input, output, clientData, session) {
     print(c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex))
     # Warning if trying to plot several types of data AND several files:
     validate(
-      need(!(length(c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex)[c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex)>=2])>0 & max(c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex) != 1)), "Can only input one file per type of format for comparison")
+      need(!(length(c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex)[c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex)>=2])>0 & max(c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex) != 1)), "You can only input one file per format type that you want to compare.")
     )
     
     if (testfileinput() == 0) { # no input test file
