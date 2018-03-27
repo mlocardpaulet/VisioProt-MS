@@ -92,7 +92,8 @@ ui <- fluidPage(
                 accept = c(
                   "text/csv",
                   "text/comma-separated-values,text/plain",
-                  ".csv"),
+                  ".csv", 
+                  ".ms1ft"),
                 multiple = T
       ),
       
@@ -203,7 +204,7 @@ server <- function(input, output, clientData, session) {
     testfileinput(0)
   })
   
-  filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0) # Number of files of each type. Bruker files fall into the "RoWinPro" category once recognised and opened properly.
+  filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0, ProMex = 0) # Number of files of each type. Bruker files fall into the "RoWinPro" category once recognised and opened properly.
   
   colval <- reactiveVal()
   observe({
@@ -232,15 +233,20 @@ server <- function(input, output, clientData, session) {
     if (!is.null(input$file)) {
       l <- list()
       l2 <- list()
+      l3 <- list()
       for(i in 1:nrow(input$file)){
         l[[i]] <- grepl("Monoisotopic Mass", readLines(input$file[i, 'datapath'])[1]) & grepl("Apex RT", readLines(input$file[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(input$file[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T)  # TRUE if Biopharma
         l2[[i]] <- substr(readLines(input$file[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
+        l3[[i]] <- grepl(".ms1ft", input$file$name[i], fixed = T) # TRUE if ProMex
       }
       l <- unlist(l)
       l2 <- unlist(l2)
-      filetype$RoWinPro <- length(l[l==F | l2==T]) # Bruker files too
-      filetype$BioPharma <- length(l[l==T & l2==F])
-      linput(max(as.numeric(table(l))))
+      l3 <- unlist(l3)
+      filetype$RoWinPro <- sum(l==F & l3==F) # Bruker files too
+      filetype$BioPharma <- sum(l==T & l2==F & l3==F)
+      filetype$ProMex <- sum(l==F & l2==F & l3==T)
+      #linput(max(as.numeric(table(l))))
+      linput(max(as.numeric(c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex))))
       if (linput() > 1) {
         colval("Set1")
       } else {
@@ -249,8 +255,10 @@ server <- function(input, output, clientData, session) {
     } else {
       filetype$RoWinPro <- 0
       filetype$BioPharma <- 0
+      filetype$ProMex <- 0
     }
   })
+  
   ftype <- reactive({
     if (is.null(input$file) & testfileinput() == 0) {
       return(NULL)
@@ -259,14 +267,16 @@ server <- function(input, output, clientData, session) {
       for(i in 1:nrow(input$file)){
         val <- grepl("Monoisotopic Mass", readLines(input$file[i, 'datapath'])[1]) & grepl("Apex RT", readLines(input$file[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(input$file[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T) # T for BioPharma, F for RoWinPro
         val2 <- substr(readLines(input$file[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
+        val3 <- grepl(".ms1ft", input$file$name[i]) # TRUE if ProMex
         val <- ifelse(val,  "BioPharma", "RoWinPro")
         val[val2] <- "Bruker"
+        val[val3] <- "ProMex"
         # Check it is the correct input format:
         if (val == "BioPharma") { # Find "Apex RT" in BioPharma files
           if (!grepl("Apex RT", readLines(input$file[i, 'datapath'])[1])) {
             val <- "DoNotApply"
             validate(
-              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.")
+              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".")
             )
           }
         }
@@ -274,7 +284,7 @@ server <- function(input, output, clientData, session) {
           if (length(as.numeric(gregexpr("\t", readLines(input$file[i, 'datapath'])[1])[[1]]))!=3) {
             val <- "DoNotApply"
             validate(
-              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.")
+              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".")
             )
           }
         }
@@ -282,7 +292,15 @@ server <- function(input, output, clientData, session) {
           if (!(!grepl(",", readLines(input$file[i, 'datapath'])[1]) & grepl(" RT", readLines(input$file[i, 'datapath'])[2]))) {
             val <- "DoNotApply"
             validate(
-              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.")
+              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".")
+            )
+          }
+        }
+        if (val == "ProMex") { # Contains the columns MonoMass, ApexIntensity and Min/MaxElutionTime
+          if (!grepl("MinElutionTime", readLines(input$file[i, 'datapath'])[1])) {
+            val <- "DoNotApply"
+            validate(
+              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".")
             )
           }
         }
@@ -297,10 +315,10 @@ server <- function(input, output, clientData, session) {
   # Input the data table:
   filedata0 <- reactive({
     #This function is repsonsible for loading in the selected file
-    
+    print(c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex))
     # Warning if trying to plot several types of data AND several files:
     validate(
-      need(!((filetype$RoWinPro >= 2 & filetype$BioPharma >= 1) | (filetype$RoWinPro >= 1 & filetype$BioPharma >= 2)), "Can only input one file per type of format for comparison")
+      need(!(length(c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex)[c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex)>=2])>0 & max(c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex) != 1)), "Can only input one file per type of format for comparison")
     )
     
     if (testfileinput() == 0) { # no input test file
@@ -319,12 +337,16 @@ server <- function(input, output, clientData, session) {
               lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
               lfiles[[i]] <- lfiles[[i]][,c("Apex.RT", "Monoisotopic.Mass", "Sum.Intensity", "Start.Time..min.", "Stop.Time..min.")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
             }
+            
           } else if (ftype()[i] == "RoWinPro")  { # RoWinPro output
             lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = F)
             lfiles[[i]] <- cbind(lfiles[[i]][,1:3], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
           } else if (ftype()[i] == "Bruker")  { # Bruker output
             lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = ",", header = F, skip = 2)
             lfiles[[i]] <- cbind(lfiles[[i]][,2:4], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
+          } else if (ftype()[i] == "ProMex")  { # ProMez output
+            lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
+            lfiles[[i]] <- cbind("Temp1" = rep(NA, nrow(lfiles[[i]])), lfiles[[i]][,c("MonoMass", "ApexIntensity", "MinElutionTime", "MaxElutionTime")]) # Map the columns as in RoWinPro format, but with start and stop instead of all the points of the peak. I add a first empty column for using the function TresholdCleaning.
           }
         }
         names(lfiles) <- input$file$name
@@ -362,7 +384,7 @@ server <- function(input, output, clientData, session) {
     } else {
       lfiles <- filedata0()
       lfiles <- ThresholdCleaning(lfiles, input$IntensityThresh)
-      if (filetype$BioPharma == 0) { # Only RoWinPro files
+      if (filetype$BioPharma == 0 & filetype$ProMex == 0) { # Only RoWinPro files
         l <- list()
         for (i in seq_along(lfiles)) {
           l[[i]] <- RenameBioPharma(lfiles[[i]])
@@ -370,14 +392,14 @@ server <- function(input, output, clientData, session) {
         names(l) <- names(lfiles)
         lfiles <- l
         return(RBindList(lfiles))
-      } else if (filetype$RoWinPro == 0) { # Only BioPharma
+      } else if (filetype$RoWinPro == 0) { # No RoWinPro, so BioPharma or ProMex
         lfiles <- lapply(lfiles, function(x) {
           RenameBioPharma(x)
         })
         return(RBindList(lfiles))
       } else { # More than one type of files
         lfiles <- lapply(lfiles, function(x) {
-          RenameBioPharma(x)
+          RenameBioPharma(x) # The files from ProMex will have an empty column named "RT".
         })
         return(lfiles)
       }
@@ -392,7 +414,8 @@ server <- function(input, output, clientData, session) {
     ranges$y <- oldranges$y
   })
   observeEvent(input$TotalDeZoom, {
-    if (filetype$BioPharma == 0 | filetype$RoWinPro == 0) { # one table
+    #if (filetype$BioPharma == 0 | filetype$RoWinPro == 0) { # one table
+    if (class(filedata()) != "list") { # one table
       ranges$x <- c(0, range(filedata()[,1])[2])
       ranges$y <- range(filedata()[,2])
     } else  { # two tables because two types of files
@@ -428,7 +451,8 @@ server <- function(input, output, clientData, session) {
       rangesy <- ranges$y
       return(list(rangesx, rangesy))
     } else {
-      if (filetype$BioPharma == 0 | filetype$RoWinPro == 0) { # one table
+      #if (filetype$BioPharma == 0 | filetype$RoWinPro == 0) { # one table
+      if (class(filedata()) != "list") { # one table
         rangesx <- range(filedata()[,1])
         rangesy <- range(filedata()[,2])
         return(list(rangesx, rangesy))
@@ -452,7 +476,7 @@ server <- function(input, output, clientData, session) {
       } else {
         rangesx <- defineranges()[[1]]
         rangesy <- defineranges()[[2]]
-        if (filetype$BioPharma == 0) { # Only RoWinPro
+        if (filetype$BioPharma == 0 & filetype$ProMex == 0) { # Only RoWinPro
           gtab <- filedata()
           if (linput() >= 2) { # if comparing several plots
             g <- ggplot(gtab, aes(x = RT, y = Mass, col = File, text = paste0("Intensity: ", intensity))) + 
@@ -471,42 +495,45 @@ server <- function(input, output, clientData, session) {
               ylab("Protein mass (Da)") + 
               xlab("Retention time (min)")
           }
-        } else if (filetype$RoWinPro == 0) { # Only type BioPharma
+        } else if (filetype$RoWinPro == 0) { # Only type BioPharma/Promex
           gtab <- filedata()
           # Define the ranges for margins in the plot:
-          rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.05*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.05*max(gtab$PeakStop, na.rm = T))
+          rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.02*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.02*max(gtab$PeakStop, na.rm = T))
           
           if (linput() >= 2) { # if comparing several plots
-            g <- ggplot(gtab, aes(y = RT, x = Mass, col = File, ymin = PeakStart, ymax = PeakStop, text = paste0("Intensity: ", intensity))) + 
+            g <- ggplot(gtab, aes(y = Mass, x = PeakStart, col = File, yend = Mass, xend = PeakStop, text = paste0("Intensity: ", intensity))) + 
               geom_pointrange(alpha = 0.7, size = input$pch) +
-              coord_flip(xlim = rangesy, ylim = rangesyB) +
+              xlim(rangesyB) +
+              ylim(rangesy) +
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
               xlab("Protein mass (Da)") + 
               ylab("Retention time (min)")
           } else {
-            g <- ggplot(gtab, aes(y = RT, x = Mass, ymin = PeakStart, ymax = PeakStop, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
-              geom_pointrange(alpha = 0.7, size = input$pch) +
-              coord_flip(xlim = rangesy, ylim = rangesyB) +
+            g <- ggplot(gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
+              geom_segment(alpha = 0.7, size = input$pch) +
+              xlim(rangesyB) +
+              ylim(rangesy) +
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
               xlab("Protein mass (Da)") + 
               ylab("Retention time (min)")
           }
         } else { # several types of input format
-          gtabRWP <- filedata()[ftype()=="RoWinPro" | ftype()=="Bruker"][[1]]
-          gtabBP <- filedata()[ftype()=="BioPharma"][[1]]
+          gtabRWP <- RBindList(filedata()[ftype()=="RoWinPro" | ftype()=="Bruker"])
+          gtabBP <- RBindList(filedata()[ftype()=="BioPharma" | ftype()=="ProMex"])
           
           # Define the ranges for margins in the plot:
-          rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.05*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.05*max(gtabBP$PeakStop, na.rm = T))
+          rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.02*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.02*max(gtabBP$PeakStop, na.rm = T))
           rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
           
           g <- ggplot() + 
-            geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
-            coord_flip(xlim = rangesy, ylim = rangesyB) +
+            geom_segment(data = gtabBP, aes(x = PeakStart, y = Mass, col = File, xend = PeakStop, yend = Mass), size = input$pch, alpha = 0.7) + 
+            ylim(rangesy) +
+            xlim(rangesyB) +
             theme_bw() + 
-            scale_colour_distiller(palette = colval()) + 
-            geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity))) + 
+            scale_colour_brewer(palette = colval()) + 
+            geom_point(data = gtabRWP, aes(y = Mass, x = RT, col = File)) + 
             xlab("Protein mass (Da)") + 
             ylab("Retention time (min)")
         }
@@ -526,7 +553,7 @@ server <- function(input, output, clientData, session) {
       } else {
         rangesx <- defineranges()[[1]]
         rangesy <- defineranges()[[2]]
-        if (filetype$BioPharma == 0) { # Only one type of plot: RoWinPro
+        if (filetype$BioPharma == 0 & filetype$ProMex == 0) { # Only one type of plot: RoWinPro
           gtab <- filedata()
           if (linput() >= 2) { # For plotting multiple plots.
             g <- ggplot(gtab, aes(x = RT, y = Mass, col = File)) + 
@@ -545,42 +572,45 @@ server <- function(input, output, clientData, session) {
               ylab("Protein mass (Da)") + 
               xlab("Retention time (min)")
           }
-        } else if (filetype$RoWinPro == 0) { # Only one type of plot: BioPharma
+        } else if (filetype$RoWinPro == 0) { # BioPharma/ProMex
           gtab <- filedata()
           # Define the ranges for margins in the plot:
-          rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.05*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.05*max(gtab$PeakStop, na.rm = T))
+          rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.02*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.02*max(gtab$PeakStop, na.rm = T)) 
           
           if (linput() >= 2) { # For plotting multiple plots.
-            g <- ggplot(gtab, aes(y = RT, x = Mass, col = File)) + 
-              geom_pointrange(aes(ymin = PeakStart, ymax = PeakStop), alpha = 0.7, size = input$pch) + 
-              coord_flip(xlim = rangesy, ylim = rangesyB, expand = TRUE) +
+            g <- ggplot(gtab, aes(y = Mass, x = PeakStart, yend = Mass, xend = PeakStop, col = File)) + 
+              geom_segment(alpha = 0.7, size = input$pch) + 
+              xlim(rangesyB) +
+              ylim(rangesy) +
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
               xlab("Protein mass (Da)") + 
               ylab("Retention time (min)")
           } else { # For simple plot.
-            g <- ggplot(gtab, aes(y = RT, x = Mass, col = log10(intensity))) + 
-              geom_pointrange(aes(ymin = PeakStart, ymax = PeakStop), alpha = 0.7, size = input$pch) + 
-              coord_flip(xlim = rangesy, ylim = rangesyB, expand = TRUE) +
+            g <- ggplot(gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity))) + 
+              geom_segment(alpha = 0.7, size = input$pch) +
               theme_bw() + 
+              xlim(rangesyB) +
+              ylim(rangesy) +
               scale_colour_distiller(palette = colval()) + 
               xlab("Protein mass (Da)") + 
               ylab("Retention time (min)")
           }
         } else { # two types of plot
-          gtabRWP <- filedata()[ftype()=="RoWinPro" | ftype()=="Bruker"][[1]]
-          gtabBP <- filedata()[ftype()=="BioPharma"][[1]]
+          gtabRWP <- RBindList(filedata()[ftype()=="RoWinPro" | ftype()=="Bruker"])
+          gtabBP <- RBindList(filedata()[ftype()=="BioPharma" | ftype()=="ProMex"])
           
           # Define the ranges for margins in the plot:
-          rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.05*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.05*max(gtabBP$PeakStop, na.rm = T))
+          rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.02*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.02*max(gtabBP$PeakStop, na.rm = T))
           rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
           
           g <- ggplot() + 
-            geom_pointrange(data = gtabBP, aes(y = RT, x = Mass, col = log10(intensity), ymin = PeakStart, ymax = PeakStop), size = input$pch, alpha = 0.7) + 
-            coord_flip(xlim = rangesy, ylim = rangesyB, expand = TRUE) + 
+            geom_segment(data = gtabBP, aes(y = Mass, x = PeakStart, col = File, yend = Mass, xend = PeakStop), size = input$pch, alpha = 0.7) + 
+            xlim(rangesyB) +
+            ylim(rangesy) +
             theme_bw() + 
-            scale_colour_distiller(palette = colval()) + 
-            geom_point(data = gtabRWP, aes(y = RT, x = Mass, col = log10(intensity))) + 
+            scale_colour_brewer(palette = colval()) + 
+            geom_point(data = gtabRWP, aes(y = Mass, x = RT, col = File)) + 
             xlab("Protein mass (Da)") + 
             ylab("Retention time (min)")
         }
