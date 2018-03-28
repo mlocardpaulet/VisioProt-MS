@@ -210,7 +210,6 @@ server <- function(input, output, clientData, session) {
   })
   
   filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0, ProMex = 0) # Number of files of each type. Bruker files fall into the "RoWinPro" category once recognised and opened properly.
-
   
   observeEvent(input$TestFile1, {
     linput(1)
@@ -418,13 +417,31 @@ server <- function(input, output, clientData, session) {
   })
   observeEvent(input$TotalDeZoom, {
     #if (filetype$BioPharma == 0 | filetype$RoWinPro == 0) { # one table
+    #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if (class(filedata()) != "list") { # one table
-      ranges$x <- c(0, range(filedata()[,1])[2])
-      ranges$y <- range(filedata()[,2])
+      if (sum(grepl("PeakStop", names(filedata())))==1) {
+        ranges$x <- c(0, range(filedata()[,5])[2])
+        ranges$y <- range(filedata()[,2])
+      } else {
+        ranges$x <- c(0, range(filedata()[,1])[2])
+        ranges$y <- range(filedata()[,2])
+      }
     } else  { # two tables because two types of files
-      x <- c(filedata()[[1]][,1], filedata()[[2]][,1])
-      y <- c(filedata()[[1]][,2], filedata()[[2]][,2])
-      ranges$x <- c(0, range(x)[0])
+      x1 <- sapply(filedata(), function(z) {
+        z$RT
+      })
+      x2 <- sapply(filedata(), function(z) {
+        z$PeakStart
+      })
+      x3 <- sapply(filedata(), function(z) {
+        z$PeakStop
+      })
+      x <- c(unlist(x1), unlist(x2), unlist(x3))
+      x <- x[!is.na(x)]
+      y <- sapply(filedata(), function(z) {
+        z$Mass
+      })
+      ranges$x <- c(0, range(x)[2])
       ranges$y <- range(y)
     }
   })
@@ -435,10 +452,32 @@ server <- function(input, output, clientData, session) {
     oldranges$y <- ranges$y
     if (input$DataPoints) {
       newdata <- event_data("plotly_selected")
-      print(newdata)
       if (!is.null(newdata) & class(newdata)=="data.frame") {
+        if (class(filedata()) != "list" & sum(grepl("PeakStart", names(filedata()))) == 1) {
+          ranges$x <- c(min(filedata()[filedata()[,5] >= min(newdata$x),4]), max(filedata()[filedata()[,4] <= max(newdata$x),5]))
+          ranges$y <- range(newdata$y)  
+        } else if (class(filedata()) == "list") { # multiple file types
+          tab <- filedata()
+          if (sum(ftype()=="ProMex" | ftype()=="BioPharma") > 1) {
+            tab2 <- RBindList(tab[ftype()=="ProMex" | ftype()=="BioPharma"])
+          } else {
+            tab2 <- tab[ftype()=="ProMex" | ftype()=="BioPharma"][[1]]
+          }
+          if (sum(!(ftype()=="ProMex" | ftype()=="BioPharma")) > 1) {
+            tab <- RBindList(tab[!(ftype()=="ProMex" | ftype()=="BioPharma")])
+          } else {
+            tab <- tab[!(ftype()=="ProMex" | ftype()=="BioPharma")][[1]]
+          }
+          minx <- min(tab2[tab2[,5] >= min(newdata$x),4])
+          minx <- min(minx, min(tab$RT))
+          maxx <- max(tab2[tab2[,4] <= max(newdata$x),5])
+          maxx <- max(maxx, max(tab$RT))
+          ranges$x <- c(minx, maxx)
+          ranges$y <- range(newdata$y)  
+        } else {
         ranges$x <- range(newdata$x)
-        ranges$y <- range(newdata$y)       
+        ranges$y <- range(newdata$y)      
+        }
       } else {
         newdata <- NULL
       }
@@ -460,9 +499,21 @@ server <- function(input, output, clientData, session) {
         rangesx <- range(filedata()[,1])
         rangesy <- range(filedata()[,2])
         return(list(rangesx, rangesy))
-      } else  { # two tables because two types of files
-        x <- c(filedata()[[1]][,1], filedata()[[2]][,1])
-        y <- c(filedata()[[1]][,2], filedata()[[2]][,2])
+      } else  { # two tables because several types of files
+        x1 <- sapply(filedata(), function(z) {
+          z$RT
+        })
+        x2 <- sapply(filedata(), function(z) {
+          z$PeakStart
+        })
+        x3 <- sapply(filedata(), function(z) {
+          z$PeakStop
+        })
+        x <- c(unlist(x1), unlist(x2), unlist(x3))
+        x <- x[!is.na(x)]
+        y <- sapply(filedata(), function(z) {
+          z$Mass
+        })
         rangesx <- range(x)
         rangesy <- range(y)
         return(list(rangesx, rangesy))
@@ -483,7 +534,7 @@ server <- function(input, output, clientData, session) {
         if (filetype$BioPharma == 0 & filetype$ProMex == 0) { # Only RoWinPro
           gtab <- filedata()
           if (linput() >= 2) { # if comparing several plots
-            g <- ggplot(gtab, aes(x = RT, y = Mass, col = File, text = paste0("Intensity: ", intensity))) + 
+            g <- ggplot(gtab, aes(x = RT, y = Mass, col = File)) + 
               geom_point(alpha = 0.7, size = input$pch) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
               theme_bw() + 
@@ -491,7 +542,7 @@ server <- function(input, output, clientData, session) {
               ylab("Protein mass (Da)") + 
               xlab("Retention time (min)")
           } else { # only one plot, no overlay
-            g <- ggplot(gtab, aes(x = RT, y = Mass, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
+            g <- ggplot(gtab, aes(x = RT, y = Mass, col = log10(intensity))) + 
               geom_point(alpha = 0.7, size = input$pch) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
               theme_bw() + 
@@ -501,26 +552,24 @@ server <- function(input, output, clientData, session) {
           }
         } else if (filetype$RoWinPro == 0) { # Only type BioPharma/Promex
           gtab <- filedata()
-          gtab <- gtab[gtab$PeakStart >= (rangesx[1]-(rangesx[1]*0.01)) & gtab$PeakStop <= (rangesx[2]+(rangesy[1]*0.01)),]
-          # Define the ranges for margins in the plot:
-          #rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.002*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.002*max(gtab$PeakStop, na.rm = T))
+          gtab <- gtab[gtab$PeakStart >= (rangesx[1]-(rangesx[1]*0.01)) & gtab$PeakStop <= (rangesx[2]+(rangesx[2]*0.01)),]
           
           if (linput() >= 2) { # if comparing several plots
-            g <- ggplot(gtab, aes(y = Mass, x = PeakStart, col = File, yend = Mass, xend = PeakStop, text = paste0("Intensity: ", intensity))) + 
-              geom_pointrange(alpha = 0.7, size = input$pch) +
-              geom_point(aes(x = RT, y = Mass), alpha = 0, text = "") +
-              coord_cartesian(ylim = rangesy, expand = TRUE) + 
+            g <- ggplot(gtab, aes(y = Mass, x = PeakStart, col = File, yend = Mass, xend = PeakStop)) + 
+              geom_segment(alpha = 0.7, size = input$pch) + 
+              geom_point(aes(x = RT, y = Mass), alpha = 0) +
+              coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
               xlab("Protein mass (Da)") + 
               ylab("Retention time (min)")
           } else {
-            g <- ggplot(gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity), text = paste0("Intensity: ", intensity))) + 
+            g <- ggplot(gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity))) + 
               geom_segment(alpha = 0.7, size = input$pch) +
-              geom_point(aes(x = RT, y = Mass, text = ""), alpha = 0) +
+              geom_point(aes(x = RT, y = Mass), alpha = 0) +
               #xlim(rangesyB) +
               #ylim(rangesy) +
-              coord_cartesian(ylim = rangesy, expand = TRUE) + 
+              coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
               xlab("Protein mass (Da)") + 
@@ -529,16 +578,16 @@ server <- function(input, output, clientData, session) {
         } else { # several types of input format
           gtabRWP <- RBindList(filedata()[ftype()=="RoWinPro" | ftype()=="Bruker"])
           gtabBP <- RBindList(filedata()[ftype()=="BioPharma" | ftype()=="ProMex"])
-          gtabBP <- gtabBP[gtabBP$PeakStart >= (rangesx[1]-(rangesx[1]*0.01)) & gtabBP$PeakStop <= (rangesx[2]+(rangesy[1]*0.01)),]
+
+          gtabBP <- gtabBP[gtabBP$PeakStart >= (rangesx[1]-(rangesx[1]*0.01)) & gtabBP$PeakStop <= (rangesx[2]+(rangesx[2]*0.01)),]
           
           # Define the ranges for margins in the plot:
-          #rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.002*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.002*max(gtabBP$PeakStop, na.rm = T))
           rangesyB <- c(min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T))
           rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
           
           g <- ggplot() + 
             geom_segment(data = gtabBP, aes(x = PeakStart, y = Mass, col = File, xend = PeakStop, yend = Mass), size = input$pch, alpha = 0.7) + 
-            geom_point(data = gtabBP, aes(x = RT, y = Mass), alpha = 0, text = "") +
+            geom_point(data = gtabBP, aes(x = RT, y = Mass), alpha = 0) +
             coord_cartesian(xlim = rangesyB, ylim = rangesy, expand = TRUE) + 
             theme_bw() + 
             scale_colour_brewer(palette = colval()) + 
@@ -583,15 +632,13 @@ server <- function(input, output, clientData, session) {
           }
         } else if (filetype$RoWinPro == 0) { # BioPharma/ProMex
           gtab <- filedata()
-          # Define the ranges for margins in the plot:
-          rangesyB <- c(min(gtab$PeakStart, na.rm = T) - 0.002*min(gtab$PeakStart, na.rm = T), max(gtab$PeakStop, na.rm = T) + 0.002*max(gtab$PeakStop, na.rm = T)) 
-          
+          gtab <- gtab[gtab$PeakStart >= (rangesx[1]-(rangesx[1]*0.01)) & gtab$PeakStop <= (rangesx[2]+(rangesx[2]*0.01)),] 
           
           if (linput() >= 2) { # For plotting multiple plots.
             g <- ggplot(gtab, aes(y = Mass, x = PeakStart, yend = Mass, xend = PeakStop, col = File)) + 
               geom_segment(alpha = 0.7, size = input$pch) + 
               geom_point(aes(x = RT, y = Mass), alpha = 0) +
-              coord_cartesian(xlim = rangesyB, ylim = rangesy, expand = TRUE) + 
+              coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
               xlab("Protein mass (Da)") + 
@@ -601,7 +648,7 @@ server <- function(input, output, clientData, session) {
               geom_segment(alpha = 0.7, size = input$pch) +
               geom_point(aes(x = RT, y = Mass), alpha = 0) +
               theme_bw() + 
-              coord_cartesian(xlim = rangesyB, ylim = rangesy, expand = TRUE) + 
+              coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               scale_colour_distiller(palette = colval()) + 
               xlab("Protein mass (Da)") + 
               ylab("Retention time (min)")
@@ -609,9 +656,10 @@ server <- function(input, output, clientData, session) {
         } else { # two types of plot
           gtabRWP <- RBindList(filedata()[ftype()=="RoWinPro" | ftype()=="Bruker"])
           gtabBP <- RBindList(filedata()[ftype()=="BioPharma" | ftype()=="ProMex"])
+          gtabBP <- gtabBP[gtabBP$PeakStart >= (rangesx[1]-(rangesx[1]*0.01)) & gtabBP$PeakStop <= (rangesx[2]+(rangesx[2]*0.01)),]
           
           # Define the ranges for margins in the plot:
-          rangesyB <- c(min(gtabBP$PeakStart, na.rm = T) - 0.002*min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T) + 0.002*max(gtabBP$PeakStop, na.rm = T))
+          rangesyB <- c(min(gtabBP$PeakStart, na.rm = T), max(gtabBP$PeakStop, na.rm = T))
           rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
           
           g <- ggplot() + 
