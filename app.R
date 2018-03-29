@@ -455,7 +455,7 @@ server <- function(input, output, clientData, session) {
     if (input$DataPoints) {
       newdata <- event_data("plotly_selected")
       if (!is.null(newdata) & class(newdata)=="data.frame") {
-        if (class(filedata()) != "list" & sum(grepl("PeakStart", names(filedata()))) == 1) {
+        if (class(filedata()) != "list" & (filetype$ProMex > 0 | filetype$BioPharma > 0)) {
           ranges$x <- c(min(filedata()[filedata()[,5] >= min(newdata$x),4]), max(filedata()[filedata()[,4] <= max(newdata$x),5]))
           ranges$y <- range(newdata$y)  
         } else if (class(filedata()) == "list") { # multiple file types
