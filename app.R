@@ -207,6 +207,8 @@ server <- function(input, output, clientData, session) {
   # Remove plot when getting out of test mode.
   observeEvent(input$TestModeCheck, {
     testfileinput(0)
+    ranges$x <- NULL
+    ranges$y <- NULL
   })
   
   filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0, ProMex = 0) # Number of files of each type. Bruker files fall into the "RoWinPro" category once recognised and opened properly.
@@ -216,6 +218,7 @@ server <- function(input, output, clientData, session) {
     testfileinput(1)
     filetype$RoWinPro <- 1
     filetype$BioPharma <- 0
+    filetype$ProMex <- 0
     colval("Spectral")
   })
   
@@ -224,6 +227,7 @@ server <- function(input, output, clientData, session) {
     testfileinput(2)
     filetype$RoWinPro <- 4
     filetype$BioPharma <- 0
+    filetype$ProMex <- 0
     colval("Set1")
   })
   
@@ -317,13 +321,12 @@ server <- function(input, output, clientData, session) {
   # Input the data table:
   filedata0 <- reactive({
     #This function is repsonsible for loading in the selected file
-    print(c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex))
-    # Warning if trying to plot several types of data AND several files:
-    validate(
-      need(!(length(c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex)[c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex)>=2])>0 & max(c(filetype$BioPharma, filetype$RoWinPro, filetype$ProMex) != 1)), "You can only input one file per format type that you want to compare.")
-    )
     
     if (testfileinput() == 0) { # no input test file
+      # Warning if trying to plot several types of data AND several files:
+      validate(
+        need(!(max(table(ftype())) > 1), "You can only input one file per format type that you want to compare.")
+      )
       if (is.null(input$file)) {
         # User has not uploaded a file yet
         return(NULL)
@@ -416,8 +419,6 @@ server <- function(input, output, clientData, session) {
     ranges$y <- oldranges$y
   })
   observeEvent(input$TotalDeZoom, {
-    #if (filetype$BioPharma == 0 | filetype$RoWinPro == 0) { # one table
-    #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if (class(filedata()) != "list") { # one table
       if (sum(grepl("PeakStop", names(filedata())))==1) {
         ranges$x <- c(0, range(filedata()[,5])[2])
