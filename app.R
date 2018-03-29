@@ -419,8 +419,9 @@ server <- function(input, output, clientData, session) {
     ranges$y <- oldranges$y
   })
   observeEvent(input$TotalDeZoom, {
+    print(str(filedata()))
     if (class(filedata()) != "list") { # one table
-      if (sum(grepl("PeakStop", names(filedata())))==1) {
+      if (filetype$ProMex > 0 | filetype$BioPharma > 0) {
         ranges$x <- c(0, range(filedata()[,5])[2])
         ranges$y <- range(filedata()[,2])
       } else {
