@@ -293,7 +293,7 @@ server <- function(input, output, clientData, session) {
   #####################
   # When input MS2 file:
   #####################
-  InputFilesMS2 <- reactiveVal(NULL)
+  InputFilesMS2 <- reactiveVal(NULL) # For BioPharma input
   observeEvent(c(input$MS2file, input$PSMfile), {
     if (input$MSModeCheck == "MS2" & !is.null(input$MS2file)) {
       if (!is.null(input$MS2file) & !is.null(input$PSMfile))
@@ -302,7 +302,15 @@ server <- function(input, output, clientData, session) {
       InputFilesMS2(NULL)
     }
   })
-  
+  InputFilesMS2PF <- reactiveVal(NULL) # For PathFinder input
+  observeEvent(c(input$MS2filePF), {
+    if (input$MSModeCheck == "MS2" & !is.null(input$MS2filePF)) {
+      if (!is.null(input$MS2file) & !is.null(input$PSMfile))
+        InputFilesMS2PF(input$MS2filePF)
+    } else {
+      InputFilesMS2PF(NULL)
+    }
+  })
   
   #####################
   # Plotting MS trace:
@@ -530,6 +538,31 @@ server <- function(input, output, clientData, session) {
       )
     }
     return(list("MS2file" = MS2, "PSMfile" = PSM))
+  })
+  
+  filedataMS2PF <- reactiveVal(NULL)
+  observeEvent(input$MS2filePF, input$fileMS2, {
+    if (input$PDPFModeCheck == 'PF') {
+      validate(
+        need(!is.null(InputFilesMS2()), "You need to upload the associated MS file to plot MS2 results from PathFinder."
+        )
+      )
+      if (!is.null(InputFilesMS2())) {
+        MS2PF <- read.table(InputMS2filePF()$datapath, sep = "\t", header = T)
+        validate(
+          need(sum(grepl("ProteinDesc", names(MS2PF))) == 1, "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- The \"IcTarget\" output file from PathFinder associated with the deconvoluted MS masses uploaded as \"input file for MS\".")
+        )
+        validate(
+          need(length(unique(MS2PF$ProteinDesc))==length(unique(MS2PF$MS1Features)), "Several IDs have been attributed to the same MS feature.")
+        )
+        names(MS2PF)[names(MS2PF)=="ProteinDesc"] <- "Master.Protein.Descriptions"
+        names(MS2PF)[names(MS2PF)=="MS1Features"] <- "FeatureID"
+        MS2PF <- merge(filedataMS2(), MS2PF, by = "FeatureID", all = T)
+        MS2PF <- MS2PF[!is.na(MS2PF$MinScan),]
+        print(head(MS2PF))
+        filedataMS2PF(MS2PF) 
+      }
+    }
   })
   
   # Create table for plotting:
