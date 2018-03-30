@@ -105,6 +105,8 @@ ui <- fluidPage(
                                  accept = c(
                                    "text/csv",
                                    "text/comma-separated-values,text/plain",
+                                   ".txt",
+                                   ".ms1ft",
                                    ".csv"),
                                  multiple = T
                        ),
@@ -754,6 +756,7 @@ server <- function(input, output, clientData, session) {
     }
     # When in MS2 mode: overlay of the MS2 values:
     if (input$MSModeCheck == "MS2" & !is.null(InputFilesMS2())) {
+      
       PSM <- filedataMS2()$PSM
       MS2 <- filedataMS2()$MS2
       PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$First.Scan)
@@ -777,8 +780,8 @@ server <- function(input, output, clientData, session) {
       getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
       
       if (is.null(InputFileMS())) { # No MS trace
-        g <- ggplot(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification)) + 
-          geom_point(alpha = 0.8, size = input$pch, col = "grey30") + 
+        g <- ggplot() + 
+          geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
           coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)  + 
           theme_bw() + 
           scale_shape_manual(values = c(16, 1)) + 
