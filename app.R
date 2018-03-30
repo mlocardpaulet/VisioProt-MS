@@ -439,6 +439,9 @@ server <- function(input, output, clientData, session) {
   filedata0 <- reactive({
     #This function is repsonsible for loading in the selected file
     if (testfileinput() == 0) { # no input test file
+      validate(
+        need(input$TestModeCheck==FALSE, "Uncheck test mode before loading a MS file.")
+      )
       if (is.null(InputFileMS())) {
         # User has not uploaded a file yet
         return(NULL)
