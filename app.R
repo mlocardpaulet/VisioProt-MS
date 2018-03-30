@@ -257,12 +257,21 @@ server <- function(input, output, clientData, session) {
   
   # Add the protein IDs to select to highlight them in the plot:
   observe({
-    if (!is.null(InputFilesMS2())) {
-      if (length(filedataMS2()$PSMfile$Master.Protein.Descriptions[!is.na(filedataMS2()$PSMfile$Master.Protein.Descriptions)]) > 0) {
-        updateSelectInput(session, "SelectProt",
-                          "Select the ID to highlight:",
-                          sort(unique(filedataMS2()$PSMfile$Master.Protein.Descriptions[!is.na(filedataMS2()$PSMfile$Master.Protein.Descriptions)]))
-        )
+    if (!is.null(InputFilesMS2()) | !is.null(InputFilesMS2PF)) {
+      if (!is.null(InputFilesMS2())) {
+        if (length(filedataMS2()$PSMfile$Master.Protein.Descriptions[!is.na(filedataMS2()$PSMfile$Master.Protein.Descriptions)]) > 0) {
+          updateSelectInput(session, "SelectProt",
+                            "Select the ID to highlight:",
+                            sort(unique(filedataMS2()$PSMfile$Master.Protein.Descriptions[!is.na(filedataMS2()$PSMfile$Master.Protein.Descriptions)]))
+          )
+        }
+      } else { # PathFinder
+        if (length(filedataMS2PF()$Master.Protein.Descriptions[!is.na(filedataMS2PF()$Master.Protein.Descriptions)]) > 0) {
+          updateSelectInput(session, "SelectProt",
+                            "Select the ID to highlight:",
+                            sort(unique(filedataMS2PF()$Master.Protein.Descriptions[!is.na(filedataMS2PF()$Master.Protein.Descriptions)]))
+          )
+        }
       }
     }
   })
@@ -296,7 +305,6 @@ server <- function(input, output, clientData, session) {
   InputFilesMS2 <- reactiveVal(NULL) # For BioPharma input
   observeEvent(c(input$MS2file, input$PSMfile), {
     if (input$MSModeCheck == "MS2" & !is.null(input$MS2file)) {
-      if (!is.null(input$MS2file) & !is.null(input$PSMfile))
         InputFilesMS2(list("MS2file" = input$MS2file, "PSMfile" = input$PSMfile))
     } else {
       InputFilesMS2(NULL)
