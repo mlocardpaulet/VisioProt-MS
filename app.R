@@ -478,7 +478,6 @@ server <- function(input, output, clientData, session) {
         return(lfiles)
       }
     } else if (testfileinput() == 1) { # single file test
-      
       infile <- list.files("files/Unique/", pattern = ".csv", full.names = T)
       lfiles <- list()
       for(i in 1){
@@ -642,7 +641,7 @@ server <- function(input, output, clientData, session) {
   #####################
   # Plot:
   #####################
-  ## ggplot for the option DataPoints == T:
+  
   defineranges <- function() {
     if (!is.null(ranges$x) & !is.null(ranges$y)) {
       rangesx <- ranges$x
@@ -683,12 +682,11 @@ server <- function(input, output, clientData, session) {
     return(list(rangesx, rangesy))
   }
   
-  
+  ## ggplot for the option DataPoints == T:
   plotInput1 <- function(){
     validate(
       need(input$pch <= 10, "Please define a smaller size of points")
     )
-    print(linput())
     if (!is.null(linput())) {
       if (input$DataPoints == F | (is.null(filedata()) & is.null(InputFilesMS2()))) {
         return(NULL)
@@ -717,11 +715,10 @@ server <- function(input, output, clientData, session) {
         } else if (filetype$RoWinPro == 0) { # Only type BioPharma/Promex
           gtab <- filedata()
           gtab <- gtab[gtab$PeakStart >= (rangesx[1]-(rangesx[1]*0.01)) & gtab$PeakStop <= (rangesx[2]+(rangesx[2]*0.01)),]
-          
           if (linput() >= 2) { # if comparing several plots
             g <- ggplot() + 
               geom_segment(data = gtab, aes(y = Mass, x = PeakStart, col = File, yend = Mass, xend = PeakStop), alpha = 0.7, size = input$pch) + 
-              geom_point(aes(x = RT, y = Mass), alpha = 0) +
+              geom_point(data = gtab, aes(x = RT, y = Mass), alpha = 0) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
@@ -730,7 +727,7 @@ server <- function(input, output, clientData, session) {
           } else {
             g <- ggplot() + 
               geom_segment(data = gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity)), alpha = 0.7, size = input$pch) +
-              geom_point(aes(x = RT, y = Mass), alpha = 0) +
+              geom_point(data = gtab, aes(x = RT, y = Mass), alpha = 0) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
