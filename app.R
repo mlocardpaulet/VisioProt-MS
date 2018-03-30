@@ -17,6 +17,7 @@ library(shiny)
 library(ggplot2)
 library(plotly)
 library(dplyr)
+library(RColorBrewer)
 
 ############################################################################
 # Functions:
@@ -85,29 +86,67 @@ ThresholdCleaning <- function(l, threshold) {
 
 ui <- fluidPage(
   titlePanel("VisioProt-MS"),
+  #checkboxInput("MSModeCheck", "MS data only", TRUE), # to switch from MS data to MS2 mode
+  radioButtons("MSModeCheck", "MS mode:",
+               c("MS data only" = 'MS',
+                 "MS2 overlay" = 'MS2'),
+               selected = 'MS'
+  ), # to switch from MS data to MS2 mode
+  
   # Control side bar:
   sidebarLayout( 
-    sidebarPanel(
-      # File selection:
-      fileInput("file", "Select input file(s):",  
-                accept = c(
-                  "text/csv",
-                  "text/comma-separated-values,text/plain",
-                  ".csv", 
-                  ".ms1ft"),
-                multiple = T
+    sidebarPanel( 
+      # Conditional panels:
+      # Part 1:
+      #########
+      conditionalPanel(condition="input.MSModeCheck== 'MS'",
+                       # File selection:
+                       fileInput("fileMS", "Select input file(s):",  
+                                 accept = c(
+                                   "text/csv",
+                                   "text/comma-separated-values,text/plain",
+                                   ".csv"),
+                                 multiple = T
+                       ),
+                       checkboxInput("TestModeCheck", "Using test mode (to test the app. whithout input file-s)", FALSE), # to switch from user data to test mode
+                       # Modifying output when passing in test mode:
+                       conditionalPanel(
+                         condition="input.TestModeCheck==true",
+                         actionButton("TestFile1", "Single test file"),
+                         actionButton("TestFile2", "Multiple test files")
+                       )
       ),
-      
-      checkboxInput("TestModeCheck", "Using test mode (to test the app. whithout input file-s)", FALSE), # to switch from user data to test mode
-      # Modifying output when passing in test mode:
-      conditionalPanel(
-        condition="input.TestModeCheck==true",
-        actionButton("TestFile1", "Single test file"),
-        actionButton("TestFile2", "Multiple test files")
+      ########
+      #########
+      # Part 2:
+      #########
+      conditionalPanel(condition="input.MSModeCheck== 'MS2'", 
+                       fileInput("fileMS2", "Select input file for MS:",  
+                                 accept = c(
+                                   "text/csv",
+                                   "text/comma-separated-values,text/plain",
+                                   ".csv"),
+                                 multiple = F
+                       ),
+                       fileInput("MS2file", "Choose MS2 File:", 
+                                 accept = c(
+                                   "text/csv",
+                                   "text/comma-separated-values,text/plain",
+                                   ".txt")
+                       ),
+                       fileInput("PSMfile", "Choose PSM File:", 
+                                 accept = c(
+                                   "text/csv",
+                                   "text/comma-separated-values,text/plain",
+                                   ".txt")
+                       ),
+                       selectInput("SelectProt", "Select the ID to highlight:", 
+                                   NULL,
+                                   multiple = TRUE),
+                       actionButton("Button0", "Hide/show MSMS withouth ID")
+                       #checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
       ),
-      
       checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
-      
       # Selection of the colour scales. This depends on the number of input files:
       # With updateSelectInput:
       selectInput("colourscale", "Colour scale:", # for continuous scales
@@ -116,10 +155,9 @@ ui <- fluidPage(
                     "Red/yellow/green" = "RdYlGn",
                     "yellow to red" = "YlOrRd"
                   )),
-      
       # Parameters for the plot:
       numericInput("pch", label = "Point size:", value = 1, min = 0.01, step = 0.1, max = 10),
-      numericInput("IntensityThresh", label = "Plotting threshold\n(Percentage of plotted data points):", value = 20, min = 0, max = 100, step = 1),
+      numericInput("IntensityThresh", label = "Plotting threshold\n(Percentage of plotted data points in the MS file):", value = 20, min = 0, max = 100, step = 1),
       # Information regarding how to zoom (depends on the plotting type):
       htmlOutput("ZoomParam"),
       
@@ -138,7 +176,6 @@ ui <- fluidPage(
       br(),
       a("Help", href="Help/VisioProtHelp.html", target="blank") # Access to help
     ),
-    
     # Main panel for plotting (output different in function of the checkbox DataPoints):
     mainPanel(
       uiOutput("plotUI")
@@ -147,7 +184,7 @@ ui <- fluidPage(
   # Footer
   tabsetPanel(
     tabPanel(
-      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V1.2</font></footer>')
+      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V2.0</font></footer>')
     )
   )
 )
@@ -157,7 +194,8 @@ ui <- fluidPage(
 
 server <- function(input, output, clientData, session) {
   
-  
+  # UI modifications:
+  ###################
   # Text output to describe how to zoom (dependent on the checkbox DataPoints):
   output$ZoomParam <- renderUI({
     if (input$DataPoints) {
@@ -166,9 +204,6 @@ server <- function(input, output, clientData, session) {
       HTML("<h4>Zoom in: select the ranges of interest and double click.<br/>Zoom out: double click.</h4>")
     }
   })
-  
-  # Number of input file(s) from the same type:
-  linput <- reactiveVal()
   
   # Change colour scale in function of the number of scales:
   observe({
@@ -201,18 +236,66 @@ server <- function(input, output, clientData, session) {
     colval(x)
   })
   
+  # Add the protein IDs to select to highlight them in the plot:
+  observe({
+    if (!is.null(InputFilesMS2())) {
+      if (length(filedataMS2()$PSMfile$Master.Protein.Descriptions[!is.na(filedataMS2()$PSMfile$Master.Protein.Descriptions)]) > 0) {
+        updateSelectInput(session, "SelectProt",
+                          "Select the ID to highlight:",
+                          sort(unique(filedataMS2()$PSMfile$Master.Protein.Descriptions[!is.na(filedataMS2()$PSMfile$Master.Protein.Descriptions)]))
+        )
+      }
+    }
+  })
+  
+  ###################
+  # When input MS file:
+  #####################
+  InputFileMS <- reactiveVal(NULL)
+  
+  observeEvent(input$fileMS, {
+    if (input$MSModeCheck == "MS" & !is.null(input$fileMS) & input$TestModeCheck == FALSE) {
+      InputFileMS(input$fileMS)
+    } else {
+      InputFileMS(NULL)
+    }
+  })
+  
+  observeEvent(input$fileMS2, {
+    if (input$MSModeCheck == "MS2" & !is.null(input$fileMS2)) {
+      InputFileMS(input$fileMS2)
+    } else {
+      InputFileMS(NULL)
+    }
+  })
+  
+  #####################
+  # When input MS2 file:
+  #####################
+  InputFilesMS2 <- reactiveVal(NULL)
+  observeEvent(c(input$MS2file, input$PSMfile), {
+    if (input$MSModeCheck == "MS2" & !is.null(input$MS2file)) {
+      if (!is.null(input$MS2file) & !is.null(input$PSMfile))
+        InputFilesMS2(list("MS2file" = input$MS2file, "PSMfile" = input$PSMfile))
+    } else {
+      InputFilesMS2(NULL)
+    }
+  })
+  
+  
+  #####################
+  # Plotting MS trace:
+  #####################
+  
+  # Number of input file(s) from the same type:
+  linput <- reactiveVal()
+  
   # Test files input:
   testfileinput <- reactiveVal(0) # 0: no test file; 1: single file; 2: multiple file
   
-  # Remove plot when getting out of test mode.
-  observeEvent(input$TestModeCheck, {
-    testfileinput(0)
-    ranges$x <- NULL
-    ranges$y <- NULL
-  })
-  
   filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0, ProMex = 0) # Number of files of each type. Bruker files fall into the "RoWinPro" category once recognised and opened properly.
   
+  # test mode / test files:
   observeEvent(input$TestFile1, {
     linput(1)
     testfileinput(1)
@@ -220,6 +303,8 @@ server <- function(input, output, clientData, session) {
     filetype$BioPharma <- 0
     filetype$ProMex <- 0
     colval("Spectral")
+    InputFileMS(NULL)
+    InputFilesMS2(NULL)
   })
   
   observeEvent(input$TestFile2, {
@@ -229,18 +314,22 @@ server <- function(input, output, clientData, session) {
     filetype$BioPharma <- 0
     filetype$ProMex <- 0
     colval("Set1")
+    InputFileMS(NULL)
+    InputFilesMS2(NULL)
   })
   
-  observeEvent(input$file, { # Return to 0 when uploading new file
+  # When uploading an MS file in MS mode:
+  observeEvent(c(input$fileMS, input$fileMS2), { 
+    InputFileMS <- InputFileMS()
     testfileinput(0)
-    if (!is.null(input$file)) {
+    if (!is.null(InputFileMS)) {
       l <- list()
       l2 <- list()
       l3 <- list()
-      for(i in 1:nrow(input$file)){
-        l[[i]] <- grepl("Monoisotopic Mass", readLines(input$file[i, 'datapath'])[1]) & grepl("Apex RT", readLines(input$file[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(input$file[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T)  # TRUE if Biopharma
-        l2[[i]] <- substr(readLines(input$file[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
-        l3[[i]] <- grepl(".ms1ft", input$file$name[i], fixed = T) # TRUE if ProMex
+      for(i in 1:nrow(InputFileMS)){
+        l[[i]] <- grepl("Monoisotopic Mass", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T)  # TRUE if Biopharma
+        l2[[i]] <- substr(readLines(InputFileMS[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
+        l3[[i]] <- grepl(".ms1ft", InputFileMS$name[i], fixed = T) # TRUE if ProMex
       }
       l <- unlist(l)
       l2 <- unlist(l2)
@@ -264,22 +353,43 @@ server <- function(input, output, clientData, session) {
       filetype$ProMex <- 0
     }
   })
+  #####################
+  # Prevent plotting when modifying modes:
+  ########################################
+  # Remove plot when getting out of test mode.
+  observeEvent(input$TestModeCheck, {
+    InputFileMS(NULL)
+    testfileinput(0)
+    ranges$x <- NULL
+    ranges$y <- NULL
+  })
+  
+  # Remove plot when getting out of MS or MS2 mode.
+  observeEvent(input$MSModeCheck, {
+    InputFileMS(NULL)
+    testfileinput(0)
+    ranges$x <- NULL
+    ranges$y <- NULL
+  })
+  ########################################
   
   ftype <- reactive({
-    if (is.null(input$file) & testfileinput() == 0) {
+    if (is.null(InputFileMS()) & testfileinput() == 0) {
       return(NULL)
     } else {
+      InputFileMS <- InputFileMS()
       l <- list()
-      for(i in 1:nrow(input$file)){
-        val <- grepl("Monoisotopic Mass", readLines(input$file[i, 'datapath'])[1]) & grepl("Apex RT", readLines(input$file[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(input$file[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(input$file[i, 'datapath'])[1], fixed = T) # T for BioPharma, F for RoWinPro
-        val2 <- substr(readLines(input$file[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
-        val3 <- grepl(".ms1ft", input$file$name[i]) # TRUE if ProMex
+      for(i in 1:nrow(InputFileMS)){
+        val <- grepl("Monoisotopic Mass", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) # T for BioPharma, F for RoWinPro
+        val2 <- substr(readLines(InputFileMS[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
+        val3 <- grepl(".ms1ft", InputFileMS$name[i]) # TRUE if ProMex
+        
         val <- ifelse(val,  "BioPharma", "RoWinPro")
         val[val2] <- "Bruker"
         val[val3] <- "ProMex"
         # Check it is the correct input format:
         if (val == "BioPharma") { # Find "Apex RT" in BioPharma files
-          if (!grepl("Apex RT", readLines(input$file[i, 'datapath'])[1])) {
+          if (!grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1])) {
             val <- "DoNotApply"
             validate(
               need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".")
@@ -287,7 +397,7 @@ server <- function(input, output, clientData, session) {
           }
         }
         if (val == "RoWinPro") { # Four columns in RoWinPro files
-          if (length(as.numeric(gregexpr("\t", readLines(input$file[i, 'datapath'])[1])[[1]]))!=3) {
+          if (length(as.numeric(gregexpr("\t", readLines(InputFileMS[i, 'datapath'])[1])[[1]]))!=3) {
             val <- "DoNotApply"
             validate(
               need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".")
@@ -295,7 +405,7 @@ server <- function(input, output, clientData, session) {
           }
         }
         if (val == "Bruker") { # First line has no "," and second line contains the column header " RT / min"
-          if (!(!grepl(",", readLines(input$file[i, 'datapath'])[1]) & grepl(" RT", readLines(input$file[i, 'datapath'])[2]))) {
+          if (!(!grepl(",", readLines(InputFileMS[i, 'datapath'])[1]) & grepl(" RT", readLines(InputFileMS[i, 'datapath'])[2]))) {
             val <- "DoNotApply"
             validate(
               need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".")
@@ -317,47 +427,47 @@ server <- function(input, output, clientData, session) {
     }
   })
   
-  
   # Input the data table:
   filedata0 <- reactive({
     #This function is repsonsible for loading in the selected file
-    
     if (testfileinput() == 0) { # no input test file
-      # Warning if trying to plot several types of data AND several files:
-      validate(
-        need(!(max(table(ftype())) > 1), "You can only input one file per format type that you want to compare.")
-      )
-      if (is.null(input$file)) {
+      if (is.null(InputFileMS())) {
         # User has not uploaded a file yet
         return(NULL)
       } else {
+        # Warning if trying to plot several types of data AND several files:
+        validate(
+          need(!(max(table(ftype())) > 1), "Can only input one file per type of format for comparison")
+        )
+        InputFileMS <- InputFileMS()
         lfiles <- list()
-        for(i in 1:nrow(input$file)){
+        for(i in 1:nrow(InputFileMS)){
           if (ftype()[i] == "BioPharma") { # If the file is from Thermo BioPharma
-            if (!grepl("Protein Name", readLines(input$file[i, 'datapath'])[1])) { # No IDs
-              lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
+            if (!grepl("Protein Name", readLines(InputFileMS[i, 'datapath'])[1])) { # No IDs
+              lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = "\t", header = T)
               lfiles[[i]] <- lfiles[[i]][,c("Apex.RT", "Monoisotopic.Mass", "Sum.Intensity", "Start.Time..min.", "Stop.Time..min.")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
             }
-            if (grepl("Protein Name", readLines(input$file[i, 'datapath'])[1])) { # IDs
-              lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
+            if (grepl("Protein Name", readLines(InputFileMS[i, 'datapath'])[1])) { # IDs
+              lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = "\t", header = T)
               lfiles[[i]] <- lfiles[[i]][,c("Apex.RT", "Monoisotopic.Mass", "Sum.Intensity", "Start.Time..min.", "Stop.Time..min.")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
             }
             
           } else if (ftype()[i] == "RoWinPro")  { # RoWinPro output
-            lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = F)
+            lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = "\t", header = F)
             lfiles[[i]] <- cbind(lfiles[[i]][,1:3], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
           } else if (ftype()[i] == "Bruker")  { # Bruker output
-            lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = ",", header = F, skip = 2)
+            lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = ",", header = F, skip = 2)
             lfiles[[i]] <- cbind(lfiles[[i]][,2:4], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
           } else if (ftype()[i] == "ProMex")  { # ProMex output
             lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
             lfiles[[i]] <- cbind("RT" = (lfiles[[i]]$MinElutionTime + ((lfiles[[i]]$MaxElutionTime - lfiles[[i]]$MinElutionTime)/2)), lfiles[[i]][,c("MonoMass", "ApexIntensity", "MinElutionTime", "MaxElutionTime")]) # Map the columns as in RoWinPro format, but with start and stop instead of all the points of the peak. I add a first column with the middle of the peak for zooming (plotly_select needs points, not ranges).
           }
         }
-        names(lfiles) <- input$file$name
+        names(lfiles) <- InputFileMS()$name
         return(lfiles)
       }
     } else if (testfileinput() == 1) { # single file test
+      
       infile <- list.files("files/Unique/", pattern = ".csv", full.names = T)
       lfiles <- list()
       for(i in 1){
@@ -377,6 +487,23 @@ server <- function(input, output, clientData, session) {
       return(lfiles)   
       testfileinput(0)
     }
+  })
+  
+  filedataMS2 <- reactive({
+    validate(
+      need(!is.null(InputFilesMS2), "Input a MS2 file and a PSM file for overlaying identification data.")
+    )
+    if (is.null(InputFilesMS2())) {
+      # User has not uploaded a file yet
+      return(NULL)
+    } else {
+      PSM <- read.table(InputFilesMS2()$PSMfile$datapath, sep = "\t", header = T)
+      MS2 <- read.table(InputFilesMS2()$MS2file$datapath, sep = "\t", header = T)
+      validate(
+        need(sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1, "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectromInfo.txt file from BioPharma Finder (in the \"MS2 File\" field.\n- The corresponding PSMs.txt file (in the \"PSM File\" field).")
+      )
+    }
+    return(list("MS2file" = MS2, "PSMfile" = PSM))
   })
   
   # Create table for plotting:
@@ -411,6 +538,9 @@ server <- function(input, output, clientData, session) {
     }
   }
   
+  
+  
+  #####################
   # For zoomable plot:
   #####################
   ranges <- reactiveValues(x = NULL, y = NULL)
@@ -419,32 +549,43 @@ server <- function(input, output, clientData, session) {
     ranges$y <- oldranges$y
   })
   observeEvent(input$TotalDeZoom, {
-    print(str(filedata()))
-    if (class(filedata()) != "list") { # one table
-      if (filetype$ProMex > 0 | filetype$BioPharma > 0) {
-        ranges$x <- c(0, range(filedata()[,5])[2])
-        ranges$y <- range(filedata()[,2])
-      } else {
-        ranges$x <- c(0, range(filedata()[,1])[2])
-        ranges$y <- range(filedata()[,2])
+    if (is.null(filedataMS2())) { # Only MS trace, no MS2
+      if (class(filedata()) != "list") { # one table
+        if (filetype$ProMex > 0 | filetype$BioPharma > 0) {
+          ranges$x <- c(0, range(filedata()[,5])[2])
+          ranges$y <- range(filedata()[,2])
+        } else {
+          ranges$x <- c(0, range(filedata()[,1])[2])
+          ranges$y <- range(filedata()[,2])
+        }
+      } else { # two tables because two types of files
+        x1 <- sapply(filedata(), function(z) {
+          z$RT
+        })
+        x2 <- sapply(filedata(), function(z) {
+          z$PeakStart
+        })
+        x3 <- sapply(filedata(), function(z) {
+          z$PeakStop
+        })
+        x <- c(unlist(x1), unlist(x2), unlist(x3))
+        x <- x[!is.na(x)]
+        y <- sapply(filedata(), function(z) {
+          z$Mass
+        })
+        ranges$x <- c(0, range(x)[2])
+        ranges$y <- range(y)
       }
-    } else  { # two tables because two types of files
-      x1 <- sapply(filedata(), function(z) {
-        z$RT
-      })
-      x2 <- sapply(filedata(), function(z) {
-        z$PeakStart
-      })
-      x3 <- sapply(filedata(), function(z) {
-        z$PeakStop
-      })
-      x <- c(unlist(x1), unlist(x2), unlist(x3))
-      x <- x[!is.na(x)]
-      y <- sapply(filedata(), function(z) {
-        z$Mass
-      })
-      ranges$x <- c(0, range(x)[2])
-      ranges$y <- range(y)
+    } else if (is.null(filedata())) { # Only MS2 data, no MS trace
+      ranges$x <- c(0, range(filedataMS2()$MS2file$RT.in.min)[2])
+      ranges$y <- range(filedataMS2()$MS2file$Precursor.MHplus.in.Da)
+    } else { # Overlay of MS2 and Ms data
+      if (filetype$ProMex > 0 | filetype$BioPharma > 0) {
+        ranges$x <- c(0, range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,5]))[2])
+      } else {
+        ranges$x <- c(0, range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,1]))[2])
+      }
+      ranges$y <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()[,2]))
     }
   })
   
@@ -477,8 +618,8 @@ server <- function(input, output, clientData, session) {
           ranges$x <- c(minx, maxx)
           ranges$y <- range(newdata$y)  
         } else {
-        ranges$x <- range(newdata$x)
-        ranges$y <- range(newdata$y)      
+          ranges$x <- range(newdata$x)
+          ranges$y <- range(newdata$y)      
         }
       } else {
         newdata <- NULL
@@ -487,21 +628,19 @@ server <- function(input, output, clientData, session) {
   })
   #####################
   
+  #####################
   # Plot:
-  # For export:
+  #####################
   ## ggplot for the option DataPoints == T:
   defineranges <- function() {
     if (!is.null(ranges$x) & !is.null(ranges$y)) {
       rangesx <- ranges$x
       rangesy <- ranges$y
-      return(list(rangesx, rangesy))
-    } else {
-      #if (filetype$BioPharma == 0 | filetype$RoWinPro == 0) { # one table
+    } else if (is.null(filedataMS2())) { # Only MS trace, no MS2
       if (class(filedata()) != "list") { # one table
         rangesx <- range(filedata()[,1])
         rangesy <- range(filedata()[,2])
-        return(list(rangesx, rangesy))
-      } else  { # two tables because several types of files
+      } else { # two tables because two types of files
         x1 <- sapply(filedata(), function(z) {
           z$RT
         })
@@ -518,17 +657,29 @@ server <- function(input, output, clientData, session) {
         })
         rangesx <- range(x)
         rangesy <- range(y)
-        return(list(rangesx, rangesy))
       }
+    } else if (is.null(filedata())) { # Only MS2 data, no MS trace
+      rangesx <- range(filedataMS2()$MS2file$RT.in.min)
+      rangesy <- range(filedataMS2()$MS2file$Precursor.MHplus.in.Da)
+    } else { # Overlay of MS2 and MS data
+      if (filetype$ProMex > 0 | filetype$BioPharma > 0) {
+        rangesx <- range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,5]))
+      } else {
+        rangesx <- range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,1]))
+      }
+      rangesy <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()[,2]))
     }
+    return(list(rangesx, rangesy))
   }
+  
   
   plotInput1 <- function(){
     validate(
       need(input$pch <= 10, "Please define a smaller size of points")
     )
+    print(linput())
     if (!is.null(linput())) {
-      if (input$DataPoints == F | is.null(filedata())) {
+      if (input$DataPoints == F | (is.null(filedata()) & is.null(InputFilesMS2()))) {
         return(NULL)
       } else {
         rangesx <- defineranges()[[1]]
@@ -536,16 +687,16 @@ server <- function(input, output, clientData, session) {
         if (filetype$BioPharma == 0 & filetype$ProMex == 0) { # Only RoWinPro
           gtab <- filedata()
           if (linput() >= 2) { # if comparing several plots
-            g <- ggplot(gtab, aes(x = RT, y = Mass, col = File)) + 
-              geom_point(alpha = 0.7, size = input$pch) +
+            g <- ggplot() + 
+              geom_point(data = gtab, aes(x = RT, y = Mass, col = File), alpha = 0.7, size = input$pch) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
               ylab("Protein mass (Da)") + 
               xlab("Retention time (min)")
           } else { # only one plot, no overlay
-            g <- ggplot(gtab, aes(x = RT, y = Mass, col = log10(intensity))) + 
-              geom_point(alpha = 0.7, size = input$pch) +
+            g <- ggplot() + 
+              geom_point(data = gtab, aes(x = RT, y = Mass, col = log10(intensity)), alpha = 0.7, size = input$pch) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
@@ -557,8 +708,8 @@ server <- function(input, output, clientData, session) {
           gtab <- gtab[gtab$PeakStart >= (rangesx[1]-(rangesx[1]*0.01)) & gtab$PeakStop <= (rangesx[2]+(rangesx[2]*0.01)),]
           
           if (linput() >= 2) { # if comparing several plots
-            g <- ggplot(gtab, aes(y = Mass, x = PeakStart, col = File, yend = Mass, xend = PeakStop)) + 
-              geom_segment(alpha = 0.7, size = input$pch) + 
+            g <- ggplot() + 
+              geom_segment(data = gtab, aes(y = Mass, x = PeakStart, col = File, yend = Mass, xend = PeakStop), alpha = 0.7, size = input$pch) + 
               geom_point(aes(x = RT, y = Mass), alpha = 0) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
@@ -566,11 +717,9 @@ server <- function(input, output, clientData, session) {
               xlab("Protein mass (Da)") + 
               ylab("Retention time (min)")
           } else {
-            g <- ggplot(gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity))) + 
-              geom_segment(alpha = 0.7, size = input$pch) +
+            g <- ggplot() + 
+              geom_segment(data = gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity)), alpha = 0.7, size = input$pch) +
               geom_point(aes(x = RT, y = Mass), alpha = 0) +
-              #xlim(rangesyB) +
-              #ylim(rangesy) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
@@ -580,7 +729,7 @@ server <- function(input, output, clientData, session) {
         } else { # several types of input format
           gtabRWP <- RBindList(filedata()[ftype()=="RoWinPro" | ftype()=="Bruker"])
           gtabBP <- RBindList(filedata()[ftype()=="BioPharma" | ftype()=="ProMex"])
-
+          
           gtabBP <- gtabBP[gtabBP$PeakStart >= (rangesx[1]-(rangesx[1]*0.01)) & gtabBP$PeakStop <= (rangesx[2]+(rangesx[2]*0.01)),]
           
           # Define the ranges for margins in the plot:
@@ -597,8 +746,57 @@ server <- function(input, output, clientData, session) {
             xlab("Protein mass (Da)") + 
             ylab("Retention time (min)")
         }
-        return(g)
+        if (is.null(InputFilesMS2())) {
+          return(g)
+          rm(list = c("gtabRWP", "gtabBP", "g"))
+        }
       }
+    }
+    # When in MS2 mode: overlay of the MS2 values:
+    if (input$MSModeCheck == "MS2" & !is.null(InputFilesMS2())) {
+      PSM <- filedataMS2()$PSM
+      MS2 <- filedataMS2()$MS2
+      PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$First.Scan)
+      MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$First.Scan)
+      # Retrieve protein IDs in the MS2 table:
+      MS2$Master.Protein.Descriptions <- PSM$Master.Protein.Descriptions[match(MS2$ID, PSM$ID)]
+      # Plot:
+      gtabMS2 <- MS2[,c("RT.in.min", "Precursor.MHplus.in.Da", "Precursor.Intensity", "Master.Protein.Descriptions")]
+      gtabMS2$Identification <- ifelse(!is.na(gtabMS2$Master.Protein.Descriptions), "IDed", "NoID")
+      
+      # Action button:
+      if (input$Button0 %% 2 == 1) {
+        gtabMS2 <- gtabMS2[gtabMS2$Identification == "IDed",]
+      }
+      
+      names(gtabMS2)[3] <- "intensity"
+      gtabMS2 <- gtabMS2[order(gtabMS2$Identification, decreasing = T),]
+      
+      vec <- unique(gtabMS2$Master.Protein.Descriptions[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt])
+      vec <- vec[!is.na(vec)]
+      getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
+      
+      if (is.null(InputFileMS())) { # No MS trace
+        g <- ggplot(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification)) + 
+          geom_point(alpha = 0.8, size = input$pch, col = "grey30") + 
+          coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)  + 
+          theme_bw() + 
+          scale_shape_manual(values = c(16, 1)) + 
+          ylab("Protein mass (Da)") + 
+          xlab("Retention time (min)") + 
+          geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+          scale_fill_manual(values = getPalette(length(vec))) 
+      } else { # Overlay on MS trace
+        g <- g +
+          geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
+          theme_bw() + 
+          scale_shape_manual(values = c(16, 1)) + 
+          ylab("Protein mass (Da)") + 
+          xlab("Retention time (min)") + 
+          geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+          scale_fill_manual(values = getPalette(length(vec)))
+      }
+      return(g)
     }
   }
   
@@ -608,7 +806,7 @@ server <- function(input, output, clientData, session) {
       need(input$pch <= 10, "Please define a smaller size of points")
     )
     if (!is.null(linput())) {
-      if (is.null(filedata()) | input$DataPoints == T) {
+      if (is.null(filedata()) | (is.null(filedata()) & is.null(InputFilesMS2()))) {
         return(NULL)
       } else {
         rangesx <- defineranges()[[1]]
@@ -616,7 +814,7 @@ server <- function(input, output, clientData, session) {
         if (filetype$BioPharma == 0 & filetype$ProMex == 0) { # Only one type of plot: RoWinPro
           gtab <- filedata()
           if (linput() >= 2) { # For plotting multiple plots.
-            g <- ggplot(gtab, aes(x = RT, y = Mass, col = File)) + 
+            g <- ggplot(data = gtab, aes(x = RT, y = Mass, col = File)) + 
               geom_point(alpha = 0.7, size = input$pch) + 
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
@@ -624,7 +822,7 @@ server <- function(input, output, clientData, session) {
               ylab("Protein mass (Da)") + 
               xlab("Retention time (min)")
           } else { # For simple plot.
-            g <- ggplot(gtab, aes(x = RT, y = Mass, col = log10(intensity))) + 
+            g <- ggplot(data = gtab, aes(x = RT, y = Mass, col = log10(intensity))) + 
               geom_point(alpha = 0.7, size = input$pch) + 
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
@@ -637,7 +835,7 @@ server <- function(input, output, clientData, session) {
           gtab <- gtab[gtab$PeakStart >= (rangesx[1]-(rangesx[1]*0.01)) & gtab$PeakStop <= (rangesx[2]+(rangesx[2]*0.01)),] 
           
           if (linput() >= 2) { # For plotting multiple plots.
-            g <- ggplot(gtab, aes(y = Mass, x = PeakStart, yend = Mass, xend = PeakStop, col = File)) + 
+            g <- ggplot(data = gtab, aes(y = Mass, x = PeakStart, yend = Mass, xend = PeakStop, col = File)) + 
               geom_segment(alpha = 0.7, size = input$pch) + 
               geom_point(aes(x = RT, y = Mass), alpha = 0) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
@@ -646,7 +844,7 @@ server <- function(input, output, clientData, session) {
               xlab("Protein mass (Da)") + 
               ylab("Retention time (min)")
           } else { # For simple plot.
-            g <- ggplot(gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity))) + 
+            g <- ggplot(data = gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity))) + 
               geom_segment(alpha = 0.7, size = input$pch) +
               geom_point(aes(x = RT, y = Mass), alpha = 0) +
               theme_bw() + 
@@ -674,9 +872,59 @@ server <- function(input, output, clientData, session) {
             xlab("Protein mass (Da)") + 
             ylab("Retention time (min)")
         }
-        #return(g)
-        g
+        if (is.null(InputFilesMS2())) {
+          return(g)
+          rm(list = c("gtabRWP", "gtabBP", "g"))
+        }
       }
+      
+    }
+    # When in MS2 mode: overlay of the MS2 values:
+    if (input$MSModeCheck == "MS2" & !is.null(InputFilesMS2())) {
+      PSM <- filedataMS2()$PSM
+      MS2 <- filedataMS2()$MS2
+      PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$First.Scan)
+      MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$First.Scan)
+      # Retrieve protein IDs in the MS2 table:
+      MS2$Master.Protein.Descriptions <- PSM$Master.Protein.Descriptions[match(MS2$ID, PSM$ID)]
+      # Plot:
+      gtabMS2 <- MS2[,c("RT.in.min", "Precursor.MHplus.in.Da", "Precursor.Intensity", "Master.Protein.Descriptions")]
+      gtabMS2$Identification <- ifelse(!is.na(gtabMS2$Master.Protein.Descriptions), "IDed", "NoID")
+      
+      # Action button:
+      if (input$Button0 %% 2 == 1) {
+        gtabMS2 <- gtabMS2[gtabMS2$Identification == "IDed",]
+      }
+      
+      names(gtabMS2)[3] <- "intensity"
+      #gtabMS2 <- gtabMS2[gtabMS2[,3]>=input$IntensityThresh,]
+      gtabMS2 <- gtabMS2[order(gtabMS2$Identification, decreasing = T),]
+      
+      vec <- unique(gtabMS2$Master.Protein.Descriptions[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt])
+      vec <- vec[!is.na(vec)]
+      getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
+      
+      if (is.null(InputFileMS())) {
+        g <- ggplot(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification)) + 
+          geom_point(alpha = 0.8, size = input$pch, col = "grey30") + 
+          coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)  + 
+          theme_bw() + 
+          scale_shape_manual(values = c(16, 1)) + 
+          ylab("Protein mass (Da)") + 
+          xlab("Retention time (min)") + 
+          geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+          scale_fill_manual(values = getPalette(length(vec)))
+      } else {
+        g <- g +
+          geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
+          theme_bw() + 
+          scale_shape_manual(values = c(16, 1)) + 
+          ylab("Protein mass (Da)") + 
+          xlab("Retention time (min)") + 
+          geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+          scale_fill_manual(values = getPalette(length(vec)))
+      }
+      return(g)
     }
   }
   
@@ -737,10 +985,14 @@ server <- function(input, output, clientData, session) {
   
   # For export:
   ############
-  
+  # pdf output:
   output$Download <- downloadHandler(
     filename = function(){
-      paste0("VisioProt-MS_", substring(input$file$name, first = 1, last = (nchar(input$file$name)-4)), "_", Sys.Date(), ".pdf")
+      if (is.null(InputFilesMS2())) {
+        paste0("VisioProt-MS_", substring(InputFileMS()$name, first = 1, last = (nchar(InputFileMS()$name)-4)), "_", Sys.Date(), ".pdf")
+      } else {
+        paste0("VisioProt-MS_", substring(InputFilesMS2()[[1]]$name, first = 1, last = (nchar(InputFilesMS2()[[1]]$name)-4)), "_", Sys.Date(), ".pdf")
+      }
     },
     content = function(file) {
       device <- function(..., width, height) {
@@ -752,9 +1004,14 @@ server <- function(input, output, clientData, session) {
         ggsave(file, plot = plotInput2(), device = device)
       }
     })
+  # png output:
   output$Download1 <- downloadHandler(
     filename = function(){
-      paste0("VisioProt-MS_", substring(input$file$name, first = 1, last = (nchar(input$file$name)-4)), "_", Sys.Date(), ".png")
+      if (is.null(InputFilesMS2())) {
+        paste0("VisioProt-MS_", substring(InputFileMS()$name, first = 1, last = (nchar(InputFileMS()$name)-4)), "_", Sys.Date(), ".png")
+      } else {
+        paste0("VisioProt-MS_", substring(InputFilesMS2()[[1]]$name, first = 1, last = (nchar(InputFilesMS2()[[1]]$name)-4)), "_", Sys.Date(), ".png")
+      }
     },
     content = function(file) {
       device <- function(..., width, height) {
@@ -766,9 +1023,14 @@ server <- function(input, output, clientData, session) {
         ggsave(file, plot = plotInput2(), device = device)
       }
     })
+  # svg output:
   output$Download2 <- downloadHandler(
     filename = function(){
-      paste0("VisioProt-MS_", substring(input$file$name, first = 1, last = (nchar(input$file$name)-4)), "_", Sys.Date(), ".svg")
+      if (is.null(InputFilesMS2())) {
+        paste0("VisioProt-MS_", substring(InputFileMS()$name, first = 1, last = (nchar(InputFileMS()$name)-4)), "_", Sys.Date(), ".svg")
+      } else {
+        paste0("VisioProt-MS_", substring(InputFilesMS2()[[1]]$name, first = 1, last = (nchar(InputFilesMS2()[[1]]$name)-4)), "_", Sys.Date(), ".svg")
+      }
     },
     content = function(file) {
       device <- function(..., width, height) {
@@ -782,10 +1044,8 @@ server <- function(input, output, clientData, session) {
     })
   ############
   
-  # For debugging:
-  #output$info <- renderText({
-  # print(unlist(defineranges()))
-  #})
+  ############
+  
 }
 
 ############################################################################
