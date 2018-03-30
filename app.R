@@ -127,7 +127,9 @@ ui <- fluidPage(
                                  accept = c(
                                    "text/csv",
                                    "text/comma-separated-values,text/plain",
-                                   ".csv"),
+                                   ".csv",
+                                   ".txt",
+                                   ".ms1ft"),
                                  multiple = F
                        ),
                        fileInput("MS2file", "Choose MS2 File:", 
@@ -391,7 +393,6 @@ server <- function(input, output, clientData, session) {
         val <- grepl("Monoisotopic Mass", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) # T for BioPharma, F for RoWinPro
         val2 <- substr(readLines(InputFileMS[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
         val3 <- grepl(".ms1ft", InputFileMS$name[i]) # TRUE if ProMex
-        
         val <- ifelse(val,  "BioPharma", "RoWinPro")
         val[val2] <- "Bruker"
         val[val3] <- "ProMex"
@@ -421,7 +422,7 @@ server <- function(input, output, clientData, session) {
           }
         }
         if (val == "ProMex") { # Contains the columns MonoMass, ApexIntensity and Min/MaxElutionTime
-          if (!grepl("MinElutionTime", readLines(input$file[i, 'datapath'])[1])) {
+          if (!grepl("MinElutionTime", readLines(InputFileMS[i, 'datapath'])[1])) {
             val <- "DoNotApply"
             validate(
               need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".")
@@ -470,7 +471,7 @@ server <- function(input, output, clientData, session) {
             lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = ",", header = F, skip = 2)
             lfiles[[i]] <- cbind(lfiles[[i]][,2:4], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
           } else if (ftype()[i] == "ProMex")  { # ProMex output
-            lfiles[[i]] <- read.table(input$file[i, 'datapath'], sep = "\t", header = T)
+            lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = "\t", header = T)
             lfiles[[i]] <- cbind("RT" = (lfiles[[i]]$MinElutionTime + ((lfiles[[i]]$MaxElutionTime - lfiles[[i]]$MinElutionTime)/2)), lfiles[[i]][,c("MonoMass", "ApexIntensity", "MinElutionTime", "MaxElutionTime")]) # Map the columns as in RoWinPro format, but with start and stop instead of all the points of the peak. I add a first column with the middle of the peak for zooming (plotly_select needs points, not ranges).
           }
         }
@@ -756,7 +757,6 @@ server <- function(input, output, clientData, session) {
         }
         if (is.null(InputFilesMS2())) {
           return(g)
-          rm(list = c("gtabRWP", "gtabBP", "g"))
         }
       }
     }
@@ -781,9 +781,11 @@ server <- function(input, output, clientData, session) {
       names(gtabMS2)[3] <- "intensity"
       gtabMS2 <- gtabMS2[order(gtabMS2$Identification, decreasing = T),]
       
-      vec <- unique(gtabMS2$Master.Protein.Descriptions[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt])
-      vec <- vec[!is.na(vec)]
-      getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
+      if (!is.null(input$SelectProt)) {
+        vec <- unique(gtabMS2$Master.Protein.Descriptions[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt])
+        vec <- vec[!is.na(vec)]
+        getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
+      }
       
       if (is.null(InputFileMS())) { # No MS trace
         g <- ggplot() + 
@@ -792,18 +794,24 @@ server <- function(input, output, clientData, session) {
           theme_bw() + 
           scale_shape_manual(values = c(16, 1)) + 
           ylab("Protein mass (Da)") + 
-          xlab("Retention time (min)") + 
-          geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
-          scale_fill_manual(values = getPalette(length(vec))) 
+          xlab("Retention time (min)")
+        if (!is.null(input$SelectProt)) {
+          g <- g + 
+            geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+            scale_fill_manual(values = getPalette(length(vec))) 
+        }
       } else { # Overlay on MS trace
         g <- g +
           geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
           theme_bw() + 
           scale_shape_manual(values = c(16, 1)) + 
           ylab("Protein mass (Da)") + 
-          xlab("Retention time (min)") + 
-          geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
-          scale_fill_manual(values = getPalette(length(vec)))
+          xlab("Retention time (min)")
+        if (!is.null(input$SelectProt)) {
+          g <- g + 
+            geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+            scale_fill_manual(values = getPalette(length(vec)))
+        }
       }
       return(g)
     }
@@ -883,7 +891,6 @@ server <- function(input, output, clientData, session) {
         }
         if (is.null(InputFilesMS2())) {
           return(g)
-          rm(list = c("gtabRWP", "gtabBP", "g"))
         }
       }
       
@@ -909,9 +916,11 @@ server <- function(input, output, clientData, session) {
       #gtabMS2 <- gtabMS2[gtabMS2[,3]>=input$IntensityThresh,]
       gtabMS2 <- gtabMS2[order(gtabMS2$Identification, decreasing = T),]
       
-      vec <- unique(gtabMS2$Master.Protein.Descriptions[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt])
-      vec <- vec[!is.na(vec)]
-      getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
+      if (!is.null(input$SelectProt)) {
+        vec <- unique(gtabMS2$Master.Protein.Descriptions[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt])
+        vec <- vec[!is.na(vec)]
+        getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
+      }
       
       if (is.null(InputFileMS())) {
         g <- ggplot(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification)) + 
@@ -920,18 +929,24 @@ server <- function(input, output, clientData, session) {
           theme_bw() + 
           scale_shape_manual(values = c(16, 1)) + 
           ylab("Protein mass (Da)") + 
-          xlab("Retention time (min)") + 
-          geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
-          scale_fill_manual(values = getPalette(length(vec)))
+          xlab("Retention time (min)")
+        if (!is.null(input$SelectProt)) {
+          g <- g + 
+            geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+            scale_fill_manual(values = getPalette(length(vec)))
+        }
       } else {
         g <- g +
           geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
           theme_bw() + 
           scale_shape_manual(values = c(16, 1)) + 
           ylab("Protein mass (Da)") + 
-          xlab("Retention time (min)") + 
-          geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
-          scale_fill_manual(values = getPalette(length(vec)))
+          xlab("Retention time (min)")
+        if (!is.null(input$SelectProt)) {
+          g <- g + 
+            geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+            scale_fill_manual(values = getPalette(length(vec)))
+        }
       }
       return(g)
     }
