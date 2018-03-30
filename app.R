@@ -134,7 +134,7 @@ ui <- fluidPage(
                        ),
                        radioButtons("PDPFModeCheck", "Origin of the MS2 files:",
                                     c("BioPharma Finder" = 'PD',
-                                      "PathFinder" = 'PF'),
+                                      "MSPathFinder" = 'PF'),
                                     selected = 'PD'
                        ),
                        conditionalPanel(condition = "input.PDPFModeCheck== 'PD'", 
@@ -152,7 +152,7 @@ ui <- fluidPage(
                                         )
                        ),
                        conditionalPanel(condition = "input.PDPFModeCheck== 'PF'", 
-                                        fileInput("MS2filePF", "Choose IcTarget File:", 
+                                        fileInput("MS2filePF", "Choose IcTarget or IcTda File from MSPathFinder:", 
                                                   accept = c(
                                                     "text/csv",
                                                     "text/comma-separated-values,text/plain",
@@ -175,7 +175,7 @@ ui <- fluidPage(
                     "yellow to red" = "YlOrRd"
                   )),
       # Parameters for the plot:
-      numericInput("pch", label = "Point size:", value = 1, min = 0.01, step = 0.1, max = 10),
+      numericInput("pch", label = "Point size:", value = 1, min = 0.1, step = 0.1, max = 10),
       numericInput("IntensityThresh", label = "Plotting threshold\n(Percentage of plotted data points in the MS file):", value = 20, min = 0, max = 100, step = 1),
       # Information regarding how to zoom (depends on the plotting type):
       htmlOutput("ZoomParam"),
@@ -305,10 +305,7 @@ server <- function(input, output, clientData, session) {
   InputFilesMS2PF <- reactiveVal(NULL) # For PathFinder input
   observeEvent(c(input$MS2filePF), {
     if (input$MSModeCheck == "MS2" & !is.null(input$MS2filePF)) {
-      if (!is.null(input$MS2file) & !is.null(input$PSMfile))
-        InputFilesMS2PF(input$MS2filePF)
-    } else {
-      InputFilesMS2PF(NULL)
+      InputFilesMS2PF(input$MS2filePF)
     }
   })
   
@@ -534,32 +531,37 @@ server <- function(input, output, clientData, session) {
       PSM <- read.table(InputFilesMS2()$PSMfile$datapath, sep = "\t", header = T)
       MS2 <- read.table(InputFilesMS2()$MS2file$datapath, sep = "\t", header = T)
       validate(
-        need(sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1, "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectromInfo.txt file from BioPharma Finder (in the \"MS2 File\" field.\n- The corresponding PSMs.txt file (in the \"PSM File\" field).")
+        need(sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1, "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectrumInfo.txt file from BioPharma Finder (in the \"MS2 File\" field.\n- The corresponding PSMs.txt file (in the \"PSM File\" field).")
       )
     }
     return(list("MS2file" = MS2, "PSMfile" = PSM))
   })
   
   filedataMS2PF <- reactiveVal(NULL)
-  observeEvent(input$MS2filePF, input$fileMS2, {
+  observeEvent(c(input$MS2filePF, input$fileMS2), {
     if (input$PDPFModeCheck == 'PF') {
-      validate(
-        need(!is.null(InputFilesMS2()), "You need to upload the associated MS file to plot MS2 results from PathFinder."
-        )
-      )
-      if (!is.null(InputFilesMS2())) {
-        MS2PF <- read.table(InputMS2filePF()$datapath, sep = "\t", header = T)
-        validate(
-          need(sum(grepl("ProteinDesc", names(MS2PF))) == 1, "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- The \"IcTarget\" output file from PathFinder associated with the deconvoluted MS masses uploaded as \"input file for MS\".")
-        )
-        validate(
-          need(length(unique(MS2PF$ProteinDesc))==length(unique(MS2PF$MS1Features)), "Several IDs have been attributed to the same MS feature.")
-        )
-        names(MS2PF)[names(MS2PF)=="ProteinDesc"] <- "Master.Protein.Descriptions"
-        names(MS2PF)[names(MS2PF)=="MS1Features"] <- "FeatureID"
-        MS2PF <- merge(filedataMS2(), MS2PF, by = "FeatureID", all = T)
-        MS2PF <- MS2PF[!is.na(MS2PF$MinScan),]
-        print(head(MS2PF))
+      #validate(
+      #  need(!is.null(filedata()), "You need to upload the associated MS file to plot MS2 results from MSPathFinder."
+      #  )
+      #)
+      if (!is.null(filedata())) {
+        MS2PF <- read.table(InputFilesMS2PF()$datapath, sep = "\t", header = F, comment.char = "#", skip = 1)
+        #  validate(
+        #    need(grepl("IcT", InputFilesMS2PF()$datapath), "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- The \"IcTarget\" or \"IcTda\" output file from MSPathFinder associated with the deconvoluted MS masses uploaded as \"input file for MS\".")
+        #  )
+        #  validate(
+        #    need(length(unique(MS2PF[,8]))==length(unique(MS2PF[,15])), "Several IDs have been attributed to the same MS feature.")
+        #  )
+        names(MS2PF)[8] <- "Master.Protein.Descriptions"
+        names(MS2PF)[15] <- "FeatureID"
+        MS <- read.table(InputFileMS()$datapath, sep = "\t", header = T)
+        MS2PF <- merge(MS, MS2PF, by = "FeatureID", all = T)
+        MS2PF <- MS2PF[!is.na(MS2PF[,3]),]
+        MS2PF <- cbind("RT" = (MS2PF$MinElutionTime + ((MS2PF$MaxElutionTime - MS2PF$MinElutionTime)/2)), MS2PF[,c("MonoMass", "ApexIntensity", "MinElutionTime", "MaxElutionTime", "Master.Protein.Descriptions")]) 
+        names(MS2PF)[2] <- "Mass"
+        names(MS2PF)[3] <- "intensity"
+        names(MS2PF)[4] <- "PeakStart"
+        names(MS2PF)[5] <- "PeakStop"
         filedataMS2PF(MS2PF) 
       }
     }
@@ -734,10 +736,10 @@ server <- function(input, output, clientData, session) {
   ## ggplot for the option DataPoints == T:
   plotInput1 <- function(){
     validate(
-      need(input$pch <= 10, "Please define a smaller size of points")
+      need(input$pch <= 10, "Please define a smaller size of points (max. 10).")
     )
     if (!is.null(linput())) {
-      if (input$DataPoints == F | (is.null(filedata()) & is.null(InputFilesMS2()))) {
+      if (input$DataPoints == F | (is.null(filedata()) & (is.null(InputFilesMS2()) | is.null(InputFilesMS2PF())))) {
         return(NULL)
       } else {
         rangesx <- defineranges()[[1]]
@@ -803,72 +805,101 @@ server <- function(input, output, clientData, session) {
             xlab("Protein mass (Da)") + 
             ylab("Retention time (min)")
         }
-        if (is.null(InputFilesMS2())) {
+        if (is.null(InputFilesMS2()) & is.null(InputFilesMS2PF)) {
+          return(g)
+        }
+        # When in MS2 mode: overlay of the MS2 values:
+        if (input$MSModeCheck == "MS2" & (!is.null(InputFilesMS2()) | !is.null(InputFilesMS2PF()))) {
+          if (input$PDPFModeCheck == "PD") {
+            PSM <- filedataMS2()$PSM
+            MS2 <- filedataMS2()$MS2
+            PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$First.Scan)
+            MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$First.Scan)
+            # Retrieve protein IDs in the MS2 table:
+            MS2$Master.Protein.Descriptions <- PSM$Master.Protein.Descriptions[match(MS2$ID, PSM$ID)]
+            # Plot:
+            gtabMS2 <- MS2[,c("RT.in.min", "Precursor.MHplus.in.Da", "Precursor.Intensity", "Master.Protein.Descriptions")]
+            gtabMS2$Identification <- ifelse(!is.na(gtabMS2$Master.Protein.Descriptions), "IDed", "NoID")
+            
+            # Action button:
+            if (input$Button0 %% 2 == 1) {
+              gtabMS2 <- gtabMS2[gtabMS2$Identification == "IDed",]
+            }
+            
+            names(gtabMS2)[3] <- "intensity"
+            gtabMS2 <- gtabMS2[order(gtabMS2$Identification, decreasing = T),]
+            
+            if (!is.null(input$SelectProt)) {
+              vec <- unique(gtabMS2$Master.Protein.Descriptions[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt])
+              vec <- vec[!is.na(vec)]
+              getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
+            }
+            
+            if (is.null(InputFileMS())) { # No MS trace
+              g <- ggplot() + 
+                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
+                coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)  + 
+                theme_bw() + 
+                scale_shape_manual(values = c(16, 1)) + 
+                ylab("Protein mass (Da)") + 
+                xlab("Retention time (min)")
+              if (!is.null(input$SelectProt)) {
+                g <- g + 
+                  geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  scale_fill_manual(values = getPalette(length(vec))) 
+              }
+            } else { # Overlay on MS trace
+              g <- g +
+                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
+                theme_bw() + 
+                scale_shape_manual(values = c(16, 1)) + 
+                ylab("Protein mass (Da)") + 
+                xlab("Retention time (min)")
+              if (!is.null(input$SelectProt)) {
+                g <- g + 
+                  geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  scale_fill_manual(values = getPalette(length(vec)))
+              }
+            }
+          } else { # PathFinder
+            gtabMS2 <- filedataMS2PF()
+            print(head(gtabMS2))
+            gtabMS2$Identification <- ifelse(!is.na(gtabMS2$Master.Protein.Descriptions), "IDed", "NoID")
+            # Action button:
+            if (input$Button0 %% 2 == 1) {
+              gtabMS2 <- gtabMS2[gtabMS2$Identification == "IDed",]
+            }
+            gtabMS2 <- gtabMS2[order(gtabMS2$Identification, decreasing = T),]
+            
+            if (!is.null(input$SelectProt)) {
+              vec <- unique(gtabMS2$Master.Protein.Descriptions[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt])
+              vec <- vec[!is.na(vec)]
+              getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
+            }
+            print(head(gtabMS2))
+            g <- g +
+              geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
+              theme_bw() + 
+              scale_shape_manual(values = c(16, 1)) + 
+              ylab("Protein mass (Da)") + 
+              xlab("Retention time (min)")
+            if (!is.null(input$SelectProt)) {
+              g <- g + 
+                geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                scale_fill_manual(values = getPalette(length(vec)))
+            }
+            
+          }
           return(g)
         }
       }
-    }
-    # When in MS2 mode: overlay of the MS2 values:
-    if (input$MSModeCheck == "MS2" & !is.null(InputFilesMS2())) {
-      
-      PSM <- filedataMS2()$PSM
-      MS2 <- filedataMS2()$MS2
-      PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$First.Scan)
-      MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$First.Scan)
-      # Retrieve protein IDs in the MS2 table:
-      MS2$Master.Protein.Descriptions <- PSM$Master.Protein.Descriptions[match(MS2$ID, PSM$ID)]
-      # Plot:
-      gtabMS2 <- MS2[,c("RT.in.min", "Precursor.MHplus.in.Da", "Precursor.Intensity", "Master.Protein.Descriptions")]
-      gtabMS2$Identification <- ifelse(!is.na(gtabMS2$Master.Protein.Descriptions), "IDed", "NoID")
-      
-      # Action button:
-      if (input$Button0 %% 2 == 1) {
-        gtabMS2 <- gtabMS2[gtabMS2$Identification == "IDed",]
-      }
-      
-      names(gtabMS2)[3] <- "intensity"
-      gtabMS2 <- gtabMS2[order(gtabMS2$Identification, decreasing = T),]
-      
-      if (!is.null(input$SelectProt)) {
-        vec <- unique(gtabMS2$Master.Protein.Descriptions[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt])
-        vec <- vec[!is.na(vec)]
-        getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
-      }
-      
-      if (is.null(InputFileMS())) { # No MS trace
-        g <- ggplot() + 
-          geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
-          coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)  + 
-          theme_bw() + 
-          scale_shape_manual(values = c(16, 1)) + 
-          ylab("Protein mass (Da)") + 
-          xlab("Retention time (min)")
-        if (!is.null(input$SelectProt)) {
-          g <- g + 
-            geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
-            scale_fill_manual(values = getPalette(length(vec))) 
-        }
-      } else { # Overlay on MS trace
-        g <- g +
-          geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
-          theme_bw() + 
-          scale_shape_manual(values = c(16, 1)) + 
-          ylab("Protein mass (Da)") + 
-          xlab("Retention time (min)")
-        if (!is.null(input$SelectProt)) {
-          g <- g + 
-            geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
-            scale_fill_manual(values = getPalette(length(vec)))
-        }
-      }
-      return(g)
     }
   }
   
   ## plotly for the option DataPoints == F:
   plotInput2 <- function(){
     validate(
-      need(input$pch <= 10, "Please define a smaller size of points")
+      need(input$pch <= 10, "Please define a smaller size of points (max. 10).")
     )
     if (!is.null(linput())) {
       if (is.null(filedata()) | (is.null(filedata()) & is.null(InputFilesMS2()))) {
