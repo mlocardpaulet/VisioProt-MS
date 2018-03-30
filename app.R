@@ -256,6 +256,8 @@ server <- function(input, output, clientData, session) {
   InputFileMS <- reactiveVal(NULL)
   
   observeEvent(input$fileMS, {
+    ranges$x <- NULL
+    ranges$y <- NULL
     if (input$MSModeCheck == "MS" & !is.null(input$fileMS) & input$TestModeCheck == FALSE) {
       InputFileMS(input$fileMS)
     } else {
@@ -299,6 +301,8 @@ server <- function(input, output, clientData, session) {
   
   # test mode / test files:
   observeEvent(input$TestFile1, {
+    ranges$x <- NULL
+    ranges$y <- NULL
     linput(1)
     testfileinput(1)
     filetype$RoWinPro <- 1
@@ -310,6 +314,8 @@ server <- function(input, output, clientData, session) {
   })
   
   observeEvent(input$TestFile2, {
+    ranges$x <- NULL
+    ranges$y <- NULL
     linput(4)
     testfileinput(2)
     filetype$RoWinPro <- 4
