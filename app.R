@@ -976,14 +976,12 @@ server <- function(input, output, clientData, session) {
             xlab("Protein mass (Da)") + 
             ylab("Retention time (min)")
         }
-        if (is.null(InputFilesMS2())) {
+        if (is.null(InputFilesMS2()) & is.null(InputFilesMS2PF)) {
           return(g)
         }
-      }
-      
-    }
     # When in MS2 mode: overlay of the MS2 values:
-    if (input$MSModeCheck == "MS2" & !is.null(InputFilesMS2())) {
+    if (input$MSModeCheck == "MS2" & (!is.null(InputFilesMS2()) | !is.null(InputFilesMS2PF()))) {
+      if (input$PDPFModeCheck == "PD") {
       PSM <- filedataMS2()$PSM
       MS2 <- filedataMS2()$MS2
       PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$First.Scan)
@@ -1035,7 +1033,38 @@ server <- function(input, output, clientData, session) {
             scale_fill_manual(values = getPalette(length(vec)))
         }
       }
+      } else { # PathFinder
+        gtabMS2 <- filedataMS2PF()
+        print(head(gtabMS2))
+        gtabMS2$Identification <- ifelse(!is.na(gtabMS2$Master.Protein.Descriptions), "IDed", "NoID")
+        # Action button:
+        if (input$Button0 %% 2 == 1) {
+          gtabMS2 <- gtabMS2[gtabMS2$Identification == "IDed",]
+        }
+        gtabMS2 <- gtabMS2[order(gtabMS2$Identification, decreasing = T),]
+        
+        if (!is.null(input$SelectProt)) {
+          vec <- unique(gtabMS2$Master.Protein.Descriptions[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt])
+          vec <- vec[!is.na(vec)]
+          getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
+        }
+        print(head(gtabMS2))
+        g <- g +
+          geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
+          theme_bw() + 
+          scale_shape_manual(values = c(16, 1)) + 
+          ylab("Protein mass (Da)") + 
+          xlab("Retention time (min)")
+        if (!is.null(input$SelectProt)) {
+          g <- g + 
+            geom_point(data = gtabMS2[gtabMS2$Master.Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Master.Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+            scale_fill_manual(values = getPalette(length(vec)))
+        }
+        
+      }
       return(g)
+    }
+      }
     }
   }
   
