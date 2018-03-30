@@ -132,17 +132,32 @@ ui <- fluidPage(
                                    ".ms1ft"),
                                  multiple = F
                        ),
-                       fileInput("MS2file", "Choose MS2 File:", 
-                                 accept = c(
-                                   "text/csv",
-                                   "text/comma-separated-values,text/plain",
-                                   ".txt")
+                       radioButtons("PDPFModeCheck", "Origin of the MS2 files:",
+                                    c("BioPharma Finder" = 'PD',
+                                      "PathFinder" = 'PF'),
+                                    selected = 'PD'
                        ),
-                       fileInput("PSMfile", "Choose PSM File:", 
-                                 accept = c(
-                                   "text/csv",
-                                   "text/comma-separated-values,text/plain",
-                                   ".txt")
+                       conditionalPanel(condition = "input.PDPFModeCheck== 'PD'", 
+                                        fileInput("MS2file", "Choose MS2 File:", 
+                                                  accept = c(
+                                                    "text/csv",
+                                                    "text/comma-separated-values,text/plain",
+                                                    ".txt")
+                                        ),
+                                        fileInput("PSMfile", "Choose PSM File:", 
+                                                  accept = c(
+                                                    "text/csv",
+                                                    "text/comma-separated-values,text/plain",
+                                                    ".txt")
+                                        )
+                       ),
+                       conditionalPanel(condition = "input.PDPFModeCheck== 'PF'", 
+                                        fileInput("MS2filePF", "Choose IcTarget File:", 
+                                                  accept = c(
+                                                    "text/csv",
+                                                    "text/comma-separated-values,text/plain",
+                                                    ".tsv")
+                                        )
                        ),
                        selectInput("SelectProt", "Select the ID to highlight:", 
                                    NULL,
@@ -854,7 +869,7 @@ server <- function(input, output, clientData, session) {
           if (linput() >= 2) { # For plotting multiple plots.
             g <- ggplot() + 
               geom_segment(data = gtab, aes(y = Mass, x = PeakStart, yend = Mass, xend = PeakStop, col = File), alpha = 0.7, size = input$pch) + 
-              geom_point(aes(x = RT, y = Mass), alpha = 0) +
+              geom_point(data = gtab, aes(x = RT, y = Mass), alpha = 0) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
@@ -863,7 +878,7 @@ server <- function(input, output, clientData, session) {
           } else { # For simple plot.
             g <- ggplot() + 
               geom_segment(data = gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity)), alpha = 0.7, size = input$pch) +
-              geom_point(aes(x = RT, y = Mass), alpha = 0) +
+              geom_point(data = gtab, aes(x = RT, y = Mass), alpha = 0) +
               theme_bw() + 
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               scale_colour_distiller(palette = colval()) + 
