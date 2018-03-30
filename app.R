@@ -831,16 +831,16 @@ server <- function(input, output, clientData, session) {
         if (filetype$BioPharma == 0 & filetype$ProMex == 0) { # Only one type of plot: RoWinPro
           gtab <- filedata()
           if (linput() >= 2) { # For plotting multiple plots.
-            g <- ggplot(data = gtab, aes(x = RT, y = Mass, col = File)) + 
-              geom_point(alpha = 0.7, size = input$pch) + 
+            g <- ggplot() + 
+              geom_point(data = gtab, aes(x = RT, y = Mass, col = File), alpha = 0.7, size = input$pch) + 
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
               ylab("Protein mass (Da)") + 
               xlab("Retention time (min)")
           } else { # For simple plot.
-            g <- ggplot(data = gtab, aes(x = RT, y = Mass, col = log10(intensity))) + 
-              geom_point(alpha = 0.7, size = input$pch) + 
+            g <- ggplot() + 
+              geom_point(data = gtab, aes(x = RT, y = Mass, col = log10(intensity)), alpha = 0.7, size = input$pch) + 
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
@@ -852,8 +852,8 @@ server <- function(input, output, clientData, session) {
           gtab <- gtab[gtab$PeakStart >= (rangesx[1]-(rangesx[1]*0.01)) & gtab$PeakStop <= (rangesx[2]+(rangesx[2]*0.01)),] 
           
           if (linput() >= 2) { # For plotting multiple plots.
-            g <- ggplot(data = gtab, aes(y = Mass, x = PeakStart, yend = Mass, xend = PeakStop, col = File)) + 
-              geom_segment(alpha = 0.7, size = input$pch) + 
+            g <- ggplot() + 
+              geom_segment(data = gtab, aes(y = Mass, x = PeakStart, yend = Mass, xend = PeakStop, col = File), alpha = 0.7, size = input$pch) + 
               geom_point(aes(x = RT, y = Mass), alpha = 0) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
@@ -861,8 +861,8 @@ server <- function(input, output, clientData, session) {
               xlab("Protein mass (Da)") + 
               ylab("Retention time (min)")
           } else { # For simple plot.
-            g <- ggplot(data = gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity))) + 
-              geom_segment(alpha = 0.7, size = input$pch) +
+            g <- ggplot() + 
+              geom_segment(data = gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity)), alpha = 0.7, size = input$pch) +
               geom_point(aes(x = RT, y = Mass), alpha = 0) +
               theme_bw() + 
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
@@ -923,8 +923,8 @@ server <- function(input, output, clientData, session) {
       }
       
       if (is.null(InputFileMS())) {
-        g <- ggplot(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification)) + 
-          geom_point(alpha = 0.8, size = input$pch, col = "grey30") + 
+        g <- ggplot() + 
+          geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
           coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)  + 
           theme_bw() + 
           scale_shape_manual(values = c(16, 1)) + 
