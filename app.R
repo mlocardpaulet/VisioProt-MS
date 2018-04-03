@@ -112,49 +112,56 @@ ui <- fluidPage(
                        ),
                        checkboxInput("TestModeCheck", "Using test mode (to test the app. whithout input file-s)", FALSE), # to switch from user data to test mode
                        # Modifying output when passing in test mode:
-                       conditionalPanel(
-                         condition="input.TestModeCheck==true",
-                         actionButton("TestFile1", "Single test file"),
-                         actionButton("TestFile2", "Multiple test files")
+                       conditionalPanel(condition="input.TestModeCheck==true",
+                                        actionButton("TestFile1", "Single test file"),
+                                        actionButton("TestFile2", "Multiple test files")
                        )
       ),
       
       # Part 2:
       conditionalPanel(condition="input.MSModeCheck== 'MS2'", 
-                       fileInput("fileMS2", "Select input file for MS:",  
-                                 accept = c(
-                                   "text/csv",
-                                   "text/comma-separated-values,text/plain",
-                                   ".csv",
-                                   ".txt",
-                                   ".ms1ft"),
-                                 multiple = F
+                       checkboxInput("MS2TestModeCheck", "Using test mode (to test the app. whithout input file-s)", FALSE), # to switch from user data to test mode
+                       # Modifying output when passing in test mode:
+                       conditionalPanel(condition = "input.MS2TestModeCheck==true",
+                                        tags$span(style="color:red", "You are in test mode. Uncheck to exit."),
+                                        br()
                        ),
-                       radioButtons("PDPFModeCheck", "Origin of the MS2 files:",
-                                    c("BioPharma Finder" = 'PD',
-                                      "MSPathFinder" = 'PF'),
-                                    selected = 'PD'
-                       ),
-                       conditionalPanel(condition = "input.PDPFModeCheck== 'PD'", 
-                                        fileInput("MS2file", "Choose MS2 File:", 
+                       conditionalPanel(condition = "input.MS2TestModeCheck==false",
+                                        fileInput("fileMS2", "Select input file for MS:",  
                                                   accept = c(
                                                     "text/csv",
                                                     "text/comma-separated-values,text/plain",
-                                                    ".txt")
+                                                    ".csv",
+                                                    ".txt",
+                                                    ".ms1ft"),
+                                                  multiple = F
                                         ),
-                                        fileInput("PSMfile", "Choose PSM File:", 
-                                                  accept = c(
-                                                    "text/csv",
-                                                    "text/comma-separated-values,text/plain",
-                                                    ".txt")
-                                        )
-                       ),
-                       conditionalPanel(condition = "input.PDPFModeCheck== 'PF'", 
-                                        fileInput("MS2filePF", "Choose IcTarget or IcTda File from MSPathFinder:", 
-                                                  accept = c(
-                                                    "text/csv",
-                                                    "text/comma-separated-values,text/plain",
-                                                    ".tsv")
+                                        radioButtons("PDPFModeCheck", "Origin of the MS2 files:",
+                                                     c("BioPharma Finder" = 'PD',
+                                                       "MSPathFinder" = 'PF'),
+                                                     selected = 'PD'
+                                        ),
+                                        conditionalPanel(condition = "input.PDPFModeCheck== 'PD'", 
+                                                         fileInput("MS2file", "Choose MS2 File:", 
+                                                                   accept = c(
+                                                                     "text/csv",
+                                                                     "text/comma-separated-values,text/plain",
+                                                                     ".txt")
+                                                         ),
+                                                         fileInput("PSMfile", "Choose PSM File:", 
+                                                                   accept = c(
+                                                                     "text/csv",
+                                                                     "text/comma-separated-values,text/plain",
+                                                                     ".txt")
+                                                         )
+                                        ),
+                                        conditionalPanel(condition = "input.PDPFModeCheck== 'PF'", 
+                                                         fileInput("MS2filePF", "Choose IcTarget or IcTda File from MSPathFinder:", 
+                                                                   accept = c(
+                                                                     "text/csv",
+                                                                     "text/comma-separated-values,text/plain",
+                                                                     ".tsv")
+                                                         )
                                         )
                        ),
                        selectInput("SelectProt", "Select the ID to highlight:", 
@@ -177,10 +184,6 @@ ui <- fluidPage(
       numericInput("IntensityThresh", label = "Plotting threshold\n(Percentage of plotted data points in the MS file):", value = 20, min = 0, max = 100, step = 1),
       # Information regarding how to zoom (depends on the plotting type):
       htmlOutput("ZoomParam"),
-      
-      # For debugging:
-      #textOutput("hello"),
-      
       br(),
       actionButton("DeZoom", "Unzoom one step", style='padding:8px; font-size:150%'),
       actionButton("TotalDeZoom", "Total unzoom", style='padding:8px; font-size:150%'),
@@ -281,7 +284,7 @@ server <- function(input, output, clientData, session) {
   observeEvent(input$fileMS, {
     ranges$x <- NULL
     ranges$y <- NULL
-    if (input$MSModeCheck == "MS" & !is.null(input$fileMS) & input$TestModeCheck == FALSE) {
+    if (input$MSModeCheck == "MS" & !is.null(input$fileMS) & input$TestModeCheck == FALSE & input$MS2TestModeCheck == FALSE) {
       InputFileMS(input$fileMS)
     } else {
       InputFileMS(NULL)
@@ -324,7 +327,7 @@ server <- function(input, output, clientData, session) {
   linput <- reactiveVal()
   
   # Test files input:
-  testfileinput <- reactiveVal(0) # 0: no test file; 1: single file; 2: multiple file
+  testfileinput <- reactiveVal(0) # 0: no test file; 1: single file; 2: multiple file; 3: MS2 mode test.
   
   filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0, ProMex = 0) # Number of files of each type. Bruker files fall into the "RoWinPro" category once recognised and opened properly.
   
@@ -352,6 +355,22 @@ server <- function(input, output, clientData, session) {
     filetype$BioPharma <- 0
     filetype$ProMex <- 0
     colval("Set1")
+    InputFileMS(NULL)
+    InputFilesMS2(NULL)
+    InputFilesMS2PF(NULL)
+  })
+  
+  observeEvent(input$MS2TestModeCheck, {
+    ranges$x <- NULL
+    ranges$y <- NULL
+    if (input$MS2TestModeCheck == TRUE) {
+      linput(1)
+      testfileinput(3)
+      filetype$RoWinPro <- 1
+      filetype$BioPharma <- 0
+      filetype$ProMex <- 0
+      colval("Spectral")
+    }
     InputFileMS(NULL)
     InputFilesMS2(NULL)
     InputFilesMS2PF(NULL)
@@ -401,6 +420,21 @@ server <- function(input, output, clientData, session) {
     testfileinput(0)
     ranges$x <- NULL
     ranges$y <- NULL
+  })
+  
+  # Remove plot when getting out of MS2 test mode.
+  observeEvent(input$MS2TestModeCheck, {
+    if (input$MS2TestModeCheck==FALSE) {
+      InputFileMS(NULL)
+      InputFilesMS2(NULL)
+      InputFilesMS2PF(NULL)
+      testfileinput(0)
+      updateSelectInput(session, "SelectProt",
+                        "Select the ID to highlight:",
+                        c(""))
+      ranges$x <- NULL
+      ranges$y <- NULL
+    }
   })
   
   # Remove plot when getting out of MS or MS2 mode.
@@ -482,7 +516,7 @@ server <- function(input, output, clientData, session) {
     #This function is repsonsible for loading in the selected file
     if (testfileinput() == 0) { # no input test file
       validate(
-        need(input$TestModeCheck==FALSE, "Uncheck test mode before loading a MS file.")
+        need((input$TestModeCheck==FALSE & input$MSModeCheck == "MS") | (input$MS2TestModeCheck == FALSE & input$MSModeCheck == "MS2"), "Uncheck test mode before loading a MS file.")
       )
       if (is.null(InputFileMS())) {
         # User has not uploaded a file yet
@@ -521,7 +555,7 @@ server <- function(input, output, clientData, session) {
       names(lfiles) <- c("test data")
       return(lfiles)
       testfileinput(0)
-    } else { # Multiple file tests
+    } else if (testfileinput() == 2) { # Multiple file tests
       infile <- list.files("files/Multiple/", pattern = ".csv", full.names = T)
       lfiles <- list()
       for(i in 1:length(infile)){
@@ -531,21 +565,34 @@ server <- function(input, output, clientData, session) {
       names(lfiles) <- c("test data 1", "test data 2", "test data 3", "test data 4")
       return(lfiles)   
       testfileinput(0)
+    } else if (testfileinput() == 3) { # Test file mode MS2
+      infile <- list.files("files/MS2/", pattern = ".csv", full.names = T)
+      lfiles <- list()
+      for(i in 1){
+        lfiles[[i]] <- read.table(infile[i], sep = "\t", header = F)
+      }
+      names(lfiles) <- c("test data")
+      return(lfiles)
     }
   })
   
   filedataMS2 <- reactive({
-    if (is.null(InputFilesMS2())) {
+    if (is.null(InputFilesMS2()) & testfileinput() != 3) {
       # User has not uploaded a file yet
       return(NULL)
     } else {
-      PSM <- read.table(InputFilesMS2()$PSMfile$datapath, sep = "\t", header = T)
-      MS2 <- read.table(InputFilesMS2()$MS2file$datapath, sep = "\t", header = T)
-      head(PSM)
-      head(MS2)
-      validate(
-        need(sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1, "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectrumInfo.txt file from BioPharma Finder (in the \"MS2 File\" field.\n- The corresponding PSMs.txt file (in the \"PSM File\" field).")
-      )
+      if (testfileinput() == 3) {
+        infileMS2 <- list.files("files/MS2/", pattern = "MSMS", full.names = T)[[1]]
+        infilePSM <- list.files("files/MS2/", pattern = "PSM", full.names = T)[[1]]
+        PSM <- read.table(infilePSM, sep = "\t", header = T)
+        MS2 <- read.table(infileMS2, sep = "\t", header = T)
+      } else {
+        PSM <- read.table(InputFilesMS2()$PSMfile$datapath, sep = "\t", header = T)
+        MS2 <- read.table(InputFilesMS2()$MS2file$datapath, sep = "\t", header = T)
+        validate(
+          need(sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1, "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectrumInfo.txt file from BioPharma Finder (in the \"MS2 File\" field.\n- The corresponding PSMs.txt file (in the \"PSM File\" field).")
+        )
+      }
     }
     return(list("MS2file" = MS2, "PSMfile" = PSM))
   })
@@ -798,8 +845,8 @@ server <- function(input, output, clientData, session) {
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
-              xlab("Protein mass (Da)") + 
-              ylab("Retention time (min)")
+              ylab("Protein mass (Da)") + 
+              xlab("Retention time (min)")
           } else {
             g <- ggplot() + 
               geom_segment(data = gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity)), alpha = 0.7, size = input$pch) +
@@ -807,8 +854,8 @@ server <- function(input, output, clientData, session) {
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
-              xlab("Protein mass (Da)") + 
-              ylab("Retention time (min)")
+              ylab("Protein mass (Da)") + 
+              xlab("Retention time (min)")
           }
         } else { # several types of input format
           gtabRWP <- RBindList(filedata()[ftype()=="RoWinPro" | ftype()=="Bruker"])
@@ -827,8 +874,8 @@ server <- function(input, output, clientData, session) {
             theme_bw() + 
             scale_colour_brewer(palette = colval()) + 
             geom_point(data = gtabRWP, aes(y = Mass, x = RT, col = File)) + 
-            xlab("Protein mass (Da)") + 
-            ylab("Retention time (min)")
+            ylab("Protein mass (Da)") + 
+            xlab("Retention time (min)")
         }
       }
       if (is.null(filedataMS2()) & is.null(filedataMS2PF())) {
@@ -836,7 +883,7 @@ server <- function(input, output, clientData, session) {
       } else { # MS2 files loaded
         # When in MS2 mode: overlay of the MS2 values:
         if (input$MSModeCheck == "MS2" & (!is.null(filedataMS2()) | !is.null(filedataMS2PF()))) {
-          if (input$PDPFModeCheck == "PD") {
+          if (input$PDPFModeCheck == "PD" | testfileinput() == 3) {
             PSM <- filedataMS2()$PSM
             MS2 <- filedataMS2()$MS2
             PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$First.Scan)
@@ -862,7 +909,7 @@ server <- function(input, output, clientData, session) {
             }
             names(gtabMS2)[names(gtabMS2)=="Master.Protein.Descriptions"] <- "Protein.Descriptions"
             
-            if (is.null(InputFileMS()) | input$MSTrace == FALSE) { # No MS trace
+            if (is.null(filedata0()) | input$MSTrace == FALSE) { # No MS trace
               g <- ggplot() + 
                 geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
                 coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)  + 
