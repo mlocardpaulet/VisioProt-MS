@@ -96,9 +96,9 @@ ui <- fluidPage(
   # Control side bar:
   sidebarLayout( 
     sidebarPanel( 
+      
       # Conditional panels:
       # Part 1:
-      #########
       conditionalPanel(condition="input.MSModeCheck== 'MS'",
                        # File selection:
                        fileInput("fileMS", "Select input file(s):",  
@@ -118,10 +118,8 @@ ui <- fluidPage(
                          actionButton("TestFile2", "Multiple test files")
                        )
       ),
-      ########
-      #########
+
       # Part 2:
-      #########
       conditionalPanel(condition="input.MSModeCheck== 'MS2'", 
                        fileInput("fileMS2", "Select input file for MS:",  
                                  accept = c(
@@ -304,7 +302,7 @@ server <- function(input, output, clientData, session) {
   #####################
   InputFilesMS2 <- reactiveVal(NULL) # For BioPharma input
   observeEvent(c(input$MS2file, input$PSMfile), {
-    if (input$MSModeCheck == "MS2" & !is.null(input$MS2file)) {
+    if (input$MSModeCheck == "MS2" & !is.null(input$MS2file) & !is.null(input$PSMfile)) {
         InputFilesMS2(list("MS2file" = input$MS2file, "PSMfile" = input$PSMfile))
     } else {
       InputFilesMS2(NULL)
@@ -314,6 +312,8 @@ server <- function(input, output, clientData, session) {
   observeEvent(c(input$MS2filePF), {
     if (input$MSModeCheck == "MS2" & !is.null(input$MS2filePF)) {
       InputFilesMS2PF(input$MS2filePF)
+    } else {
+      InputFilesMS2PF(NULL)
     }
   })
   
@@ -341,6 +341,7 @@ server <- function(input, output, clientData, session) {
     colval("Spectral")
     InputFileMS(NULL)
     InputFilesMS2(NULL)
+    InputFilesMS2PF(NULL)
   })
   
   observeEvent(input$TestFile2, {
@@ -354,6 +355,7 @@ server <- function(input, output, clientData, session) {
     colval("Set1")
     InputFileMS(NULL)
     InputFilesMS2(NULL)
+    InputFilesMS2PF(NULL)
   })
   
   # When uploading an MS file in MS mode:
@@ -483,14 +485,14 @@ server <- function(input, output, clientData, session) {
         lfiles <- list()
         for(i in 1:nrow(InputFileMS)){
           if (ftype()[i] == "BioPharma") { # If the file is from Thermo BioPharma
-            if (!grepl("Protein Name", readLines(InputFileMS[i, 'datapath'])[1])) { # No IDs
+            #if (!grepl("Protein Name", readLines(InputFileMS[i, 'datapath'])[1])) { # No IDs
+            #  lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = "\t", header = T)
+            #  lfiles[[i]] <- lfiles[[i]][,c("Apex.RT", "Monoisotopic.Mass", "Sum.Intensity", "Start.Time..min.", "Stop.Time..min.")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
+            #}
+            #if (grepl("Protein Name", readLines(InputFileMS[i, 'datapath'])[1])) { # IDs
               lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = "\t", header = T)
               lfiles[[i]] <- lfiles[[i]][,c("Apex.RT", "Monoisotopic.Mass", "Sum.Intensity", "Start.Time..min.", "Stop.Time..min.")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
-            }
-            if (grepl("Protein Name", readLines(InputFileMS[i, 'datapath'])[1])) { # IDs
-              lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = "\t", header = T)
-              lfiles[[i]] <- lfiles[[i]][,c("Apex.RT", "Monoisotopic.Mass", "Sum.Intensity", "Start.Time..min.", "Stop.Time..min.")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
-            }
+            #}
             
           } else if (ftype()[i] == "RoWinPro")  { # RoWinPro output
             lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = "\t", header = F)
@@ -526,18 +528,21 @@ server <- function(input, output, clientData, session) {
       return(lfiles)   
       testfileinput(0)
     }
+    #print(str(lfiles))
   })
   
   filedataMS2 <- reactive({
-    validate(
-      need(!is.null(InputFilesMS2), "Input a MS2 file and a PSM file for overlaying identification data.")
-    )
+    #validate(
+    #  need(!is.null(InputFilesMS2), "Input a MS2 file and a PSM file for overlaying identification data.")
+    #)
     if (is.null(InputFilesMS2())) {
       # User has not uploaded a file yet
       return(NULL)
     } else {
       PSM <- read.table(InputFilesMS2()$PSMfile$datapath, sep = "\t", header = T)
       MS2 <- read.table(InputFilesMS2()$MS2file$datapath, sep = "\t", header = T)
+      head(PSM)
+      head(MS2)
       validate(
         need(sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1, "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectrumInfo.txt file from BioPharma Finder (in the \"MS2 File\" field.\n- The corresponding PSMs.txt file (in the \"PSM File\" field).")
       )
@@ -547,19 +552,20 @@ server <- function(input, output, clientData, session) {
   
   filedataMS2PF <- reactiveVal(NULL)
   observeEvent(c(input$MS2filePF, input$fileMS2), {
-    if (input$PDPFModeCheck == 'PF') {
-      #validate(
-      #  need(!is.null(filedata()), "You need to upload the associated MS file to plot MS2 results from MSPathFinder."
-      #  )
-      #)
-      if (!is.null(filedata())) {
-        MS2PF <- read.table(InputFilesMS2PF()$datapath, sep = "\t", header = F, comment.char = "#", skip = 1)
-        #  validate(
-        #    need(grepl("IcT", InputFilesMS2PF()$datapath), "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- The \"IcTarget\" or \"IcTda\" output file from MSPathFinder associated with the deconvoluted MS masses uploaded as \"input file for MS\".")
-        #  )
-        #  validate(
-        #    need(length(unique(MS2PF[,8]))==length(unique(MS2PF[,15])), "Several IDs have been attributed to the same MS feature.")
-        #  )
+    if (input$MSModeCheck == "MS" & input$PDPFModeCheck == "PF") {
+      validate(
+        need(!is.null(filedata0()), "You need to upload the associated MS file to plot MS2 results from MSPathFinder."
+        )
+      )
+ #     if (!is.null(filedata0())) {
+        print(InputFilesMS2PF)
+        MS2PF <- read.table(InputFilesMS2PF()$datapath, sep = "\t", header = F, skip = 1)
+          validate(
+            need(grepl("IcT", InputFilesMS2PF()$datapath, fixed = T), "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- The \"IcTarget\" or \"IcTda\" output file from MSPathFinder associated with the deconvoluted MS masses uploaded as \"input file for MS\".")
+          )
+          validate(
+            need(length(unique(MS2PF[,8]))==length(unique(MS2PF[,15])), "Several IDs have been attributed to the same MS feature.")
+          )
         names(MS2PF)[8] <- "Master.Protein.Descriptions"
         names(MS2PF)[15] <- "FeatureID"
         MS <- read.table(InputFileMS()$datapath, sep = "\t", header = T)
@@ -571,7 +577,7 @@ server <- function(input, output, clientData, session) {
         names(MS2PF)[4] <- "PeakStart"
         names(MS2PF)[5] <- "PeakStop"
         filedataMS2PF(MS2PF) 
-      }
+ #     }
     }
   })
   
@@ -813,7 +819,7 @@ server <- function(input, output, clientData, session) {
             xlab("Protein mass (Da)") + 
             ylab("Retention time (min)")
         }
-        if (is.null(InputFilesMS2()) & is.null(InputFilesMS2PF)) {
+        if (is.null(InputFilesMS2()) & is.null(InputFilesMS2PF())) {
           return(g)
         }
         # When in MS2 mode: overlay of the MS2 values:
@@ -976,7 +982,7 @@ server <- function(input, output, clientData, session) {
             xlab("Protein mass (Da)") + 
             ylab("Retention time (min)")
         }
-        if (is.null(InputFilesMS2()) & is.null(InputFilesMS2PF)) {
+        if (is.null(InputFilesMS2()) & is.null(InputFilesMS2PF())) {
           return(g)
         }
     # When in MS2 mode: overlay of the MS2 values:
