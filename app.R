@@ -997,7 +997,8 @@ server <- function(input, output, clientData, session) {
         layout(height = 800, dragmode = "select") %>%
         config(displayModeBar = F) %>%
         layout(xaxis=list(fixedrange=TRUE)) %>%
-        layout(yaxis=list(fixedrange=TRUE))
+        layout(yaxis=list(fixedrange=TRUE)) %>%
+        layout(margin = list(l = 110, b = 40, r = 10, t = 10, pad = -2))
     } else {
       plotly_empty()
     }
