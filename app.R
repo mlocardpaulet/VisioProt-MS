@@ -635,6 +635,7 @@ server <- function(input, output, clientData, session) {
       names(MS2PF)[2] <- "Mass"
       names(MS2PF)[3] <- "intensity"
       names(MS2PF)[4] <- "PeakStart"
+      names(MS2PF)[5] <- "PeakStop"
       return(MS2PF) 
     }
   })
@@ -820,7 +821,8 @@ server <- function(input, output, clientData, session) {
           gtab <- filedata()
           if (linput() >= 2) { # if comparing several plots
             g <- ggplot() + 
-              geom_point(data = gtab, aes(x = RT, y = Mass, col = File), alpha = 0.7, size = input$pch) +
+              geom_point(data = gtab, aes(x = RT, y = Mass, col = File, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", File)), alpha = 0.7, size = input$pch) +
+              geom_text(parse = TRUE) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
@@ -828,7 +830,7 @@ server <- function(input, output, clientData, session) {
               xlab("Retention time (min)")
           } else { # only one plot, no overlay
             g <- ggplot() + 
-              geom_point(data = gtab, aes(x = RT, y = Mass, col = log10(intensity)), alpha = 0.7, size = input$pch) +
+              geom_point(data = gtab, aes(x = RT, y = Mass, col = log10(intensity), text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity)), alpha = 0.7, size = input$pch) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
@@ -840,8 +842,8 @@ server <- function(input, output, clientData, session) {
           gtab <- gtab[gtab$PeakStart >= (rangesx[1]-(rangesx[1]*0.01)) & gtab$PeakStop <= (rangesx[2]+(rangesx[2]*0.01)),]
           if (linput() >= 2) { # if comparing several plots
             g <- ggplot() + 
-              geom_segment(data = gtab, aes(y = Mass, x = PeakStart, col = File, yend = Mass, xend = PeakStop), alpha = 0.7, size = input$pch) + 
-              geom_point(data = gtab, aes(x = RT, y = Mass), alpha = 0) +
+              geom_segment(data = gtab, aes(y = Mass, x = PeakStart, col = File, yend = Mass, xend = PeakStop, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", File)), alpha = 0.7, size = input$pch) + 
+              geom_point(data = gtab, aes(x = RT, y = Mass, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", File), col = File), alpha = 0) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
@@ -849,8 +851,8 @@ server <- function(input, output, clientData, session) {
               xlab("Retention time (min)")
           } else {
             g <- ggplot() + 
-              geom_segment(data = gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity)), alpha = 0.7, size = input$pch) +
-              geom_point(data = gtab, aes(x = RT, y = Mass), alpha = 0) +
+              geom_segment(data = gtab, aes(x = PeakStart, y = Mass, xend = PeakStop, yend = Mass, col = log10(intensity), text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity)), alpha = 0.7, size = input$pch) +
+              geom_point(data = gtab, aes(x = RT, y = Mass, col = log10(intensity), text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity)), alpha = 0) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
@@ -868,12 +870,12 @@ server <- function(input, output, clientData, session) {
           rangesyB <- c(min(rangesyB[1], rangesx[1]), max(rangesyB[2], rangesx[2]))
           
           g <- ggplot() + 
-            geom_segment(data = gtabBP, aes(x = PeakStart, y = Mass, col = File, xend = PeakStop, yend = Mass), size = input$pch, alpha = 0.7) + 
-            geom_point(data = gtabBP, aes(x = RT, y = Mass), alpha = 0) +
+            geom_segment(data = gtabBP, aes(x = PeakStart, y = Mass, col = File, xend = PeakStop, yend = Mass, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", File)), size = input$pch, alpha = 0.7) + 
+            geom_point(data = gtabBP, aes(x = RT, y = Mass, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", File), col = File), alpha = 0) +
             coord_cartesian(xlim = rangesyB, ylim = rangesy, expand = TRUE) + 
             theme_bw() + 
             scale_colour_brewer(palette = colval()) + 
-            geom_point(data = gtabRWP, aes(y = Mass, x = RT, col = File)) + 
+            geom_point(data = gtabRWP, aes(y = Mass, x = RT, col = File, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", File))) + 
             ylab("Protein mass (Da)") + 
             xlab("Retention time (min)")
         }
@@ -911,7 +913,7 @@ server <- function(input, output, clientData, session) {
             
             if (is.null(filedata0()) | input$MSTrace == FALSE) { # No MS trace
               g <- ggplot() + 
-                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
+                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30") + 
                 coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)  + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
@@ -919,19 +921,19 @@ server <- function(input, output, clientData, session) {
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
                   scale_fill_manual(values = getPalette(length(vec))) 
               }
             } else if (input$MSTrace == TRUE) { # Overlay on MS trace
               g <- g +
-                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
+                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30") + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Protein mass (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             }
@@ -948,29 +950,30 @@ server <- function(input, output, clientData, session) {
               vec <- vec[!is.na(vec)]
               getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
             }
+            print(head(gtabMS2))
             
             if (input$MSTrace == TRUE) {
               g <- g +
-                geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
+                geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30") + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Protein mass (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             } else {
               g <- ggplot() +
-                geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification), alpha = 0.8, size = input$pch, col = "grey30") + 
+                geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30") + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Protein mass (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             }
@@ -990,7 +993,7 @@ server <- function(input, output, clientData, session) {
       need(!is.null(plotInput1()), '')
     )
     if (input$DataPoints == TRUE) {
-      p <- ggplotly(plotInput1()) %>%
+      p <- ggplotly(plotInput1(), tooltip = "text") %>%
         layout(height = 800, dragmode = "select") %>%
         config(displayModeBar = F) %>%
         layout(xaxis=list(fixedrange=TRUE)) %>%
