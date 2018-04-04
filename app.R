@@ -895,7 +895,7 @@ server <- function(input, output, clientData, session) {
             MS2$Master.Protein.Descriptions <- PSM$Master.Protein.Descriptions[match(MS2$ID, PSM$ID)]
             # Plot:
             gtabMS2 <- MS2[,c("RT.in.min", "Precursor.MHplus.in.Da", "Precursor.Intensity", "Master.Protein.Descriptions")]
-            gtabMS2$Identification <- ifelse(!is.na(gtabMS2$Master.Protein.Descriptions), "IDed", "NoID")
+            gtabMS2$Identification <- ifelse(!is.na(gtabMS2$Master.Protein.Descriptions), "IDed", "Not IDed")
             
             # Action button:
             if (input$HideMSMS == TRUE) {
@@ -940,7 +940,7 @@ server <- function(input, output, clientData, session) {
             }
           } else { # MSPathFinder
             gtabMS2 <- filedataMS2PF()
-            gtabMS2$Identification <- ifelse(!is.na(as.character(gtabMS2$Protein.Descriptions)), "IDed", "NoID")
+            gtabMS2$Identification <- ifelse(!is.na(as.character(gtabMS2$Protein.Descriptions)), "IDed", "Not IDed")
             # Action button:
             if (input$HideMSMS == TRUE) {
               gtabMS2 <- gtabMS2[gtabMS2$Identification == "IDed",]
@@ -951,7 +951,6 @@ server <- function(input, output, clientData, session) {
               vec <- vec[!is.na(vec)]
               getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
             }
-            print(head(gtabMS2))
             
             if (input$MSTrace == TRUE) {
               g <- g +
@@ -1003,6 +1002,24 @@ server <- function(input, output, clientData, session) {
         layout(yaxis=list(fixedrange=TRUE)) %>%
         layout(margin = list(l = 110, b = 40, r = 10, t = 10, pad = -2))  %>% 
         layout(title = "")
+      # Remove IDed and Not IDed from the legend:
+      if (input$MSModeCheck == "MS2") {
+        if (input$MSTrace & !is.null(filedata()) & filetype$RoWinPro > 0) {
+          if (input$HideMSMS) {
+            p <- style(p, showlegend = FALSE, traces = 2)
+          } else {
+            p <- style(p, showlegend = FALSE, traces = 2:3)
+          }
+        } else {
+          print(plotly_build(g)$data)
+          if (input$HideMSMS) {
+            p <- style(p, showlegend = FALSE, traces = 1)
+          } else {
+            p <- style(p, showlegend = FALSE, traces = 1:2)
+          }
+        }
+      }
+      p
     } else {
       plotly_empty()
     }
