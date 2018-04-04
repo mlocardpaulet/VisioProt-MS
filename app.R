@@ -913,13 +913,12 @@ server <- function(input, output, clientData, session) {
             
             if (is.null(filedata0()) | input$MSTrace == FALSE) { # No MS trace
               g <- ggplot() + 
-                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30") + 
+                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)  + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Protein mass (Da)") + 
-                xlab("Retention time (min)") +
-                guides(shape = FALSE)
+                xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
                   geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
@@ -927,12 +926,11 @@ server <- function(input, output, clientData, session) {
               }
             } else if (input$MSTrace == TRUE) { # Overlay on MS trace
               g <- g +
-                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30") + 
+                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Protein mass (Da)") + 
-                xlab("Retention time (min)") +
-                guides(shape = FALSE)
+                xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
                   geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
@@ -956,12 +954,11 @@ server <- function(input, output, clientData, session) {
             
             if (input$MSTrace == TRUE) {
               g <- g +
-                geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30") + 
+                geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Protein mass (Da)") + 
-                xlab("Retention time (min)") +
-                guides(shape = FALSE)
+                xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
                   geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
@@ -969,12 +966,11 @@ server <- function(input, output, clientData, session) {
               }
             } else {
               g <- ggplot() +
-                geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30") + 
+                geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Protein mass (Da)") + 
-                xlab("Retention time (min)") +
-                guides(shape = FALSE)
+                xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
                   geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
@@ -1002,7 +998,8 @@ server <- function(input, output, clientData, session) {
         config(displayModeBar = F) %>%
         layout(xaxis=list(fixedrange=TRUE)) %>%
         layout(yaxis=list(fixedrange=TRUE)) %>%
-        layout(margin = list(l = 110, b = 40, r = 10, t = 10, pad = -2))
+        layout(margin = list(l = 110, b = 40, r = 10, t = 10, pad = -2)) %>%
+        layout(legend = list(x = 100, y = 0.5))
     } else {
       plotly_empty()
     }
