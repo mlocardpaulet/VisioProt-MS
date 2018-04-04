@@ -918,7 +918,8 @@ server <- function(input, output, clientData, session) {
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Protein mass (Da)") + 
-                xlab("Retention time (min)")
+                xlab("Retention time (min)") +
+                guides(shape = FALSE)
               if (!is.null(input$SelectProt)) {
                 g <- g + 
                   geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
@@ -930,7 +931,8 @@ server <- function(input, output, clientData, session) {
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Protein mass (Da)") + 
-                xlab("Retention time (min)")
+                xlab("Retention time (min)") +
+                guides(shape = FALSE)
               if (!is.null(input$SelectProt)) {
                 g <- g + 
                   geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
@@ -958,7 +960,8 @@ server <- function(input, output, clientData, session) {
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Protein mass (Da)") + 
-                xlab("Retention time (min)")
+                xlab("Retention time (min)") +
+                guides(shape = FALSE)
               if (!is.null(input$SelectProt)) {
                 g <- g + 
                   geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
@@ -970,7 +973,8 @@ server <- function(input, output, clientData, session) {
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Protein mass (Da)") + 
-                xlab("Retention time (min)")
+                xlab("Retention time (min)") +
+                guides(shape = FALSE)
               if (!is.null(input$SelectProt)) {
                 g <- g + 
                   geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
