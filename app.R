@@ -827,7 +827,8 @@ server <- function(input, output, clientData, session) {
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
               ylab("Protein mass (Da)") + 
-              xlab("Retention time (min)")
+              xlab("Retention time (min)")+
+              theme(legend.title=element_blank())
           } else { # only one plot, no overlay
             g <- ggplot() + 
               geom_point(data = gtab, aes(x = RT, y = Mass, col = log10(intensity), text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity)), alpha = 0.7, size = input$pch) +
@@ -993,13 +994,15 @@ server <- function(input, output, clientData, session) {
       need(!is.null(plotInput1()), '')
     )
     if (input$DataPoints == TRUE) {
-      p <- ggplotly(plotInput1(), tooltip = "text") %>%
-        layout(height = 800, dragmode = "select") %>%
+      g <- plotInput1() + 
+        theme(legend.title = element_blank())
+      p <- ggplotly(g, tooltip = "text", height = 800) %>%
+        layout(dragmode = "select") %>%
         config(displayModeBar = F) %>%
         layout(xaxis=list(fixedrange=TRUE)) %>%
         layout(yaxis=list(fixedrange=TRUE)) %>%
-        layout(margin = list(l = 110, b = 40, r = 10, t = 10, pad = -2)) %>%
-        layout(legend = list(x = 100, y = 0.5))
+        layout(margin = list(l = 110, b = 40, r = 10, t = 10, pad = -2))  %>% 
+        layout(title = "")
     } else {
       plotly_empty()
     }
