@@ -420,6 +420,9 @@ server <- function(input, output, clientData, session) {
     testfileinput(0)
     ranges$x <- NULL
     ranges$y <- NULL
+    filetype$RoWinPro <- 0
+    filetype$BioPharma <- 0
+    filetype$ProMex <- 0
   })
   
   # Remove plot when getting out of MS2 test mode.
