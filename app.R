@@ -19,6 +19,9 @@ library(plotly)
 library(dplyr)
 library(RColorBrewer)
 
+library(shinyBS)
+
+
 ############################################################################
 # Functions:
 ############################################################################
@@ -92,6 +95,8 @@ ui <- fluidPage(
                  "MS2 overlay" = 'MS2'),
                selected = 'MS'
   ), # to switch from MS data to MS2 mode
+  bsTooltip("MSModeCheck", "Choose between plotting MS data only or overlaying results of Top-Down searches.",
+            "right"),
   
   # Control side bar:
   sidebarLayout( 
