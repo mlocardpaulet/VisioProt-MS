@@ -93,7 +93,8 @@ ui <- fluidPage(
   radioButtons("MSModeCheck", "MS mode:",
                c("MS data only" = 'MS',
                  "MS2 overlay" = 'MS2'),
-               selected = 'MS'
+               selected = 'MS',
+               inline = TRUE
   ), # to switch from MS data to MS2 mode
   bsTooltip("MSModeCheck", 
             "Choose between plotting MS data only or overlaying results of Top-Down searches",
@@ -122,7 +123,7 @@ ui <- fluidPage(
                                        "Upload a file with deconvoluted MS data for plotting",
                                        placement = "right")
                          )),
-                       checkboxInput("TestModeCheck", "Using test mode (to test the app. whithout input file-s)", FALSE),
+                       checkboxInput("TestModeCheck", "Using test mode", FALSE),
                        bsTooltip("TestModeCheck", 
                                  "Check to test the application without uploading any file. Then click on a button to upload a single test file or several for overlay",
                                  "right"), # to switch from user data to test mode
@@ -164,7 +165,8 @@ ui <- fluidPage(
                                         radioButtons("PDPFModeCheck", "Origin of the MS2 files:",
                                                      c("Proteome Discoverer" = 'PD',
                                                        "MSPathFinder" = 'PF'),
-                                                     selected = 'PD'
+                                                     selected = 'PD',
+                                                     inline = TRUE
                                         ),
                                         bsTooltip("PDPFModeCheck", 
                                                   "Choose the software utilized for analysing of the top-down data",
@@ -215,7 +217,7 @@ ui <- fluidPage(
                                                     NULL,
                                                     multiple = TRUE),
                                         bsTooltip("SelectProt", 
-                                                  "Select among the identified proteins which ones to highlight in the plot.",
+                                                  "Select among the identified proteins which one(s) to highlight on the plot",
                                                   "right"),
                                         checkboxInput("HideMSMS", "Hide MSMS withouth ID", FALSE),
                                         bsTooltip("HideMSMS", 
@@ -229,28 +231,33 @@ ui <- fluidPage(
       ),
       checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
       bsTooltip("DataPoints", 
-                "Switch to \"data\" mode: data appears on hovering.",
-                "right"),
-      # Selection of the colour scales. This depends on the number of input files:
-      # With updateSelectInput:
-      selectInput("colourscale", "Colour scale:", # for continuous scales
-                  c("Spectral" = "Spectral",
-                    "Red/yellow/blue" = "RdYlBu", 
-                    "Red/yellow/green" = "RdYlGn",
-                    "yellow to red" = "YlOrRd"
-                  )),
-      bsTooltip("colourscale", 
-                "Select the colour scale for the MS data.",
+                "Switch to \"data\" mode: data appears on hovering",
                 "right"),
       # Parameters for the plot:
-      numericInput("pch", label = "Point size:", value = 1, min = 0.1, step = 0.1, max = 10),
-      bsTooltip("pch", 
-                "Define the size of the point (from 0.1 to 10).",
-                "right"),
-      numericInput("IntensityThresh", label = "Plotting threshold\n(Percentage of plotted data points in the MS file):", value = 20, min = 0, max = 100, step = 1),
-      bsTooltip("IntensityThresh", 
-                "Define the percentage of highest intensity features of the MS data to display.",
-                "right"),
+      fluidRow(
+        column(5,
+               # Selection of the colour scales. This depends on the number of input files:
+               # With updateSelectInput:
+               selectInput("colourscale", "Colour scale:", # for continuous scales
+                           c("Spectral" = "Spectral",
+                             "Red/yellow/blue" = "RdYlBu", 
+                             "Red/yellow/green" = "RdYlGn",
+                             "yellow to red" = "YlOrRd"
+                           )),
+               bsTooltip("colourscale", 
+                         "Select the colour scale for the MS data.",
+                         "right")),
+        column(3,
+               numericInput("pch", label = "Point size:", value = 1, min = 0.1, step = 0.1, max = 10),
+               bsTooltip("pch", 
+                         "Define the size of the point (from 0.1 to 10).",
+                         "right")),
+        column(4,
+               numericInput("IntensityThresh", label = "Threshold:", value = 20, min = 0, max = 100, step = 1),
+               bsTooltip("IntensityThresh", 
+                         "Define the percentage of highest intensity features of the MS data to display.",
+                         "right"))
+      ),
       # Information regarding how to zoom (depends on the plotting type):
       htmlOutput("ZoomParam"),
       br(),
@@ -645,6 +652,7 @@ server <- function(input, output, clientData, session) {
       testfileinput(0)
     } else if (testfileinput() == 3) { # Test file mode MS2
       infile <- list.files("files/MS2/", pattern = ".csv", full.names = T)
+      print(infile)
       lfiles <- list()
       for(i in 1){
         lfiles[[i]] <- read.table(infile[i], sep = "\t", header = F)
