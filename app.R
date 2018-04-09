@@ -212,22 +212,22 @@ ui <- fluidPage(
                                                                          "Upload the corresponding IcTarget or IcTda file from MSPathFinder",
                                                                          placement = "right")
                                                            ))
-                                        ),
-                                        selectInput("SelectProt", "Select the ID to highlight:", 
-                                                    NULL,
-                                                    multiple = TRUE),
-                                        bsTooltip("SelectProt", 
-                                                  "Select among the identified proteins which one(s) to highlight on the plot",
-                                                  "right"),
-                                        checkboxInput("HideMSMS", "Hide MSMS withouth ID", FALSE),
-                                        bsTooltip("HideMSMS", 
-                                                  "Removes the MSMS spectra from the top-down analysis that were not matched to a protein.",
-                                                  "right"),
-                                        checkboxInput("MSTrace", "Display the MS trace", TRUE),
-                                        bsTooltip("MSTrace", 
-                                                  "Adds the MS trace to the plot.",
-                                                  "right")
-                       )
+                                        )
+                       ),
+                       selectInput("SelectProt", "Select the ID to highlight:", 
+                                   NULL,
+                                   multiple = TRUE),
+                       bsTooltip("SelectProt", 
+                                 "Select among the identified proteins which one(s) to highlight on the plot",
+                                 "right"),
+                       checkboxInput("HideMSMS", "Hide MSMS withouth ID", FALSE),
+                       bsTooltip("HideMSMS", 
+                                 "Removes the MSMS spectra from the top-down analysis that were not matched to a protein.",
+                                 "right"),
+                       checkboxInput("MSTrace", "Display the MS trace", TRUE),
+                       bsTooltip("MSTrace", 
+                                 "Adds the MS trace to the plot.",
+                                 "right")
       ),
       checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
       bsTooltip("DataPoints", 
@@ -357,6 +357,13 @@ server <- function(input, output, clientData, session) {
       }
     }
   })
+  
+  # Number of selected proteins for dimentions of exported plot:
+  nProtSelection <- reactiveVal(0)
+  observeEvent(input$SelectProt, {
+    nProtSelection <- length(input$SelectProt)
+  })
+  
   
   ###################
   # When input MS file:
@@ -1165,7 +1172,7 @@ server <- function(input, output, clientData, session) {
     },
     content = function(file) {
       device <- function(..., width, height) {
-        grDevices::pdf(..., width = 10, height = 8)
+        grDevices::pdf(..., width = 10, height = 8+(nProtSelection()/10))
       }
       ggsave(file, plot = plotInput1(), device = device)
     })
@@ -1180,7 +1187,7 @@ server <- function(input, output, clientData, session) {
     },
     content = function(file) {
       device <- function(..., width, height) {
-        grDevices::png(..., width = 1000, height = 800, res = 120)
+        grDevices::png(..., width = 1000, height = 800+(nProtSelection()*10), res = 120)
       }
       ggsave(file, plot = plotInput1(), device = device)
     })
@@ -1195,7 +1202,7 @@ server <- function(input, output, clientData, session) {
     },
     content = function(file) {
       device <- function(..., width, height) {
-        grDevices::svg(..., width = 10, height = 8)
+        grDevices::svg(..., width = 10, height = 8+(nProtSelection()/10))
       }
       ggsave(file, plot = plotInput1(), device = device)
     })
