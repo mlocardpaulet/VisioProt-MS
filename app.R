@@ -101,7 +101,7 @@ ui <- fluidPage(
             "right"),
   # Control side bar:
   sidebarLayout( 
-    sidebarPanel( 
+    sidebarPanel(width = 4,
       # Conditional panels:
       # Part 1:
       conditionalPanel(condition="input.MSModeCheck== 'MS'",
@@ -279,7 +279,7 @@ ui <- fluidPage(
       a("Help", href="Help/VisioProtHelp.html", target="blank") # Access to help
     ),
     # Main panel for plotting (output different in function of the checkbox DataPoints):
-    mainPanel(
+    mainPanel(width = 8,
       uiOutput("plotUI")
     )
   ),
@@ -361,7 +361,7 @@ server <- function(input, output, clientData, session) {
   # Number of selected proteins for dimentions of exported plot:
   nProtSelection <- reactiveVal(0)
   observeEvent(input$SelectProt, {
-    nProtSelection <- length(input$SelectProt)
+    nProtSelection(length(input$SelectProt))
   })
   
   
@@ -659,7 +659,6 @@ server <- function(input, output, clientData, session) {
       testfileinput(0)
     } else if (testfileinput() == 3) { # Test file mode MS2
       infile <- list.files("files/MS2/", pattern = ".csv", full.names = T)
-      print(infile)
       lfiles <- list()
       for(i in 1){
         lfiles[[i]] <- read.table(infile[i], sep = "\t", header = F)
@@ -1086,15 +1085,22 @@ server <- function(input, output, clientData, session) {
       need(!is.null(plotInput1()), '')
     )
     if (input$DataPoints == TRUE) {
-      g <- plotInput1() + 
-        theme(legend.title = element_blank())
+      if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
+        g <- plotInput1() + 
+          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom") +
+          guides(fill=guide_legend(ncol=2))
+      } else {
+        g <- plotInput1()+ 
+          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+      }
       p <- ggplotly(g, tooltip = "text", height = 800) %>%
-        layout(dragmode = "select") %>%
+        layout(dragmode = "select", 
+               xaxis=list(fixedrange=TRUE),
+               yaxis=list(fixedrange=TRUE),
+               title = "") %>%
         config(displayModeBar = F) %>%
-        layout(xaxis=list(fixedrange=TRUE)) %>%
-        layout(yaxis=list(fixedrange=TRUE)) %>%
-        layout(margin = list(l = 110, b = 40, r = 10, t = 10, pad = -2))  %>% 
-        layout(title = "")
+        layout(margin = list(l = 110, b = 40, r = 3, t = 10, pad = -2))  %>% 
+        layout(legend = list(x = 0.25, y = -0.25))
       # Remove IDed and Not IDed from the legend:
       if (input$MSModeCheck == "MS2") {
         if (input$MSTrace & !is.null(filedata()) & filetype$RoWinPro > 0) {
@@ -1104,7 +1110,6 @@ server <- function(input, output, clientData, session) {
             p <- style(p, showlegend = FALSE, traces = 2:3)
           }
         } else {
-          print(plotly_build(g)$data)
           if (input$HideMSMS) {
             p <- style(p, showlegend = FALSE, traces = 1)
           } else {
@@ -1124,7 +1129,14 @@ server <- function(input, output, clientData, session) {
       need(!is.null(plotInput1()), '')
     )
     if (input$DataPoints == F) {
-      plotInput1()  
+      if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
+        plotInput1() + 
+          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom") +
+          guides(fill=guide_legend(ncol=2))
+      } else {
+        plotInput1()+ 
+          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+      }
     }
   }, height = 800)
   
@@ -1171,13 +1183,32 @@ server <- function(input, output, clientData, session) {
       }
     },
     content = function(file) {
-      device <- function(..., width, height) {
-        grDevices::pdf(..., width = 10, height = 8+(nProtSelection()/10))
+      h <- 8
+      if (nProtSelection() > 0) {
+        if (!is.null(filedata0()) & input$MSTrace) {
+          h <- h + 1.6
+        }
+        if (nProtSelection() > 5) {
+          h <- h+(nProtSelection()*0.152)
+        }
+      } else if (linput() > 1) {
+        h <- h+(linput()*0.152)
       }
-      ggsave(file, plot = plotInput1(), device = device)
+      device <- function(..., width, height) {
+        grDevices::pdf(..., width = 10, height = h)
+      }
+      if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
+        g <- plotInput1() + 
+          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom")
+      } else {
+        g <- plotInput1()+ 
+          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+      }
+      ggsave(file, plot = g, device = device)
     })
   # png output:
   output$Download1 <- downloadHandler(
+    
     filename = function(){
       if (is.null(InputFilesMS2())) {
         paste0("VisioProt-MS_", substring(InputFileMS()$name, first = 1, last = (nchar(InputFileMS()$name)-4)), "_", Sys.Date(), ".png")
@@ -1186,10 +1217,28 @@ server <- function(input, output, clientData, session) {
       }
     },
     content = function(file) {
-      device <- function(..., width, height) {
-        grDevices::png(..., width = 1000, height = 800+(nProtSelection()*10), res = 120)
+      h <- 800
+      if (nProtSelection() > 0) {
+        if (!is.null(filedata0()) & input$MSTrace) {
+          h <- h + 160
+        }
+        if (nProtSelection() > 5) {
+          h <- h+(nProtSelection()*15.2)
+        }
+      } else if (linput() > 1) {
+        h <- h+(linput()*15.2)
       }
-      ggsave(file, plot = plotInput1(), device = device)
+      device <- function(..., width, height) {
+        grDevices::png(..., width = 1000, height = h, res = 120)
+      }
+      if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
+        g <- plotInput1() + 
+          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom")
+      } else {
+        g <- plotInput1()+ 
+          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+      }
+      ggsave(file, plot = g, device = device)
     })
   # svg output:
   output$Download2 <- downloadHandler(
@@ -1201,10 +1250,28 @@ server <- function(input, output, clientData, session) {
       }
     },
     content = function(file) {
-      device <- function(..., width, height) {
-        grDevices::svg(..., width = 10, height = 8+(nProtSelection()/10))
+      h <- 8
+      if (nProtSelection() > 0) {
+        if (!is.null(filedata0()) & input$MSTrace) {
+          h <- h + 1.6
+        }
+        if (nProtSelection() > 5) {
+          h <- h+(nProtSelection()*0.152)
+        }
+      } else if (linput() > 1) {
+        h <- h+(linput()*0.152)
       }
-      ggsave(file, plot = plotInput1(), device = device)
+      device <- function(..., width, height) {
+        grDevices::svg(..., width = 10, height = h)
+      }
+      if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
+        g <- plotInput1() + 
+          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom")
+      } else {
+        g <- plotInput1()+ 
+          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+      }
+      ggsave(file, plot = g, device = device)
     })
   ############
   
