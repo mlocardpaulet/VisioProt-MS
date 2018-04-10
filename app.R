@@ -18,8 +18,9 @@ library(ggplot2)
 library(plotly)
 library(dplyr)
 library(RColorBrewer)
-
 library(shinyBS)
+
+library(data.table)
 
 
 ############################################################################
@@ -59,7 +60,7 @@ RenameBioPharma <- function(tab) {
   vec[2] <- "Mass"
   vec[1] <- "RT"
   vec[4] <- "PeakStart"
-  vec[5] <- "PeakStop"
+  vec[5] <- "PeakStop" 
   names(tab) <- vec
   return(tab)
 }
@@ -79,6 +80,40 @@ ThresholdCleaning <- function(l, threshold) {
   }
   names(l1) <- names(l)
   return(l1)
+}
+
+TopPicMS1Parsing <- function(fname) {
+  # Return a table in the style of RoWinPro tables for use in VisioProt.
+  # fname is the path to the file to parse.
+  allData <- readLines(fname)
+  allData <- allData[-(1:11)]
+  rep_ions_entries = which(allData=="BEGIN IONS")
+  IDs <- gsub("ID=", "", allData[rep_ions_entries+1])
+  SCANs <- gsub("SCANS=", "", allData[rep_ions_entries+2])
+  RT <- gsub("RETENTION_TIME=", "", allData[rep_ions_entries+3])
+  removeEntries <- c(rep_ions_entries,rep_ions_entries+1,rep_ions_entries+2,rep_ions_entries+3,rep_ions_entries[2:length(rep_ions_entries)]-1,rep_ions_entries[2:length(rep_ions_entries)]-2, length(allData)-1, length(allData))
+  ions_per_scan <- diff(rep_ions_entries) - 6
+  ions_per_scan <- c(ions_per_scan, (length(allData) - rep_ions_entries[length(rep_ions_entries)] - 5))
+  dat <- fread(paste(allData[-removeEntries], collapse = "\n"), sep = "\t")
+  class(dat) <- "data.frame"
+  names(dat) <- c("Mass", "intensity", "charge")
+  dat$ID <- rep(IDs, ions_per_scan)
+  dat$SCANs <- rep(SCANs, ions_per_scan)
+  dat$RT <- rep(RT, ions_per_scan)
+  dat <- dat[,c(6,1,2,3,5)] 
+  # Keep only the ions >= 5+
+  dat <- dat[dat[,4]>=5,]
+  # Change from seconds to minutes:
+  dat[,1] <- as.numeric(dat[,1])/60
+  # Keep only the 100% highest intensities:
+  dat <- dat[order(dat[,3], decreasing = T),]
+  dat <- dat[!is.na(dat[,3]),]
+  thresh <- floor(1 * nrow(dat))
+  dat <- dat[c(1:thresh),]
+  # For the functions to come (thresholding, renaming):
+  dat[,4] <- rep(NA, nrow(dat))
+  dat[,5] <- rep(NA, nrow(dat))
+  return(dat)
 }
 ############################################################################
 
@@ -114,7 +149,8 @@ ui <- fluidPage(
                                             "text/comma-separated-values,text/plain",
                                             ".txt",
                                             ".ms1ft",
-                                            ".csv"),
+                                            ".csv",
+                                            ".msalign"),
                                           multiple = T,
                                           width = "100%"
                                 )),
@@ -153,7 +189,8 @@ ui <- fluidPage(
                                                              "text/comma-separated-values,text/plain",
                                                              ".csv",
                                                              ".txt",
-                                                             ".ms1ft"),
+                                                             ".ms1ft",
+                                                             ".msalign"),
                                                            multiple = F,
                                                            width = "100%"
                                                  )),
@@ -364,7 +401,6 @@ server <- function(input, output, clientData, session) {
     nProtSelection(length(input$SelectProt))
   })
   
-  
   ###################
   # When input MS file:
   #####################
@@ -418,7 +454,7 @@ server <- function(input, output, clientData, session) {
   # Test files input:
   testfileinput <- reactiveVal(0) # 0: no test file; 1: single file; 2: multiple file; 3: MS2 mode test.
   
-  filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0, ProMex = 0) # Number of files of each type. Bruker files fall into the "RoWinPro" category once recognised and opened properly.
+  filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0, ProMex = 0) # Number of files of each type. Bruker and TopPic files fall into the "RoWinPro" category once recognised and opened/parsed properly.
   
   # test mode / test files:
   observeEvent(input$TestFile1, {
@@ -473,18 +509,20 @@ server <- function(input, output, clientData, session) {
       l <- list()
       l2 <- list()
       l3 <- list()
+      l4 <- list()
       for(i in 1:nrow(InputFileMS)){
         l[[i]] <- grepl("Monoisotopic Mass", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T)  # TRUE if Biopharma
         l2[[i]] <- substr(readLines(InputFileMS[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
         l3[[i]] <- grepl(".ms1ft", InputFileMS$name[i], fixed = T) # TRUE if ProMex
+        l4[[i]] <- grepl("ms1.msalign", InputFileMS$name[i], fixed = T) # TRUE if TopPic
       }
       l <- unlist(l)
       l2 <- unlist(l2)
       l3 <- unlist(l3)
-      filetype$RoWinPro <- sum(l==F & l3==F) # Bruker files too
+      l4 <- unlist(l4)
+      filetype$RoWinPro <- sum(l==F & l3==F) # Bruker and TopPic files too
       filetype$BioPharma <- sum(l==T & l2==F & l3==F)
       filetype$ProMex <- sum(l==F & l2==F & l3==T)
-      #linput(max(as.numeric(table(l))))
       linput(max(as.numeric(c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex))))
       if (linput() == 1 & length(c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex)[c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex)!=0])>1) {
         linput(sum(as.numeric((c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex)))))
@@ -557,18 +595,22 @@ server <- function(input, output, clientData, session) {
       InputFileMS <- InputFileMS()
       l <- list()
       for(i in 1:nrow(InputFileMS)){
+        validationText <- "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".\n- TopPic export of the deconvoluted MS data: \"_ms1.msalign\" files."
+        
         val <- grepl("Monoisotopic Mass", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) # T for BioPharma, F for RoWinPro
         val2 <- substr(readLines(InputFileMS[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
         val3 <- grepl(".ms1ft", InputFileMS$name[i]) # TRUE if ProMex
+        val4 <- grepl("ms1.msalign", InputFileMS$name[i]) # TRUE if TopPic
         val <- ifelse(val,  "BioPharma", "RoWinPro")
         val[val2] <- "Bruker"
         val[val3] <- "ProMex"
+        val[val4] <- "TopPic"
         # Check it is the correct input format:
         if (val == "BioPharma") { # Find "Apex RT" in BioPharma files
           if (!grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1])) {
             val <- "DoNotApply"
             validate(
-              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".")
+              need(val!="DoNotApply", validationText)
             )
           }
         }
@@ -576,7 +618,7 @@ server <- function(input, output, clientData, session) {
           if (length(as.numeric(gregexpr("\t", readLines(InputFileMS[i, 'datapath'])[1])[[1]]))!=3) {
             val <- "DoNotApply"
             validate(
-              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".")
+              need(val!="DoNotApply", validationText)
             )
           }
         }
@@ -584,7 +626,7 @@ server <- function(input, output, clientData, session) {
           if (!(!grepl(",", readLines(InputFileMS[i, 'datapath'])[1]) & grepl(" RT", readLines(InputFileMS[i, 'datapath'])[2]))) {
             val <- "DoNotApply"
             validate(
-              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".")
+              need(val!="DoNotApply", validationText)
             )
           }
         }
@@ -592,7 +634,15 @@ server <- function(input, output, clientData, session) {
           if (!grepl("MinElutionTime", readLines(InputFileMS[i, 'datapath'])[1])) {
             val <- "DoNotApply"
             validate(
-              need(val!="DoNotApply", "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".")
+              need(val!="DoNotApply", validationText)
+            )
+          }
+        }
+        if (val == "TopPic") { # Four columns in RoWinPro files
+          if (!grepl("#TopFD", readLines(InputFileMS[i, 'datapath'])[1], fixed = T)) {
+            val <- "DoNotApply"
+            validate(
+              need(val!="DoNotApply", validationText)
             )
           }
         }
@@ -633,6 +683,8 @@ server <- function(input, output, clientData, session) {
           } else if (ftype()[i] == "ProMex")  { # ProMex output
             lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = "\t", header = T)
             lfiles[[i]] <- cbind("RT" = (lfiles[[i]]$MinElutionTime + ((lfiles[[i]]$MaxElutionTime - lfiles[[i]]$MinElutionTime)/2)), lfiles[[i]][,c("MonoMass", "ApexIntensity", "MinElutionTime", "MaxElutionTime")]) # Map the columns as in RoWinPro format, but with start and stop instead of all the points of the peak. I add a first column with the middle of the peak for zooming (plotly_select needs points, not ranges).
+          } else if (ftype()[i] == "TopPic")  { # TopPic output
+            lfiles[[i]] <- TopPicMS1Parsing(InputFileMS[i,'datapath'])
           }
         }
         names(lfiles) <- InputFileMS()$name
@@ -868,18 +920,18 @@ server <- function(input, output, clientData, session) {
         rangesy <- range(filedata()[,2])
       } else { # two tables because two types of files
         x1 <- sapply(filedata(), function(z) {
-          z$RT
+          as.numeric(z$RT)
         })
         x2 <- sapply(filedata(), function(z) {
-          z$PeakStart
+          as.numeric(z$PeakStart)
         })
         x3 <- sapply(filedata(), function(z) {
-          z$PeakStop
+          as.numeric(z$PeakStop)
         })
         x <- c(unlist(x1), unlist(x2), unlist(x3))
         x <- x[!is.na(x)]
         y <- sapply(filedata(), function(z) {
-          z$Mass
+          as.numeric(z$Mass)
         })
         rangesx <- range(x)
         rangesy <- range(y)
@@ -953,7 +1005,7 @@ server <- function(input, output, clientData, session) {
               xlab("Retention time (min)")
           }
         } else { # several types of input format
-          gtabRWP <- RBindList(filedata()[ftype()=="RoWinPro" | ftype()=="Bruker"])
+          gtabRWP <- RBindList(filedata()[ftype()=="RoWinPro" | ftype()=="Bruker" | ftype()=="TopPic"])
           gtabBP <- RBindList(filedata()[ftype()=="BioPharma" | ftype()=="ProMex"])
           
           gtabBP <- gtabBP[gtabBP$PeakStart >= (rangesx[1]-(rangesx[1]*0.01)) & gtabBP$PeakStop <= (rangesx[2]+(rangesx[2]*0.01)),]
@@ -1075,7 +1127,6 @@ server <- function(input, output, clientData, session) {
       }
       
     }
-    #}
   }
   
   
