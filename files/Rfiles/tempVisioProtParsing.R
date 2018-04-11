@@ -44,7 +44,7 @@ TopPicMS1Parsing <- function(fname) {
 
 # fname <- "//GANDALF/mloca/RRelatedWork/VisioProt-MS/files/test/TopPic2/OFJMX160905_30.raw_ms2.msalign"
 
-TopPicMS1Parsing <- function(fname) {
+TopPicMS2Parsing <- function(fname) {
   # Return a table in the style of RoWinPro tables for use in VisioProt.
   # fname is the path to the file to parse.
   allData <- readLines(fname)
@@ -60,10 +60,5 @@ TopPicMS1Parsing <- function(fname) {
   dat <- data.frame("RT"=RT, "Mass"=Mass, "intensity"=intensity, "Scan"=SCANs, stringsAsFactors = F)
   # Change from seconds to minutes:
   dat[,1] <- as.numeric(dat[,1])/60
-  # Keep only the 30% highest intensities:
-  #dat <- dat[order(dat[,3], decreasing = T),]
-  #dat <- dat[!is.na(dat[,3]),]
-  #thresh <- floor(0.3 * nrow(dat))
-  #dat <- dat[c(1:thresh),]
   return(dat)
 }

@@ -115,6 +115,25 @@ TopPicMS1Parsing <- function(fname) {
   dat[,5] <- rep(NA, nrow(dat))
   return(dat)
 }
+
+TopPicMS2Parsing <- function(fname) {
+  # Return a table in the style of RoWinPro tables for use in VisioProt.
+  # fname is the path to the file to parse.
+  allData <- readLines(fname)
+  allData <- allData[-(1:11)]
+  rep_ions_entries = which(allData=="BEGIN IONS")
+  IDs <- gsub("ID=", "", allData[rep_ions_entries+1])
+  SCANs <- gsub("SCANS=", "", allData[rep_ions_entries+2])
+  RT <- gsub("RETENTION_TIME=", "", allData[rep_ions_entries+3])
+  Mass <- gsub("PRECURSOR_MASS=", "", allData[rep_ions_entries+9])
+  intensity <- gsub("PRECURSOR_INTENSITY=", "", allData[rep_ions_entries+10])
+  charge <- gsub("PRECURSOR_CHARGE=", "", allData[rep_ions_entries+8])
+  
+  dat <- data.frame("RT"=RT, "Mass"=Mass, "intensity"=intensity, "Scan"=SCANs, stringsAsFactors = F)
+  # Change from seconds to minutes:
+  dat[,1] <- as.numeric(dat[,1])/60
+  return(dat)
+}
 ############################################################################
 
 # App:
@@ -137,187 +156,215 @@ ui <- fluidPage(
   # Control side bar:
   sidebarLayout( 
     sidebarPanel(width = 4,
-      # Conditional panels:
-      # Part 1:
-      conditionalPanel(condition="input.MSModeCheck== 'MS'",
-                       # File selection:
-                       fluidRow(
-                         column(11,
-                                fileInput("fileMS", "Select input file(s):",  
-                                          accept = c(
-                                            "text/csv",
-                                            "text/comma-separated-values,text/plain",
-                                            ".txt",
-                                            ".ms1ft",
-                                            ".csv",
-                                            ".msalign"),
-                                          multiple = T,
-                                          width = "100%"
-                                )),
-                         column(1, style = "margin-top: 30px",
-                                tipify(bsButton("bsfileMS", "?", style = "default", size = "extra-small"),
-                                       "Upload a file with deconvoluted MS data for plotting",
-                                       placement = "right")
-                         )),
-                       checkboxInput("TestModeCheck", "Using test mode", FALSE),
-                       bsTooltip("TestModeCheck", 
-                                 "Check to test the application without uploading any file. Then click on a button to upload a single test file or several for overlay",
-                                 "right"), # to switch from user data to test mode
-                       # Modifying output when passing in test mode:
-                       conditionalPanel(condition="input.TestModeCheck==true",
-                                        actionButton("TestFile1", "Single test file"),
-                                        actionButton("TestFile2", "Multiple test files")
-                       )
-      ),
-      # Part 2:
-      conditionalPanel(condition="input.MSModeCheck== 'MS2'", 
-                       checkboxInput("MS2TestModeCheck", "Using test mode", FALSE),
-                       bsTooltip("MS2TestModeCheck", 
-                                 "Check to test the application without uploading any file",
-                                 "right"), # to switch from user data to test mode
-                       # Modifying output when passing in test mode:
-                       conditionalPanel(condition = "input.MS2TestModeCheck==true",
-                                        tags$span(style="color:red", "You are in test mode. Uncheck to exit."),
-                                        br()
-                       ),
-                       conditionalPanel(condition = "input.MS2TestModeCheck==false",
-                                        fluidRow(
-                                          column(11,
-                                                 fileInput("fileMS2", "Select input file for MS:",  
-                                                           accept = c(
-                                                             "text/csv",
-                                                             "text/comma-separated-values,text/plain",
-                                                             ".csv",
-                                                             ".txt",
-                                                             ".ms1ft",
-                                                             ".msalign"),
-                                                           multiple = F,
-                                                           width = "100%"
-                                                 )),
-                                          column(1, style = "margin-top: 30px", 
-                                                 tipify(bsButton(inputId = "fileMS2", label = "?", style = "default", size = "extra-small"),
-                                                        title = "Upload a file with deconvoluted MS data for plotting with the corresponding results of a top-down analysis",
-                                                        options = NULL)
-                                          )),
-                                        radioButtons("PDPFModeCheck", "Origin of the MS2 files:",
-                                                     c("Proteome Discoverer" = 'PD',
-                                                       "MSPathFinder" = 'PF'),
-                                                     selected = 'PD',
-                                                     inline = TRUE
-                                        ),
-                                        bsTooltip("PDPFModeCheck", 
-                                                  "Choose the software utilized for analysing of the top-down data",
-                                                  "right"),
-                                        conditionalPanel(condition = "input.PDPFModeCheck== 'PD'", 
-                                                         fluidRow(
-                                                           column(11,
-                                                                  fileInput("MS2file", "Choose MS2 File:", 
-                                                                            accept = c(
-                                                                              "text/csv",
-                                                                              "text/comma-separated-values,text/plain",
-                                                                              ".txt")
-                                                                  )),
-                                                           column(1, style = "margin-top: 30px",
-                                                                  tipify(bsButton("MS2file", "?", style = "default", size = "extra-small"),
-                                                                         "Upload the corresponding MSMS file from Proteome Discoverer",
-                                                                         placement = "right")
-                                                           )),
-                                                         fluidRow(
-                                                           column(11,
-                                                                  fileInput("PSMfile", "Choose PSM File:", 
-                                                                            accept = c(
-                                                                              "text/csv",
-                                                                              "text/comma-separated-values,text/plain",
-                                                                              ".txt")
-                                                                  )),
-                                                           column(1, style = "margin-top: 30px",
-                                                                  tipify(bsButton("PSMfile", "?", style = "default", size = "extra-small"),
-                                                                         "Upload the corresponding PSMs file from Proteome Discoverer",
-                                                                         placement = "right")
-                                                           ))),
-                                        conditionalPanel(condition = "input.PDPFModeCheck== 'PF'", 
-                                                         fluidRow(
-                                                           column(11,
-                                                                  fileInput("MS2filePF", "Choose IcTarget or IcTda File from MSPathFinder:", 
-                                                                            accept = c(
-                                                                              "text/csv",
-                                                                              "text/comma-separated-values,text/plain",
-                                                                              ".tsv")
-                                                                  )),
-                                                           column(1, style = "margin-top: 30px",
-                                                                  tipify(bsButton("MS2filePF", "?", style = "default", size = "extra-small"),
-                                                                         "Upload the corresponding IcTarget or IcTda file from MSPathFinder",
-                                                                         placement = "right")
-                                                           ))
-                                        )
-                       ),
-                       selectInput("SelectProt", "Select the ID to highlight:", 
-                                   NULL,
-                                   multiple = TRUE),
-                       bsTooltip("SelectProt", 
-                                 "Select among the identified proteins which one(s) to highlight on the plot",
-                                 "right"),
-                       checkboxInput("HideMSMS", "Hide MSMS withouth ID", FALSE),
-                       bsTooltip("HideMSMS", 
-                                 "Removes the MSMS spectra from the top-down analysis that were not matched to a protein.",
-                                 "right"),
-                       checkboxInput("MSTrace", "Display the MS trace", TRUE),
-                       bsTooltip("MSTrace", 
-                                 "Adds the MS trace to the plot.",
-                                 "right")
-      ),
-      checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
-      bsTooltip("DataPoints", 
-                "Switch to \"data\" mode: data appears on hovering",
-                "right"),
-      # Parameters for the plot:
-      fluidRow(
-        column(5,
-               # Selection of the colour scales. This depends on the number of input files:
-               # With updateSelectInput:
-               selectInput("colourscale", "Colour scale:", # for continuous scales
-                           c("Spectral" = "Spectral",
-                             "Red/yellow/blue" = "RdYlBu", 
-                             "Red/yellow/green" = "RdYlGn",
-                             "yellow to red" = "YlOrRd"
-                           )),
-               bsTooltip("colourscale", 
-                         "Select the colour scale for the MS data.",
-                         "right")),
-        column(3,
-               numericInput("pch", label = "Point size:", value = 1, min = 0.1, step = 0.1, max = 10),
-               bsTooltip("pch", 
-                         "Define the size of the point (from 0.1 to 10).",
-                         "right")),
-        column(4,
-               numericInput("IntensityThresh", label = "Threshold:", value = 20, min = 0, max = 100, step = 1),
-               bsTooltip("IntensityThresh", 
-                         "Define the percentage of highest intensity features of the MS data to display.",
-                         "right"))
-      ),
-      # Information regarding how to zoom (depends on the plotting type):
-      htmlOutput("ZoomParam"),
-      br(),
-      actionButton("DeZoom", "Unzoom one step", style='padding:8px; font-size:150%'),
-      bsTooltip("DeZoom", 
-                "Unzoom to previous window (only once).",
-                "right"),
-      actionButton("TotalDeZoom", "Total unzoom", style='padding:8px; font-size:150%'),
-      bsTooltip("TotalDeZoom", 
-                "Total unzoom.",
-                "right"),
-      br(),
-      br(),
-      # Buttons for download:
-      downloadButton("Download", "Download .pdf"),
-      downloadButton("Download1", "Download .png"),
-      downloadButton("Download2", "Download .svg"),
-      br(),
-      a("Help", href="Help/VisioProtHelp.html", target="blank") # Access to help
+                 # Conditional panels:
+                 # Part 1:
+                 conditionalPanel(condition="input.MSModeCheck== 'MS'",
+                                  # File selection:
+                                  fluidRow(
+                                    column(11,
+                                           fileInput("fileMS", "Select input file(s):",  
+                                                     accept = c(
+                                                       "text/csv",
+                                                       "text/comma-separated-values,text/plain",
+                                                       ".txt",
+                                                       ".ms1ft",
+                                                       ".csv",
+                                                       ".msalign"),
+                                                     multiple = T,
+                                                     width = "100%"
+                                           )),
+                                    column(1, style = "margin-top: 30px",
+                                           tipify(bsButton("bsfileMS", "?", style = "default", size = "extra-small"),
+                                                  "Upload a file with deconvoluted MS data for plotting",
+                                                  placement = "right")
+                                    )),
+                                  checkboxInput("TestModeCheck", "Using test mode", FALSE),
+                                  bsTooltip("TestModeCheck", 
+                                            "Check to test the application without uploading any file. Then click on a button to upload a single test file or several for overlay",
+                                            "right"), # to switch from user data to test mode
+                                  # Modifying output when passing in test mode:
+                                  conditionalPanel(condition="input.TestModeCheck==true",
+                                                   actionButton("TestFile1", "Single test file"),
+                                                   actionButton("TestFile2", "Multiple test files")
+                                  )
+                 ),
+                 # Part 2:
+                 conditionalPanel(condition="input.MSModeCheck== 'MS2'", 
+                                  checkboxInput("MS2TestModeCheck", "Using test mode", FALSE),
+                                  bsTooltip("MS2TestModeCheck", 
+                                            "Check to test the application without uploading any file",
+                                            "right"), # to switch from user data to test mode
+                                  # Modifying output when passing in test mode:
+                                  conditionalPanel(condition = "input.MS2TestModeCheck==true",
+                                                   tags$span(style="color:red", "You are in test mode. Uncheck to exit."),
+                                                   br()
+                                  ),
+                                  conditionalPanel(condition = "input.MS2TestModeCheck==false",
+                                                   fluidRow(
+                                                     column(11,
+                                                            fileInput("fileMS2", "Select input file for MS:",  
+                                                                      accept = c(
+                                                                        "text/csv",
+                                                                        "text/comma-separated-values,text/plain",
+                                                                        ".csv",
+                                                                        ".txt",
+                                                                        ".ms1ft",
+                                                                        ".msalign"),
+                                                                      multiple = F,
+                                                                      width = "100%"
+                                                            )),
+                                                     column(1, style = "margin-top: 30px", 
+                                                            tipify(bsButton(inputId = "fileMS2", label = "?", style = "default", size = "extra-small"),
+                                                                   title = "Upload a file with deconvoluted MS data for plotting with the corresponding results of a top-down analysis",
+                                                                   options = NULL)
+                                                     )),
+                                                   radioButtons("PDPFModeCheck", "Origin of the MS2 files:",
+                                                                c("Proteome Discoverer" = 'PD',
+                                                                  "MSPathFinder" = 'PF',
+                                                                  "TopPic" = 'TP'),
+                                                                selected = 'PD',
+                                                                inline = TRUE
+                                                   ),
+                                                   bsTooltip("PDPFModeCheck", 
+                                                             "Choose the software utilized for analysing of the top-down data",
+                                                             "right"),
+                                                   conditionalPanel(condition = "input.PDPFModeCheck== 'PD'", 
+                                                                    fluidRow(
+                                                                      column(11,
+                                                                             fileInput("MS2file", "Choose MS2 File:", 
+                                                                                       accept = c(
+                                                                                         "text/csv",
+                                                                                         "text/comma-separated-values,text/plain",
+                                                                                         ".txt")
+                                                                             )),
+                                                                      column(1, style = "margin-top: 30px",
+                                                                             tipify(bsButton("MS2file", "?", style = "default", size = "extra-small"),
+                                                                                    "Upload the corresponding MSMS file from Proteome Discoverer",
+                                                                                    placement = "right")
+                                                                      )),
+                                                                    fluidRow(
+                                                                      column(11,
+                                                                             fileInput("PSMfile", "Choose PSM File:", 
+                                                                                       accept = c(
+                                                                                         "text/csv",
+                                                                                         "text/comma-separated-values,text/plain",
+                                                                                         ".txt")
+                                                                             )),
+                                                                      column(1, style = "margin-top: 30px",
+                                                                             tipify(bsButton("PSMfile", "?", style = "default", size = "extra-small"),
+                                                                                    "Upload the corresponding PSMs file from Proteome Discoverer",
+                                                                                    placement = "right")
+                                                                      ))),
+                                                   conditionalPanel(condition = "input.PDPFModeCheck== 'PF'", 
+                                                                    fluidRow(
+                                                                      column(11,
+                                                                             fileInput("MS2filePF", "Choose IcTarget or IcTda File from MSPathFinder:", 
+                                                                                       accept = c(
+                                                                                         "text/csv",
+                                                                                         "text/comma-separated-values,text/plain",
+                                                                                         ".tsv")
+                                                                             )),
+                                                                      column(1, style = "margin-top: 30px",
+                                                                             tipify(bsButton("MS2filePF", "?", style = "default", size = "extra-small"),
+                                                                                    "Upload the corresponding IcTarget or IcTda file from MSPathFinder",
+                                                                                    placement = "right")
+                                                                      ))
+                                                   ),
+                                                   conditionalPanel(condition = "input.PDPFModeCheck== 'TP'", 
+                                                                    fluidRow(
+                                                                      column(11,
+                                                                             fileInput("MS2fileTP", "Choose MS2 File:", 
+                                                                                       accept = c(
+                                                                                         "text",
+                                                                                         "text/comma-separated-values,text/plain",
+                                                                                         ".msalign")
+                                                                             )),
+                                                                      column(1, style = "margin-top: 30px",
+                                                                             tipify(bsButton("MS2fileTP", "?", style = "default", size = "extra-small"),
+                                                                                    "Upload the corresponding \"_ms2.msalign\" file from TopPic",
+                                                                                    placement = "right")
+                                                                      )), 
+                                                                    fluidRow(
+                                                                      column(11,
+                                                                             fileInput("IDfileTP", "Choose the OUTPUT TABLE from TopPic:", 
+                                                                                       accept = c(
+                                                                                         "text",
+                                                                                         "text/comma-separated-values,text/plain",
+                                                                                         ".OUTPUT_TABLE")
+                                                                             )),
+                                                                      column(1, style = "margin-top: 30px",
+                                                                             tipify(bsButton("IDfileTP", "?", style = "default", size = "extra-small"),
+                                                                                    "Upload the corresponding \"_ms2.OUTPUT_TABLE\" file from TopPic",
+                                                                                    placement = "right")
+                                                                      )))
+                                  ),
+                                  selectInput("SelectProt", "Select the ID to highlight:", 
+                                              NULL,
+                                              multiple = TRUE),
+                                  bsTooltip("SelectProt", 
+                                            "Select among the identified proteins which one(s) to highlight on the plot",
+                                            "right"),
+                                  checkboxInput("HideMSMS", "Hide MSMS withouth ID", FALSE),
+                                  bsTooltip("HideMSMS", 
+                                            "Removes the MSMS spectra from the top-down analysis that were not matched to a protein.",
+                                            "right"),
+                                  checkboxInput("MSTrace", "Display the MS trace", TRUE),
+                                  bsTooltip("MSTrace", 
+                                            "Adds the MS trace to the plot.",
+                                            "right")
+                 ),
+                 checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
+                 bsTooltip("DataPoints", 
+                           "Switch to \"data\" mode: data appears on hovering",
+                           "right"),
+                 # Parameters for the plot:
+                 fluidRow(
+                   column(5,
+                          # Selection of the colour scales. This depends on the number of input files:
+                          # With updateSelectInput:
+                          selectInput("colourscale", "Colour scale:", # for continuous scales
+                                      c("Spectral" = "Spectral",
+                                        "Red/yellow/blue" = "RdYlBu", 
+                                        "Red/yellow/green" = "RdYlGn",
+                                        "yellow to red" = "YlOrRd"
+                                      )),
+                          bsTooltip("colourscale", 
+                                    "Select the colour scale for the MS data.",
+                                    "right")),
+                   column(3,
+                          numericInput("pch", label = "Point size:", value = 1, min = 0.1, step = 0.1, max = 10),
+                          bsTooltip("pch", 
+                                    "Define the size of the point (from 0.1 to 10).",
+                                    "right")),
+                   column(4,
+                          numericInput("IntensityThresh", label = "Threshold:", value = 20, min = 0, max = 100, step = 1),
+                          bsTooltip("IntensityThresh", 
+                                    "Define the percentage of highest intensity features of the MS data to display.",
+                                    "right"))
+                 ),
+                 # Information regarding how to zoom (depends on the plotting type):
+                 htmlOutput("ZoomParam"),
+                 br(),
+                 actionButton("DeZoom", "Unzoom one step", style='padding:8px; font-size:150%'),
+                 bsTooltip("DeZoom", 
+                           "Unzoom to previous window (only once).",
+                           "right"),
+                 actionButton("TotalDeZoom", "Total unzoom", style='padding:8px; font-size:150%'),
+                 bsTooltip("TotalDeZoom", 
+                           "Total unzoom.",
+                           "right"),
+                 br(),
+                 br(),
+                 # Buttons for download:
+                 downloadButton("Download", "Download .pdf"),
+                 downloadButton("Download1", "Download .png"),
+                 downloadButton("Download2", "Download .svg"),
+                 br(),
+                 a("Help", href="Help/VisioProtHelp.html", target="blank") # Access to help
     ),
     # Main panel for plotting (output different in function of the checkbox DataPoints):
     mainPanel(width = 8,
-      uiOutput("plotUI")
+              uiOutput("plotUI")
     )
   ),
   # Footer
@@ -385,11 +432,19 @@ server <- function(input, output, clientData, session) {
         )
       }
     }
-    if (!is.null(filedataMS2PF)) { # PathFinder
+    if (!is.null(filedataMS2PF())) { # PathFinder
       if (length(filedataMS2PF()$Protein.Descriptions[!is.na(filedataMS2PF()$Protein.Descriptions)]) > 0) {
         updateSelectInput(session, "SelectProt",
                           "Select the ID to highlight:",
                           sort(unique(filedataMS2PF()$Protein.Descriptions[!is.na(filedataMS2PF()$Protein.Descriptions)]))
+        )
+      }
+    }
+    if (!is.null(filedataMS2TP())) { # TopPic
+      if (length(filedataMS2TP()$Protein.Descriptions[!is.na(filedataMS2TP()$Protein.Descriptions)]) > 0) {
+        updateSelectInput(session, "SelectProt",
+                          "Select the ID to highlight:",
+                          sort(unique(filedataMS2TP()$Protein.Descriptions[!is.na(filedataMS2TP()$Protein.Descriptions)]))
         )
       }
     }
@@ -441,6 +496,14 @@ server <- function(input, output, clientData, session) {
       InputFilesMS2PF(input$MS2filePF)
     } else {
       InputFilesMS2PF(NULL)
+    }
+  })
+  InputFilesMS2TP <- reactiveVal(NULL) # For TopPic input
+  observeEvent(c(input$MS2fileTP, input$IDfileTP), {
+    if (input$MSModeCheck == "MS2" & !is.null(input$MS2fileTP) & !is.null(input$IDfileTP)) {
+      InputFilesMS2TP(list("MS2file" = input$MS2fileTP, "IDfile" = input$IDfileTP))
+    } else {
+      InputFilesMS2TP(NULL)
     }
   })
   
@@ -523,9 +586,9 @@ server <- function(input, output, clientData, session) {
       filetype$RoWinPro <- sum(l==F & l3==F) # Bruker and TopPic files too
       filetype$BioPharma <- sum(l==T & l2==F & l3==F)
       filetype$ProMex <- sum(l==F & l2==F & l3==T)
-      linput(max(as.numeric(c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex))))
-      if (linput() == 1 & length(c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex)[c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex)!=0])>1) {
-        linput(sum(as.numeric((c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex)))))
+      linput(max(as.numeric(c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex, filetype$TopPic))))
+      if (linput() == 1 & length(c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex, filetype$TopPic)[c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex, filetype$TopPic)!=0])>1) {
+        linput(sum(as.numeric((c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex, filetype$TopPic)))))
       }
       if (linput() > 1) {
         colval("Set1")
@@ -732,7 +795,7 @@ server <- function(input, output, clientData, session) {
         MS2 <- read.table(infileMS2, sep = "\t", header = T)
       } else {
         PSM <- read.table(InputFilesMS2()$PSMfile$datapath, sep = "\t", header = T)
-        MS2 <- read.table(InputFilesMS2()$MS2file$datapath, sep = "\t", header = T)
+        MS2 <- read.table(InputFilesMS2()$MS2file$datapath, sep = "\t", header = T, comment.char = "#")
         validate(
           need(sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1, "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectrumInfo.txt file from BioPharma Finder (in the \"MS2 File\" field.\n- The corresponding PSMs.txt file (in the \"PSM File\" field).")
         )
@@ -781,6 +844,31 @@ server <- function(input, output, clientData, session) {
       names(MS2PF)[4] <- "PeakStart"
       names(MS2PF)[5] <- "PeakStop"
       return(MS2PF) 
+    }
+  })
+  
+  filedataMS2TP <- reactive({
+    if (is.null(InputFilesMS2TP())) {
+      return(NULL)
+    } else if (input$MSModeCheck == "MS2" & input$PDPFModeCheck == "TP")  {
+      validate(
+        need(grepl("_ms2.msalign", InputFilesMS2TP()$MS2file$name, fixed = T), "Error in file format for plotting MS2 data.\nYou have to upload the \"_ms2.msalign\" output file from TopPic associated with the \"_ms2.OUTPUT_TABLE\".")
+      )
+      validate(
+        need(grepl("_ms2.OUTPUT_TABLE", InputFilesMS2TP()$IDfile$name, fixed = T), "Error in file format for plotting ID data.\nYou have to upload the \"_ms2.OUTPUT_TABLE\" output file from TopPic associated with the deconvoluted MS2 masses uploaded as \"input file for MS2\".")
+      )
+      allData <- readLines(InputFilesMS2TP()$IDfile$datapath)
+      allData <- allData[-(1:23)]
+      allData[1] <- gsub("#", "", allData[1])
+      IDTP <- fread(paste(allData, collapse = "\n"), sep = "\t", header = T, stringsAsFactors = F)
+      class(IDTP) <- "data.frame"
+      MS2TP <- TopPicMS2Parsing(InputFilesMS2TP()$MS2file$datapath)
+      names(IDTP)[names(IDTP) == "Spectrum ID"] <- "Scan"
+      dat <- merge(MS2TP, IDTP, by = "Scan", all = T)
+      names(dat)[names(dat)=="Protein name"] <- "Protein.Descriptions"
+      dat$Mass <- as.numeric(dat$Mass)
+      dat$Identification <- ifelse(!is.na(as.character(dat$Protein.Descriptions)), "IDed", "Not IDed")
+      return(dat)
     }
   })
   
@@ -855,15 +943,24 @@ server <- function(input, output, clientData, session) {
         ranges$y <- range(y)
       }
     } else if (is.null(filedata())) { # Only MS2 data, no MS trace
-      ranges$x <- c(0, range(filedataMS2()$MS2file$RT.in.min)[2])
-      ranges$y <- range(filedataMS2()$MS2file$Precursor.MHplus.in.Da)
+      if (input$PDPFModeCheck == "PD") {
+        ranges$x <- c(0, range(filedataMS2()$MS2file$RT.in.min)[2])
+        ranges$y <- range(filedataMS2()$MS2file$Precursor.MHplus.in.Da)
+      } else { # TopPic
+        ranges$x <- c(0, range(filedataMS2TP()$MS2file$RT)[2])
+        ranges$y <- range(filedataMS2TP()$MS2file$Mass)
+      }
     } else { # Overlay of MS2 and Ms data
       if (filetype$ProMex > 0 | filetype$BioPharma > 0) {
         ranges$x <- c(0, range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,5]))[2])
-      } else {
+        ranges$y <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()[,2]))
+      } else if (input$PDPFModeCheck == "PD") {
         ranges$x <- c(0, range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,1]))[2])
+        ranges$y <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()[,2]))
+      } else if (input$PDPFModeCheck == "TP") {
+        ranges$x <- c(0, range(c(filedataMS2TP()$MS2file$RT, filedata()[,1]))[2])
+        ranges$y <- range(c(filedataMS2()$MS2file$Mass, filedata()[,2]))
       }
-      ranges$y <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()[,2]))
     }
   })
   
@@ -942,10 +1039,14 @@ server <- function(input, output, clientData, session) {
     } else { # Overlay of MS2 and MS data
       if (filetype$ProMex > 0 | filetype$BioPharma > 0) {
         rangesx <- range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,5]))
-      } else {
-        rangesx <- range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,1]))
+        rangesy <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()[,2]))
+      }  else if (input$PDPFModeCheck == "PD") {
+        ranges$x <- range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,1]))[2]
+        ranges$y <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()[,2]))
+      } else if (input$PDPFModeCheck == "TP") {
+        ranges$x <- range(c(filedataMS2TP()$MS2file$RT, filedata()[,1]))[2]
+        ranges$y <- range(c(filedataMS2()$MS2file$Mass, filedata()[,2]))
       }
-      rangesy <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()[,2]))
     }
     return(list(rangesx, rangesy))
   }
@@ -954,8 +1055,7 @@ server <- function(input, output, clientData, session) {
     validate(
       need(input$pch <= 10, "Please define a smaller size of points (max. 10).")
     )
-    #if (!is.null(linput()) | input$MSModeCheck == "MS2") {
-    if (is.null(filedata()) & is.null(filedataMS2()) & is.null(filedataMS2PF())) {
+    if (is.null(filedata()) & is.null(filedataMS2()) & is.null(filedataMS2PF()) & is.null(filedataMS2TP())) {
       return(NULL)
     } else {
       if (!is.null(linput())) {
@@ -1025,11 +1125,11 @@ server <- function(input, output, clientData, session) {
             xlab("Retention time (min)")
         }
       }
-      if (is.null(filedataMS2()) & is.null(filedataMS2PF())) {
+      if (is.null(filedataMS2()) & is.null(filedataMS2PF()) & is.null(filedataMS2TP())) {
         return(g)
       } else { # MS2 files loaded
         # When in MS2 mode: overlay of the MS2 values:
-        if (input$MSModeCheck == "MS2" & (!is.null(filedataMS2()) | !is.null(filedataMS2PF()))) {
+        if (input$MSModeCheck == "MS2" & (!is.null(filedataMS2()) | !is.null(filedataMS2PF()) | !is.null(filedataMS2TP()))) {
           if (input$PDPFModeCheck == "PD" | testfileinput() == 3) {
             PSM <- filedataMS2()$PSM
             MS2 <- filedataMS2()$MS2
@@ -1082,7 +1182,7 @@ server <- function(input, output, clientData, session) {
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             }
-          } else { # MSPathFinder
+          } else if (input$PDPFModeCheck == "PF") { # MSPathFinder
             gtabMS2 <- filedataMS2PF()
             gtabMS2$Identification <- ifelse(!is.na(as.character(gtabMS2$Protein.Descriptions)), "IDed", "Not IDed")
             # Action button:
@@ -1121,11 +1221,48 @@ server <- function(input, output, clientData, session) {
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             }
+          } else if (input$PDPFModeCheck == "TP") { # TopPic
+            gtabMS2 <- filedataMS2TP()
+            # Action button:
+            if (input$HideMSMS == TRUE) {
+              gtabMS2 <- gtabMS2[gtabMS2$Identification == "IDed",]
+            }
+            gtabMS2 <- gtabMS2[order(gtabMS2$Identification, decreasing = T),]    
+            if (!is.null(input$SelectProt)) {
+              vec <- unique(gtabMS2$Protein.Descriptions[gtabMS2$Protein.Descriptions %in% input$SelectProt])
+              vec <- vec[!is.na(vec)]
+              getPalette <- colorRampPalette(brewer.pal(9, "Set1"))
+            }
+            if (is.null(filedata0()) | input$MSTrace == FALSE) { # No MS trace
+              g <- ggplot() + 
+                geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
+                coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)  + 
+                theme_bw() + 
+                scale_shape_manual(values = c(16, 1)) + 
+                ylab("Protein mass (Da)") + 
+                xlab("Retention time (min)")
+              if (!is.null(input$SelectProt)) {
+                g <- g + 
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  scale_fill_manual(values = getPalette(length(vec))) 
+              }
+            } else if (input$MSTrace == TRUE) { # Overlay on MS trace
+              g <- g +
+                geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
+                theme_bw() + 
+                scale_shape_manual(values = c(16, 1)) + 
+                ylab("Protein mass (Da)") + 
+                xlab("Retention time (min)")
+              if (!is.null(input$SelectProt)) {
+                g <- g + 
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  scale_fill_manual(values = getPalette(length(vec)))
+              }
+            }
           }
           return(g)
         }
       }
-      
     }
   }
   
@@ -1136,10 +1273,15 @@ server <- function(input, output, clientData, session) {
       need(!is.null(plotInput1()), '')
     )
     if (input$DataPoints == TRUE) {
-      if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
-        g <- plotInput1() + 
-          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom") +
-          guides(fill=guide_legend(ncol=2))
+      if (!is.null(linput())) {
+        if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
+          g <- plotInput1() + 
+            theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom") +
+            guides(fill=guide_legend(ncol=2))
+        } else {
+          g <- plotInput1()+ 
+            theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+        }
       } else {
         g <- plotInput1()+ 
           theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
@@ -1180,10 +1322,15 @@ server <- function(input, output, clientData, session) {
       need(!is.null(plotInput1()), '')
     )
     if (input$DataPoints == F) {
-      if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
-        plotInput1() + 
-          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom") +
-          guides(fill=guide_legend(ncol=2))
+      if (!is.null(linput())) {
+        if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
+          plotInput1() + 
+            theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom") +
+            guides(fill=guide_legend(ncol=2))
+        } else {
+          plotInput1()+ 
+            theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+        }
       } else {
         plotInput1()+ 
           theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
@@ -1259,7 +1406,6 @@ server <- function(input, output, clientData, session) {
     })
   # png output:
   output$Download1 <- downloadHandler(
-    
     filename = function(){
       if (is.null(InputFilesMS2())) {
         paste0("VisioProt-MS_", substring(InputFileMS()$name, first = 1, last = (nchar(InputFileMS()$name)-4)), "_", Sys.Date(), ".png")
@@ -1309,18 +1455,25 @@ server <- function(input, output, clientData, session) {
         if (nProtSelection() > 5) {
           h <- h+(nProtSelection()*0.152)
         }
-      } else if (linput() > 1) {
-        h <- h+(linput()*0.152)
+      } else if (is.null(linput())) {
+        if (linput() > 1) {
+          h <- h+(linput()*0.152)
+        }
       }
       device <- function(..., width, height) {
         grDevices::svg(..., width = 10, height = h)
       }
-      if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
-        g <- plotInput1() + 
-          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom")
-      } else {
+      if (is.null(linput())) {
         g <- plotInput1()+ 
           theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+      } else {
+        if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
+          g <- plotInput1() + 
+            theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom")
+        } else {
+          g <- plotInput1()+ 
+            theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+        }
       }
       ggsave(file, plot = g, device = device)
     })
