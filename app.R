@@ -1294,8 +1294,8 @@ server <- function(input, output, clientData, session) {
                xaxis=list(fixedrange=TRUE),
                yaxis=list(fixedrange=TRUE),
                title = "") %>%
-        config(displayModeBar = F) #%>%
-        #layout(margin = list(l = 110, b = 40, r = 3, t = 10, pad = -2))
+        config(displayModeBar = F) %>%
+        layout(margin = list(l = 110, b = 40, r = 3, t = 10, pad = -2))
       # Remove title legend for proteins:
       if (nProtSelection() > 0) {
         p$x$layout$annotations[[1]]$text <- ""
