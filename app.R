@@ -196,7 +196,7 @@ ui <- fluidPage(
                                             "right"), # to switch from user data to test mode
                                   # Modifying output when passing in test mode:
                                   conditionalPanel(condition = "input.MS2TestModeCheck==true",
-                                                   tags$span(style="color:red", "You are in test mode. Uncheck to exit."),
+                                                   tags$span(style="color:red", "You are in test mode. Click on a button to select a single test file or multiple test files.\nUncheck to exit and upload your own data."),
                                                    br()
                                   ),
                                   conditionalPanel(condition = "input.MS2TestModeCheck==false",
@@ -721,7 +721,7 @@ server <- function(input, output, clientData, session) {
     #This function is repsonsible for loading in the selected file
     if (testfileinput() == 0) { # no input test file
       validate(
-        need((input$TestModeCheck==FALSE & input$MSModeCheck == "MS") | (input$MS2TestModeCheck == FALSE & input$MSModeCheck == "MS2"), "Uncheck test mode before loading a MS file.")
+        need((input$TestModeCheck==FALSE & input$MSModeCheck == "MS") | (input$MS2TestModeCheck == FALSE & input$MSModeCheck == "MS2"), "You are in test mode. Click on a button to select a single test file or multiple test files.\nUncheck to exit and upload your own data.")
       )
       if (is.null(InputFileMS())) {
         # User has not uploaded a file yet
@@ -903,8 +903,6 @@ server <- function(input, output, clientData, session) {
       }
     }
   }
-  
-  
   
   #####################
   # For zoomable plot:
@@ -1120,7 +1118,7 @@ server <- function(input, output, clientData, session) {
             coord_cartesian(xlim = rangesyB, ylim = rangesy, expand = TRUE) + 
             theme_bw() + 
             scale_colour_brewer(palette = colval()) + 
-            geom_point(data = gtabRWP, aes(y = Mass, x = RT, col = File, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", File))) + 
+            geom_point(data = gtabRWP, aes(y = Mass, x = RT, col = File, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", File)), size = input$pch) + 
             ylab("Protein mass (Da)") + 
             xlab("Retention time (min)")
         }
