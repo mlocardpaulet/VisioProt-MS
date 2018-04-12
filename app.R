@@ -1302,10 +1302,10 @@ server <- function(input, output, clientData, session) {
           grepl("ID", x$name)
         })
         #### TROUBLESHOOTING:
-        #sink("output.txt")
+        sink("output.txt")
         #print(which(vec))
-        #print(p$x$data)
-        #sink()
+        print(str(p))
+        sink()
         ####
         p <- style(p, showlegend = FALSE, traces = which(vec))
       }
