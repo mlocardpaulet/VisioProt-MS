@@ -625,6 +625,8 @@ server <- function(input, output, clientData, session) {
       updateSelectInput(session, "SelectProt",
                         "Select the ID to highlight:",
                         c(""))
+      updateRadioButtons(session, "PDPFModeCheck",
+                        selected = 'PD')
       ranges$x <- NULL
       ranges$y <- NULL
     }
@@ -1035,19 +1037,19 @@ server <- function(input, output, clientData, session) {
         rangesx <- range(x)
         rangesy <- range(y)
       }
-    } else if (is.null(filedata())) { # Only MS2 data, no MS trace
-      rangesx <- range(filedataMS2()$MS2file$RT.in.min)
-      rangesy <- range(filedataMS2()$MS2file$Precursor.MHplus.in.Da)
+    } else if (is.null(filedata()) | input$MSTrace == FALSE) { # Only MS2 data, no MS trace
+        rangesx <- range(filedataMS2()$MS2file$RT.in.min)
+        rangesy <- range(filedataMS2()$MS2file$Precursor.MHplus.in.Da)
     } else { # Overlay of MS2 and MS data
       if (filetype$ProMex > 0 | filetype$BioPharma > 0) {
         rangesx <- range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,5]))
         rangesy <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()[,2]))
       }  else if (input$PDPFModeCheck == "PD") {
-        ranges$x <- range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,1]))[2]
-        ranges$y <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()[,2]))
+        ranges$x <- range(c(filedataMS2()$MS2file$RT.in.min, filedata()$RT))
+        ranges$y <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()$Mass))
       } else if (input$PDPFModeCheck == "TP") {
-        ranges$x <- range(c(filedataMS2TP()$MS2file$RT, filedata()[,1]))[2]
-        ranges$y <- range(c(filedataMS2()$MS2file$Mass, filedata()[,2]))
+        ranges$x <- range(c(filedataMS2TP()$RT, filedata()[,1]))[2]
+        ranges$y <- range(c(filedataMS2TP()$Mass, filedata()[,2]))
       }
     }
     return(list(rangesx, rangesy))
@@ -1301,11 +1303,11 @@ server <- function(input, output, clientData, session) {
         p$x$layout$annotations[[1]]$text <- ""
       }
       #### TROUBLESHOOTING:
-      sink("output.txt")
-      #print(which(vec))
-      print(str(p))
-      print(p$x$layout$annotations)
-      sink()
+      # sink("output.txt")
+      # #print(which(vec))
+      # print(str(p))
+      # print(p$x$layout$annotations)
+      # sink()
       ####
       # Remove IDed and Not IDed from the legend:
       if (input$MSModeCheck == "MS2") {
