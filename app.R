@@ -1073,8 +1073,7 @@ server <- function(input, output, clientData, session) {
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
               ylab("Protein mass (Da)") + 
-              xlab("Retention time (min)")+
-              theme(legend.title=element_blank())
+              xlab("Retention time (min)")
           } else { # only one plot, no overlay
             g <- ggplot() + 
               geom_point(data = gtab, aes(x = RT, y = Mass, col = log10(intensity), text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity)), alpha = 0.7, size = input$pch) +
@@ -1275,39 +1274,47 @@ server <- function(input, output, clientData, session) {
       need(!is.null(plotInput1()), '')
     )
     if (input$DataPoints == TRUE) {
-      if (!is.null(linput())) {
-        if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
-          g <- plotInput1() + 
-            theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom") +
-            guides(fill=guide_legend(ncol=2))
-        } else {
-          g <- plotInput1()+ 
-            theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
-        }
-      } else {
-        g <- plotInput1()+ 
-          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
-      }
+      
+      g <- plotInput1() 
+      # if (!is.null(linput())) {
+      #   if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
+      #     g <- plotInput1() + 
+      #       theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom") +
+      #       guides(fill=guide_legend(ncol=2))
+      #   } else {
+      #     g <- plotInput1()+ 
+      #       theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+      #   }
+      # } else {
+      #   g <- plotInput1()+ 
+      #     theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+      # }
       p <- ggplotly(g, tooltip = "text", height = 800) %>%
         layout(dragmode = "select", 
                xaxis=list(fixedrange=TRUE),
                yaxis=list(fixedrange=TRUE),
                title = "") %>%
-        config(displayModeBar = F) %>%
-        layout(margin = list(l = 110, b = 40, r = 3, t = 10, pad = -2)) # %>% 
-      #layout(legend = list(x = 0.25, y = -0.25))
+        config(displayModeBar = F) #%>%
+        #layout(margin = list(l = 110, b = 40, r = 3, t = 10, pad = -2))
+      # Remove title legend for proteins:
+      if (nProtSelection() > 0) {
+        p$x$layout$annotations[[1]]$text <- ""
+      }
+      #### TROUBLESHOOTING:
+      sink("output.txt")
+      #print(which(vec))
+      print(str(p))
+      print(p$x$layout$annotations)
+      sink()
+      ####
       # Remove IDed and Not IDed from the legend:
       if (input$MSModeCheck == "MS2") {
-        vec <- sapply(p$x$data, function(x) {
-          grepl("ID", x$name)
-        })
-        #### TROUBLESHOOTING:
-        sink("output.txt")
-        #print(which(vec))
-        print(str(p))
-        sink()
-        ####
-        p <- style(p, showlegend = FALSE, traces = which(vec))
+        #   vec <- sapply(p$x$data, function(x) {
+        #     grepl("ID", x$name)
+        #   })
+        #p <- style(p, showlegend = FALSE, traces = which(vec))
+        # Remove all legends:
+        p <- style(p, showlegend = FALSE, traces = seq_len(length(p$x$data)))
       }
       p
     } else {
@@ -1324,15 +1331,15 @@ server <- function(input, output, clientData, session) {
       if (!is.null(linput())) {
         if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
           plotInput1() + 
-            theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom") +
+            theme(legend.direction ="vertical", legend.position="bottom") +
             guides(fill=guide_legend(ncol=2))
         } else {
           plotInput1()+ 
-            theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+            theme(legend.direction ="vertical", legend.position="right") 
         }
       } else {
         plotInput1()+ 
-          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+          theme(legend.direction ="vertical", legend.position="right") 
       }
     }
   }, height = 800)
@@ -1396,10 +1403,10 @@ server <- function(input, output, clientData, session) {
       }
       if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
         g <- plotInput1() + 
-          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom")
+          theme(legend.direction ="vertical", legend.position="bottom")
       } else {
         g <- plotInput1()+ 
-          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+          theme(legend.direction ="vertical", legend.position="right") 
       }
       ggsave(file, plot = g, device = device)
     })
@@ -1429,10 +1436,10 @@ server <- function(input, output, clientData, session) {
       }
       if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
         g <- plotInput1() + 
-          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom")
+          theme(legend.direction ="vertical", legend.position="bottom")
       } else {
         g <- plotInput1()+ 
-          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+          theme(legend.direction ="vertical", legend.position="right") 
       }
       ggsave(file, plot = g, device = device)
     })
@@ -1464,14 +1471,14 @@ server <- function(input, output, clientData, session) {
       }
       if (is.null(linput())) {
         g <- plotInput1()+ 
-          theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+          theme(legend.direction ="vertical", legend.position="right") 
       } else {
         if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
           g <- plotInput1() + 
-            theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom")
+            theme(legend.direction ="vertical", legend.position="bottom")
         } else {
           g <- plotInput1()+ 
-            theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+            theme(legend.direction ="vertical", legend.position="right") 
         }
       }
       ggsave(file, plot = g, device = device)

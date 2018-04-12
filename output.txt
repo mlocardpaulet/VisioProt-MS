@@ -1,557 +1,389 @@
-[1] 1 2
+List of 8
+ $ x            :List of 8
+  ..$ data       :List of 4
+  .. ..$ :List of 13
+  .. .. ..$ x          : num [1:86] 4.71 5.06 NA 6.18 NA ...
+  .. .. ..$ y          : num [1:86] 873 872 NA 873 NA ...
+  .. .. ..$ text       : chr [1:86] "4.714599907733 min\n 873.195482472656 Da\nSignal: 5637.87841796875 \n gnl|db|P25786 PSA1_HUMAN Proteasome subun"| __truncated__ "5.060604702933 min\n 872.196031789062 Da\nSignal: 8991.887939453125 \n gnl|db|P28070 PSB4_HUMAN Proteasome subu"| __truncated__ "NA min\n NA Da\nSignal: NA \n gnl|db|O14818 PSA7_HUMAN Proteasome subunit alpha type-7 OS=Homo sapiens GN=PSMA7 PE=1 SV=1" "6.183337622933 min\n 873.195360402344 Da\nSignal: 3715.883544921875 \n gnl|db|P28062 PSB8_HUMAN Proteasome subu"| __truncated__ ...
+  .. .. ..$ type       : chr "scatter"
+  .. .. ..$ mode       : chr "markers"
+  .. .. ..$ marker     :List of 6
+  .. .. .. ..$ autocolorscale: logi FALSE
+  .. .. .. ..$ color         : chr "rgba(77,77,77,1)"
+  .. .. .. ..$ opacity       : num 0.8
+  .. .. .. ..$ size          : num 3.78
+  .. .. .. ..$ symbol        : chr "circle"
+  .. .. .. ..$ line          :List of 2
+  .. .. .. .. ..$ width: num 1.89
+  .. .. .. .. ..$ color: chr "rgba(77,77,77,1)"
+  .. .. ..$ hoveron    : chr "points"
+  .. .. ..$ name       : chr "(IDed,1)"
+  .. .. ..$ legendgroup: chr "(IDed,1)"
+  .. .. ..$ showlegend : logi TRUE
+  .. .. ..$ xaxis      : chr "x"
+  .. .. ..$ yaxis      : chr "y"
+  .. .. ..$ hoverinfo  : chr "text"
+  .. ..$ :List of 13
+  .. .. ..$ x          : num NA
+  .. .. ..$ y          : num NA
+  .. .. ..$ text       : chr "NA min\n NA Da\nSignal: NA \n gnl|db|P00791 PEPA_PIG Pepsin A OS=Sus scrofa GN=PGA PE=1 SV=3"
+  .. .. ..$ type       : chr "scatter"
+  .. .. ..$ mode       : chr "markers"
+  .. .. ..$ marker     :List of 6
+  .. .. .. ..$ autocolorscale: logi FALSE
+  .. .. .. ..$ color         : chr "rgba(228,26,28,1)"
+  .. .. .. ..$ opacity       : num 0.8
+  .. .. .. ..$ size          : num 3.78
+  .. .. .. ..$ symbol        : chr "circle"
+  .. .. .. ..$ line          :List of 2
+  .. .. .. .. ..$ width: num 0
+  .. .. .. .. ..$ color: chr "rgba(0,0,0,1)"
+  .. .. ..$ hoveron    : chr "points"
+  .. .. ..$ name       : chr "(gnl|db|P00791 PEPA_PIG Pepsin A OS=Sus scrofa GN=PGA PE=1 SV=3,1)"
+  .. .. ..$ legendgroup: chr "(gnl|db|P00791 PEPA_PIG Pepsin A OS=Sus scrofa GN=PGA PE=1 SV=3,1)"
+  .. .. ..$ showlegend : logi TRUE
+  .. .. ..$ xaxis      : chr "x"
+  .. .. ..$ yaxis      : chr "y"
+  .. .. ..$ hoverinfo  : chr "text"
+  .. ..$ :List of 13
+  .. .. ..$ x          : num [1:3] NA NA 12.9
+  .. .. ..$ y          : num [1:3] NA NA 14154
+  .. .. ..$ text       : chr [1:3] "NA min\n NA Da\nSignal: NA \n gnl|db|P20618 PSB1_HUMAN Proteasome subunit beta type-1 OS=Homo sapiens GN=PSMB1 PE=1 SV=2" "NA min\n NA Da\nSignal: NA \n gnl|db|P20618 PSB1_HUMAN Proteasome subunit beta type-1 OS=Homo sapiens GN=PSMB1 PE=1 SV=2" "12.8548732888 min\n 14153.8243333437 Da\nSignal: 1452009.50390625 \n gnl|db|P20618 PSB1_HUMAN Proteasome subuni"| __truncated__
+  .. .. ..$ type       : chr "scatter"
+  .. .. ..$ mode       : chr "markers"
+  .. .. ..$ marker     :List of 6
+  .. .. .. ..$ autocolorscale: logi FALSE
+  .. .. .. ..$ color         : chr "rgba(255,127,0,1)"
+  .. .. .. ..$ opacity       : num 0.8
+  .. .. .. ..$ size          : num 3.78
+  .. .. .. ..$ symbol        : chr "circle"
+  .. .. .. ..$ line          :List of 2
+  .. .. .. .. ..$ width: num 0
+  .. .. .. .. ..$ color: chr "rgba(0,0,0,1)"
+  .. .. ..$ hoveron    : chr "points"
+  .. .. ..$ name       : chr "(gnl|db|P20618 PSB1_HUMAN Proteasome subunit beta type-1 OS=Homo sapiens GN=PSMB1 PE=1 SV=2,1)"
+  .. .. ..$ legendgroup: chr "(gnl|db|P20618 PSB1_HUMAN Proteasome subunit beta type-1 OS=Homo sapiens GN=PSMB1 PE=1 SV=2,1)"
+  .. .. ..$ showlegend : logi TRUE
+  .. .. ..$ xaxis      : chr "x"
+  .. .. ..$ yaxis      : chr "y"
+  .. .. ..$ hoverinfo  : chr "text"
+  .. ..$ :List of 13
+  .. .. ..$ x          : num [1:6] 4.71 9.75 NA NA NA ...
+  .. .. ..$ y          : num [1:6] 873 8821 NA NA NA ...
+  .. .. ..$ text       : chr [1:6] "4.714599907733 min\n 873.195482472656 Da\nSignal: 5637.87841796875 \n gnl|db|P25786 PSA1_HUMAN Proteasome subun"| __truncated__ "9.7467466208 min\n 8821.21087653516 Da\nSignal: 488320 \n gnl|db|P25786 PSA1_HUMAN Proteasome subunit alpha typ"| __truncated__ "NA min\n NA Da\nSignal: NA \n gnl|db|P25786 PSA1_HUMAN Proteasome subunit alpha type-1 OS=Homo sapiens GN=PSMA1 PE=1 SV=1" "NA min\n NA Da\nSignal: NA \n gnl|db|P25786 PSA1_HUMAN Proteasome subunit alpha type-1 OS=Homo sapiens GN=PSMA1 PE=1 SV=1" ...
+  .. .. ..$ type       : chr "scatter"
+  .. .. ..$ mode       : chr "markers"
+  .. .. ..$ marker     :List of 6
+  .. .. .. ..$ autocolorscale: logi FALSE
+  .. .. .. ..$ color         : chr "rgba(153,153,153,1)"
+  .. .. .. ..$ opacity       : num 0.8
+  .. .. .. ..$ size          : num 3.78
+  .. .. .. ..$ symbol        : chr "circle"
+  .. .. .. ..$ line          :List of 2
+  .. .. .. .. ..$ width: num 0
+  .. .. .. .. ..$ color: chr "rgba(0,0,0,1)"
+  .. .. ..$ hoveron    : chr "points"
+  .. .. ..$ name       : chr "(gnl|db|P25786 PSA1_HUMAN Proteasome subunit alpha type-1 OS=Homo sapiens GN=PSMA1 PE=1 SV=1,1)"
+  .. .. ..$ legendgroup: chr "(gnl|db|P25786 PSA1_HUMAN Proteasome subunit alpha type-1 OS=Homo sapiens GN=PSMA1 PE=1 SV=1,1)"
+  .. .. ..$ showlegend : logi TRUE
+  .. .. ..$ xaxis      : chr "x"
+  .. .. ..$ yaxis      : chr "y"
+  .. .. ..$ hoverinfo  : chr "text"
+  ..$ layout     :List of 12
+  .. ..$ margin       :List of 4
+  .. .. ..$ t: num 28.9
+  .. .. ..$ r: num 7.31
+  .. .. ..$ b: num 42.8
+  .. .. ..$ l: num 54.8
+  .. ..$ plot_bgcolor : chr "rgba(255,255,255,1)"
+  .. ..$ paper_bgcolor: chr "rgba(255,255,255,1)"
+  .. ..$ font         :List of 3
+  .. .. ..$ color : chr "rgba(0,0,0,1)"
+  .. .. ..$ family: chr ""
+  .. .. ..$ size  : num 14.6
+  .. ..$ xaxis        :List of 25
+  .. .. ..$ type          : chr "linear"
+  .. .. ..$ autorange     : logi FALSE
+  .. .. ..$ tickmode      : chr "array"
+  .. .. ..$ range         : num [1:2] 4.2 15.5
+  .. .. ..$ ticktext      : chr [1:5] "5.0" "7.5" "10.0" "12.5" ...
+  .. .. ..$ tickvals      : num [1:5] 5 7.5 10 12.5 15
+  .. .. ..$ ticks         : chr "outside"
+  .. .. ..$ tickcolor     : chr "rgba(51,51,51,1)"
+  .. .. ..$ ticklen       : num 3.65
+  .. .. ..$ tickwidth     : num 0.664
+  .. .. ..$ showticklabels: logi TRUE
+  .. .. ..$ tickfont      :List of 3
+  .. .. .. ..$ color : chr "rgba(77,77,77,1)"
+  .. .. .. ..$ family: chr ""
+  .. .. .. ..$ size  : num 11.7
+  .. .. ..$ tickangle     : num 0
+  .. .. ..$ showline      : logi FALSE
+  .. .. ..$ linecolor     : logi NA
+  .. .. ..$ linewidth     : num 0
+  .. .. ..$ showgrid      : logi TRUE
+  .. .. ..$ domain        : num [1:2] 0 1
+  .. .. ..$ gridcolor     : chr "rgba(235,235,235,1)"
+  .. .. ..$ gridwidth     : num 0.664
+  .. .. ..$ zeroline      : logi FALSE
+  .. .. ..$ anchor        : chr "y"
+  .. .. ..$ title         : chr "Retention time (min)"
+  .. .. ..$ titlefont     :List of 3
+  .. .. .. ..$ color : chr "rgba(0,0,0,1)"
+  .. .. .. ..$ family: chr ""
+  .. .. .. ..$ size  : num 14.6
+  .. .. ..$ hoverformat   : chr ".2f"
+  .. ..$ yaxis        :List of 25
+  .. .. ..$ type          : chr "linear"
+  .. .. ..$ autorange     : logi FALSE
+  .. .. ..$ tickmode      : chr "array"
+  .. .. ..$ range         : num [1:2] -300 25496
+  .. .. ..$ ticktext      : chr [1:6] "0" "5000" "10000" "15000" ...
+  .. .. ..$ tickvals      : num [1:6] 0 5000 10000 15000 20000 25000
+  .. .. ..$ ticks         : chr "outside"
+  .. .. ..$ tickcolor     : chr "rgba(51,51,51,1)"
+  .. .. ..$ ticklen       : num 3.65
+  .. .. ..$ tickwidth     : num 0.664
+  .. .. ..$ showticklabels: logi TRUE
+  .. .. ..$ tickfont      :List of 3
+  .. .. .. ..$ color : chr "rgba(77,77,77,1)"
+  .. .. .. ..$ family: chr ""
+  .. .. .. ..$ size  : num 11.7
+  .. .. ..$ tickangle     : num 0
+  .. .. ..$ showline      : logi FALSE
+  .. .. ..$ linecolor     : logi NA
+  .. .. ..$ linewidth     : num 0
+  .. .. ..$ showgrid      : logi TRUE
+  .. .. ..$ domain        : num [1:2] 0 1
+  .. .. ..$ gridcolor     : chr "rgba(235,235,235,1)"
+  .. .. ..$ gridwidth     : num 0.664
+  .. .. ..$ zeroline      : logi FALSE
+  .. .. ..$ anchor        : chr "x"
+  .. .. ..$ title         : chr "Protein mass (Da)"
+  .. .. ..$ titlefont     :List of 3
+  .. .. .. ..$ color : chr "rgba(0,0,0,1)"
+  .. .. .. ..$ family: chr ""
+  .. .. .. ..$ size  : num 14.6
+  .. .. ..$ hoverformat   : chr ".2f"
+  .. ..$ shapes       :List of 1
+  .. .. ..$ :List of 9
+  .. .. .. ..$ type     : chr "rect"
+  .. .. .. ..$ fillcolor: chr "transparent"
+  .. .. .. ..$ line     :List of 3
+  .. .. .. .. ..$ color   : chr "rgba(51,51,51,1)"
+  .. .. .. .. ..$ width   : num 0.664
+  .. .. .. .. ..$ linetype: chr "solid"
+  .. .. .. ..$ yref     : chr "paper"
+  .. .. .. ..$ xref     : chr "paper"
+  .. .. .. ..$ x0       : num 0
+  .. .. .. ..$ x1       : num 1
+  .. .. .. ..$ y0       : num 0
+  .. .. .. ..$ y1       : num 1
+  .. ..$ showlegend   : logi TRUE
+  .. ..$ legend       :List of 5
+  .. .. ..$ bgcolor    : chr "rgba(255,255,255,1)"
+  .. .. ..$ bordercolor: chr "transparent"
+  .. .. ..$ borderwidth: num 1.89
+  .. .. ..$ font       :List of 3
+  .. .. .. ..$ color : chr "rgba(0,0,0,1)"
+  .. .. .. ..$ family: chr ""
+  .. .. .. ..$ size  : num 11.7
+  .. .. ..$ y          : num 0.913
+  .. ..$ annotations  :List of 1
+  .. .. ..$ :List of 13
+  .. .. .. ..$ text       : chr ""
+  .. .. .. ..$ x          : num 1.02
+  .. .. .. ..$ y          : num 1
+  .. .. .. ..$ showarrow  : logi FALSE
+  .. .. .. ..$ ax         : num 0
+  .. .. .. ..$ ay         : num 0
+  .. .. .. ..$ font       :List of 3
+  .. .. .. .. ..$ color : chr "rgba(0,0,0,1)"
+  .. .. .. .. ..$ family: chr ""
+  .. .. .. .. ..$ size  : num 14.6
+  .. .. .. ..$ xref       : chr "paper"
+  .. .. .. ..$ yref       : chr "paper"
+  .. .. .. ..$ textangle  : num 0
+  .. .. .. ..$ xanchor    : chr "left"
+  .. .. .. ..$ yanchor    : chr "bottom"
+  .. .. .. ..$ legendTitle: logi TRUE
+  .. ..$ hovermode    : chr "closest"
+  .. ..$ height       : num 800
+  ..$ source     : chr "A"
+  ..$ attrs      :List of 2
+  .. ..$ 12f823423381:List of 5
+  .. .. ..$ x    :Class 'formula'  language ~RT
+  .. .. .. .. ..- attr(*, ".Environment")=<environment: 0x000000002ef23c40> 
+  .. .. ..$ y    :Class 'formula'  language ~Mass
+  .. .. .. .. ..- attr(*, ".Environment")=<environment: 0x000000002ef23c40> 
+  .. .. ..$ shape:Class 'formula'  language ~Identification
+  .. .. .. .. ..- attr(*, ".Environment")=<environment: 0x000000002ef23c40> 
+  .. .. ..$ text :Class 'formula'  language ~paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)
+  .. .. .. .. ..- attr(*, ".Environment")=<environment: 0x000000002ef23c40> 
+  .. .. ..$ type : chr "ggplotly"
+  .. .. ..- attr(*, "class")= chr "plotly_eval"
+  .. ..$ 12f86a877422:List of 4
+  .. .. ..$ x   :Class 'formula'  language ~RT
+  .. .. .. .. ..- attr(*, ".Environment")=<environment: 0x0000000024b39160> 
+  .. .. ..$ y   :Class 'formula'  language ~Mass
+  .. .. .. .. ..- attr(*, ".Environment")=<environment: 0x0000000024b39160> 
+  .. .. ..$ fill:Class 'formula'  language ~Protein.Descriptions
+  .. .. .. .. ..- attr(*, ".Environment")=<environment: 0x0000000024b39160> 
+  .. .. ..$ text:Class 'formula'  language ~paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)
+  .. .. .. .. ..- attr(*, ".Environment")=<environment: 0x0000000024b39160> 
+  .. .. ..- attr(*, "class")= chr "plotly_eval"
+  ..$ cur_data   : chr "12f823423381"
+  ..$ visdat     :List of 2
+  .. ..$ 12f823423381:function (y)  
+  .. ..$ 12f86a877422:function (y)  
+  ..$ config     :List of 3
+  .. ..$ modeBarButtonsToAdd:List of 1
+  .. .. ..$ :List of 3
+  .. .. .. ..$ name : chr "Collaborate"
+  .. .. .. ..$ icon :List of 4
+  .. .. .. .. ..$ width  : num 1000
+  .. .. .. .. ..$ ascent : num 500
+  .. .. .. .. ..$ descent: num -50
+  .. .. .. .. ..$ path   : chr "M487 375c7-10 9-23 5-36l-79-259c-3-12-11-23-22-31-11-8-22-12-35-12l-263 0c-15 0-29 5-43 15-13 10-23 23-28 37-5 "| __truncated__
+  .. .. .. ..$ click:Class 'JS_EVAL'  chr "function(gd) { \n        // is this being viewed in RStudio?\n        if (location.search == '?viewer_pane=1') "| __truncated__
+  .. ..$ cloud              : logi FALSE
+  .. ..$ displayModeBar     : logi FALSE
+  ..$ layoutAttrs:List of 1
+  .. ..$ 12f823423381:List of 4
+  .. .. ..$ dragmode: chr "select"
+  .. .. ..$ xaxis   :List of 1
+  .. .. .. ..$ fixedrange: logi TRUE
+  .. .. ..$ yaxis   :List of 1
+  .. .. .. ..$ fixedrange: logi TRUE
+  .. .. ..$ title   : chr ""
+  ..- attr(*, "TOJSON_FUNC")=function (x, ...)  
+ $ width        : NULL
+ $ height       : num 800
+ $ sizingPolicy :List of 6
+  ..$ defaultWidth : chr "100%"
+  ..$ defaultHeight: num 400
+  ..$ padding      : NULL
+  ..$ viewer       :List of 6
+  .. ..$ defaultWidth : NULL
+  .. ..$ defaultHeight: NULL
+  .. ..$ padding      : NULL
+  .. ..$ fill         : logi TRUE
+  .. ..$ suppress     : logi FALSE
+  .. ..$ paneHeight   : NULL
+  ..$ browser      :List of 4
+  .. ..$ defaultWidth : NULL
+  .. ..$ defaultHeight: NULL
+  .. ..$ padding      : NULL
+  .. ..$ fill         : logi TRUE
+  ..$ knitr        :List of 3
+  .. ..$ defaultWidth : NULL
+  .. ..$ defaultHeight: NULL
+  .. ..$ figure       : logi TRUE
+ $ dependencies :List of 4
+  ..$ :List of 10
+  .. ..$ name      : chr "typedarray"
+  .. ..$ version   : chr "0.1"
+  .. ..$ src       :List of 1
+  .. .. ..$ file: chr "C:/Program Files/R/R-3.4.4/library/plotly/htmlwidgets/lib/typedarray"
+  .. ..$ meta      : NULL
+  .. ..$ script    : chr "typedarray.min.js"
+  .. ..$ stylesheet: NULL
+  .. ..$ head      : NULL
+  .. ..$ attachment: NULL
+  .. ..$ package   : NULL
+  .. ..$ all_files : logi TRUE
+  .. ..- attr(*, "class")= chr "html_dependency"
+  ..$ :List of 10
+  .. ..$ name      : chr "jquery"
+  .. ..$ version   : chr "1.11.3"
+  .. ..$ src       :List of 1
+  .. .. ..$ file: chr "C:/Program Files/R/R-3.4.4/library/crosstalk/lib/jquery"
+  .. ..$ meta      : NULL
+  .. ..$ script    : chr "jquery.min.js"
+  .. ..$ stylesheet: NULL
+  .. ..$ head      : NULL
+  .. ..$ attachment: NULL
+  .. ..$ package   : NULL
+  .. ..$ all_files : logi TRUE
+  .. ..- attr(*, "class")= chr "html_dependency"
+  ..$ :List of 10
+  .. ..$ name      : chr "crosstalk"
+  .. ..$ version   : chr "1.0.0"
+  .. ..$ src       :List of 1
+  .. .. ..$ file: chr "C:/Program Files/R/R-3.4.4/library/crosstalk/www"
+  .. ..$ meta      : NULL
+  .. ..$ script    : chr "js/crosstalk.min.js"
+  .. ..$ stylesheet: chr "css/crosstalk.css"
+  .. ..$ head      : NULL
+  .. ..$ attachment: NULL
+  .. ..$ package   : NULL
+  .. ..$ all_files : logi TRUE
+  .. ..- attr(*, "class")= chr "html_dependency"
+  ..$ :List of 10
+  .. ..$ name      : chr "plotlyjs"
+  .. ..$ version   : chr "1.29.2"
+  .. ..$ src       :List of 1
+  .. .. ..$ file: chr "C:/Program Files/R/R-3.4.4/library/plotly/htmlwidgets/lib/plotlyjs"
+  .. ..$ meta      : NULL
+  .. ..$ script    : chr "plotly-latest.min.js"
+  .. ..$ stylesheet: chr "plotly-htmlwidgets.css"
+  .. ..$ head      : NULL
+  .. ..$ attachment: NULL
+  .. ..$ package   : NULL
+  .. ..$ all_files : logi TRUE
+  .. ..- attr(*, "class")= chr "html_dependency"
+ $ elementId    : chr "12f87aae2ffa"
+ $ preRenderHook:function (p, registerFrames = TRUE)  
+ $ jsHooks      : list()
+ - attr(*, "class")= chr [1:2] "plotly" "htmlwidget"
+ - attr(*, "package")= chr "plotly"
+NULL
 [[1]]
+[[1]]$text
+[1] ""
+
 [[1]]$x
- [1] 19.3745 19.3745 21.3180 21.2880 18.8275 18.8275 18.8275 22.6085 22.6085 22.6085 20.4130
-[12] 22.3900 27.5280
+[1] 1.02
 
 [[1]]$y
- [1] 22442.12 22442.12 22461.69 22550.89 25261.69 25261.69 25261.69 26155.85 26155.85 26155.85
-[11] 27022.34 27290.78 29374.16
+[1] 1
 
-[[1]]$text
- [1] "Start: 18.992 min\n Stop: 19.757 min\n 22442.1187 Da\nSignal: 239087.84 \n PSB5_HUMAN Proteasome subunit beta type-5 OS=Homo sapiens GN=PSMB5 PE=1 SV=3" 
- [2] "Start: 18.992 min\n Stop: 19.757 min\n 22442.1187 Da\nSignal: 239087.84 \n PSB5_HUMAN Proteasome subunit beta type-5 OS=Homo sapiens GN=PSMB5 PE=1 SV=3" 
- [3] "Start: 21.014 min\n Stop: 21.622 min\n 22461.6947 Da\nSignal: 71987.09 \n PSB1_HUMAN Proteasome subunit beta type-1 OS=Homo sapiens GN=PSMB1 PE=1 SV=2"  
- [4] "Start: 20.899 min\n Stop: 21.677 min\n 22550.8924 Da\nSignal: 92383.54 \n PSB1_HUMAN Proteasome subunit beta type-1 OS=Homo sapiens GN=PSMB1 PE=1 SV=2"  
- [5] "Start: 18.5 min\n Stop: 19.155 min\n 25261.695 Da\nSignal: 91672.56 \n PSB7_HUMAN Proteasome subunit beta type-7 OS=Homo sapiens GN=PSMB7 PE=1 SV=1"     
- [6] "Start: 18.5 min\n Stop: 19.155 min\n 25261.695 Da\nSignal: 91672.56 \n PSB7_HUMAN Proteasome subunit beta type-7 OS=Homo sapiens GN=PSMB7 PE=1 SV=1"     
- [7] "Start: 18.5 min\n Stop: 19.155 min\n 25261.695 Da\nSignal: 91672.56 \n PSB7_HUMAN Proteasome subunit beta type-7 OS=Homo sapiens GN=PSMB7 PE=1 SV=1"     
- [8] "Start: 22.282 min\n Stop: 22.935 min\n 26155.8529 Da\nSignal: 33737.17 \n PSA6_HUMAN Proteasome subunit alpha type-6 OS=Homo sapiens GN=PSMA6 PE=1 SV=1" 
- [9] "Start: 22.282 min\n Stop: 22.935 min\n 26155.8529 Da\nSignal: 33737.17 \n PSA6_HUMAN Proteasome subunit alpha type-6 OS=Homo sapiens GN=PSMA6 PE=1 SV=1" 
-[10] "Start: 22.282 min\n Stop: 22.935 min\n 26155.8529 Da\nSignal: 33737.17 \n PSA6_HUMAN Proteasome subunit alpha type-6 OS=Homo sapiens GN=PSMA6 PE=1 SV=1" 
-[11] "Start: 20.086 min\n Stop: 20.74 min\n 27022.3368 Da\nSignal: 118332.49 \n PSA7_HUMAN Proteasome subunit alpha type-7 OS=Homo sapiens GN=PSMA7 PE=1 SV=1" 
-[12] "Start: 21.954 min\n Stop: 22.826 min\n 27290.7785 Da\nSignal: 261048.48 \n PSA6_HUMAN Proteasome subunit alpha type-6 OS=Homo sapiens GN=PSMA6 PE=1 SV=1"
-[13] "Start: 27.031 min\n Stop: 28.025 min\n 29374.1609 Da\nSignal: 69436.9 \n PSA4_HUMAN Proteasome subunit alpha type-4 OS=Homo sapiens GN=PSMA4 PE=1 SV=1"  
-
-[[1]]$type
-[1] "scatter"
-
-[[1]]$mode
-[1] "markers"
-
-[[1]]$marker
-[[1]]$marker$autocolorscale
+[[1]]$showarrow
 [1] FALSE
 
-[[1]]$marker$color
-[1] "rgba(77,77,77,1)"
-
-[[1]]$marker$opacity
-[1] 0.8
-
-[[1]]$marker$size
-[1] 3.779528
-
-[[1]]$marker$symbol
-[1] "circle"
-
-[[1]]$marker$line
-[[1]]$marker$line$width
-[1] 1.889764
-
-[[1]]$marker$line$color
-[1] "rgba(77,77,77,1)"
-
-
-
-[[1]]$hoveron
-[1] "points"
-
-[[1]]$name
-[1] "(IDed,1)"
-
-[[1]]$legendgroup
-[1] "(IDed,1)"
-
-[[1]]$showlegend
-[1] TRUE
-
-[[1]]$xaxis
-[1] "x"
-
-[[1]]$yaxis
-[1] "y"
-
-[[1]]$hoverinfo
-[1] "text"
-
-
-[[2]]
-[[2]]$x
-  [1] 13.8720 14.0045 13.9815 13.9770 13.4680 13.4680 13.4955 20.5230 20.5510 20.5510 20.5510
- [12] 23.5620 23.5330 23.5330 11.9040 11.9155 27.6430 19.2930 27.0375 27.0100 24.9590 24.8490
- [23] 26.8125 26.8455 22.0615 22.0610 22.0340 22.0340 22.0070 24.5215 24.6855 21.3735 19.3475
- [34] 19.3745 19.3475 19.3200 19.3745 21.3990 26.8130 26.9010 26.9825 26.8725 26.7850 26.9285
- [45] 24.8215 25.1220 24.7130 24.7125 24.6300 24.8230 19.4015 19.2930 21.2900 21.2325 21.6480
- [56] 21.3990 21.4015 22.2825 22.3095 22.2820 22.2280 24.5500 24.6040 25.2850 24.7945 24.8490
- [67] 24.4120 26.9830 26.8145 26.9270 24.5200 24.7130 24.7925 24.5500 26.8455 27.2000 27.2830
- [78] 26.8690 26.7310 25.0680 24.7125 24.5230 18.8280 18.8010 18.8835 18.8835 19.3200 29.3615
- [89] 21.4265 29.0885 28.9520 21.5395 21.2915 20.4405 20.5775 20.4925 20.4130 20.4130 20.5230
-[100] 24.5500 24.2485 24.5505 28.7620 28.7610 29.1160 28.4615 28.1610 28.2975 22.3910 18.7465
-[111] 18.8560 18.8005 18.8275 18.8560 18.8835 28.7340 28.4340 28.6805 28.7350 28.4345 28.7615
-[122] 28.8165 27.9705 28.7340 29.0345 28.7890 28.9525 28.6530 28.9530 28.6530 22.3635 28.3520
-[133] 28.5980 28.9530 28.5160 28.8975 28.7070 28.4880 28.7610 22.4995 28.5430 28.5705 28.6250
-[144] 21.2880 29.1165 28.9255 28.4880 28.4610 28.8700 28.4610 14.6325 21.1485 20.4405 20.5200
-[155] 20.5200 20.3580 20.3860 20.4410 20.1690 31.9320 18.8560 22.3905 19.2930 22.4995 22.4730
-[166] 28.7075 28.7345 29.1165 29.1995 28.9530 29.0620 19.5390 20.5500 20.3855 20.5200 20.6600
-[177] 20.8515 22.4725 22.5260 22.5815 22.5270 22.7440 18.7730 27.5300 29.0340 29.4980 28.3520
-[188] 28.9800 29.0610 29.4160 29.0340 29.3345 28.3525 29.3615 28.8980 28.6800 29.6075 28.2975
-[199] 28.9255 28.6260 28.6795 15.2585 29.1980 28.9805 28.8165 28.4335 20.8275 20.8800 20.8240
-[210] 22.2550 22.8805 29.0070 22.4455 22.4995 22.4715 22.5000 27.2280 22.6355 22.6355 27.0920
-[221] 22.5270 27.2560 27.6370 27.7255 22.5815 22.6085 28.5970 25.9120 22.5000 28.5970 27.2830
-[232] 28.8425 29.6895 19.8945 26.5945 22.6355 22.4455 22.5540 27.3100 27.3645 27.6370 27.4470
-[243] 25.9920 30.1260
-
-[[2]]$y
-  [1] 15065.49 15183.95 15184.89 15185.90 15833.83 15834.86 15835.86 16778.88 16779.85 16780.83
- [11] 16781.84 16819.45 16821.42 16822.41 17246.51 17248.60 17575.13 21466.84 21702.46 21805.43
- [21] 21822.92 21824.81 21852.53 21853.42 21887.79 21888.75 21889.79 21890.76 21891.84 21910.50
- [31] 21911.40 22298.38 22443.13 22444.09 22445.04 22446.09 22447.16 22551.86 22842.44 22843.40
- [41] 22844.51 22845.40 22846.43 22847.37 22861.76 22862.69 22863.66 22864.80 22865.71 22866.84
- [51] 23462.81 23467.09 23531.91 23532.97 23533.94 23534.95 23535.90 23766.54 23767.57 23768.63
- [61] 23769.62 23777.73 23778.88 23815.92 23856.39 23857.39 23860.48 23880.26 23881.37 23882.42
- [71] 23899.48 23903.53 23904.65 23905.68 23931.81 23932.88 23935.08 23936.02 23937.01 23957.33
- [81] 24005.41 24065.68 24075.42 24253.52 24264.26 24265.07 24315.69 24322.85 24475.84 24478.69
- [91] 24479.72 24516.25 24656.36 24674.86 24715.05 24718.88 24719.79 24720.80 24801.71 24849.93
-[101] 24942.44 25039.15 25175.67 25176.60 25177.63 25232.95 25233.87 25237.74 25269.96 25275.84
-[111] 25276.80 25277.75 25278.79 25279.74 25280.85 25283.25 25285.15 25286.16 25287.16 25288.11
-[121] 25289.00 25289.97 25327.30 25331.19 25333.13 25334.06 25335.03 25336.01 25336.94 25339.85
-[131] 25342.23 25376.23 25377.26 25378.23 25379.12 25380.10 25381.04 25381.96 25382.95 25407.60
-[141] 25416.95 25417.93 25418.87 25418.90 25419.80 25420.80 25454.56 25455.53 25456.50 25490.66
-[151] 25618.25 25772.31 25790.27 25791.21 25792.23 25793.19 25794.27 25795.26 25979.37 26175.93
-[161] 26271.81 26321.32 26331.76 26351.16 26352.11 26433.18 26434.16 26435.26 26436.21 26437.20
-[171] 26438.20 26718.56 26823.51 26826.67 26865.57 26866.57 26908.06 27291.74 27292.72 27293.72
-[181] 27294.77 27295.78 27298.02 27350.04 27418.10 27449.50 27450.45 27451.56 27452.58 27454.62
-[191] 27456.74 27490.15 27491.18 27493.31 27495.41 27496.36 27499.64 27534.27 27535.32 27536.31
-[201] 27539.42 27568.56 27581.12 27587.39 27588.47 27590.58 27778.67 27779.72 27780.53 28147.49
-[211] 28232.48 28261.59 28266.01 28267.19 28268.10 28272.40 28290.32 28301.26 28302.15 28329.35
-[221] 28344.23 28361.62 28364.46 28365.21 28383.09 28385.17 28403.19 28406.01 28429.66 28441.31
-[231] 28458.58 28482.29 28640.99 28655.94 28877.32 29053.74 29170.93 29244.62 29375.10 29376.15
-[241] 29377.09 29379.30 29497.16 29606.37
-
-[[2]]$text
-  [1] "Start: 13.71 min\n Stop: 14.034 min\n 15065.4862 Da\nSignal: 39755.9 \n NA"    
-  [2] "Start: 13.811 min\n Stop: 14.198 min\n 15183.9452 Da\nSignal: 61441.92 \n NA"  
-  [3] "Start: 13.765 min\n Stop: 14.198 min\n 15184.8866 Da\nSignal: 63579.32 \n NA"  
-  [4] "Start: 13.811 min\n Stop: 14.143 min\n 15185.9045 Da\nSignal: 74621.35 \n NA"  
-  [5] "Start: 13.281 min\n Stop: 13.655 min\n 15833.8309 Da\nSignal: 390698.13 \n NA" 
-  [6] "Start: 13.281 min\n Stop: 13.655 min\n 15834.8602 Da\nSignal: 383161.46 \n NA" 
-  [7] "Start: 13.281 min\n Stop: 13.71 min\n 15835.8649 Da\nSignal: 345266.94 \n NA"  
-  [8] "Start: 20.306 min\n Stop: 20.74 min\n 16778.8791 Da\nSignal: 1333416.93 \n NA" 
-  [9] "Start: 20.306 min\n Stop: 20.796 min\n 16779.8459 Da\nSignal: 1416477.71 \n NA"
- [10] "Start: 20.306 min\n Stop: 20.796 min\n 16780.8348 Da\nSignal: 1426522.79 \n NA"
- [11] "Start: 20.306 min\n Stop: 20.796 min\n 16781.8383 Da\nSignal: 1277038.37 \n NA"
- [12] "Start: 23.261 min\n Stop: 23.863 min\n 16819.4477 Da\nSignal: 74073.12 \n NA"  
- [13] "Start: 23.315 min\n Stop: 23.751 min\n 16821.4199 Da\nSignal: 56965.34 \n NA"  
- [14] "Start: 23.315 min\n Stop: 23.751 min\n 16822.4129 Da\nSignal: 25360.37 \n NA"  
- [15] "Start: 11.686 min\n Stop: 12.122 min\n 17246.5112 Da\nSignal: 46670.7 \n NA"   
- [16] "Start: 11.709 min\n Stop: 12.122 min\n 17248.5957 Da\nSignal: 23241.73 \n NA"  
- [17] "Start: 27.315 min\n Stop: 27.971 min\n 17575.1272 Da\nSignal: 22812.27 \n NA"  
- [18] "Start: 18.992 min\n Stop: 19.594 min\n 21466.8395 Da\nSignal: 81580.66 \n NA"  
- [19] "Start: 26.594 min\n Stop: 27.481 min\n 21702.459 Da\nSignal: 55406.85 \n NA"   
- [20] "Start: 26.322 min\n Stop: 27.698 min\n 21805.4267 Da\nSignal: 54992.8 \n NA"   
- [21] "Start: 24.361 min\n Stop: 25.557 min\n 21822.9199 Da\nSignal: 48762.83 \n NA"  
- [22] "Start: 24.25 min\n Stop: 25.448 min\n 21824.8143 Da\nSignal: 65620.58 \n NA"   
- [23] "Start: 26.431 min\n Stop: 27.194 min\n 21852.5284 Da\nSignal: 56370.49 \n NA"  
- [24] "Start: 26.376 min\n Stop: 27.315 min\n 21853.4213 Da\nSignal: 47743.1 \n NA"   
- [25] "Start: 21.677 min\n Stop: 22.446 min\n 21887.7924 Da\nSignal: 2017613.13 \n NA"
- [26] "Start: 21.732 min\n Stop: 22.39 min\n 21888.7491 Da\nSignal: 2456695.75 \n NA" 
- [27] "Start: 21.732 min\n Stop: 22.336 min\n 21889.7941 Da\nSignal: 2554536.2 \n NA" 
- [28] "Start: 21.732 min\n Stop: 22.336 min\n 21890.7612 Da\nSignal: 2427332.71 \n NA"
- [29] "Start: 21.732 min\n Stop: 22.282 min\n 21891.8374 Da\nSignal: 2333836.8 \n NA" 
- [30] "Start: 23.975 min\n Stop: 25.068 min\n 21910.503 Da\nSignal: 55760.43 \n NA"   
- [31] "Start: 24.031 min\n Stop: 25.34 min\n 21911.4029 Da\nSignal: 47771.06 \n NA"   
- [32] "Start: 21.07 min\n Stop: 21.677 min\n 22298.3835 Da\nSignal: 75663.46 \n NA"   
- [33] "Start: 18.992 min\n Stop: 19.703 min\n 22443.1338 Da\nSignal: 316567.73 \n NA" 
- [34] "Start: 18.992 min\n Stop: 19.757 min\n 22444.0926 Da\nSignal: 366959.6 \n NA"  
- [35] "Start: 18.992 min\n Stop: 19.703 min\n 22445.0382 Da\nSignal: 413403.02 \n NA" 
- [36] "Start: 19.046 min\n Stop: 19.594 min\n 22446.0911 Da\nSignal: 294484.85 \n NA" 
- [37] "Start: 19.101 min\n Stop: 19.648 min\n 22447.1566 Da\nSignal: 184155.96 \n NA" 
- [38] "Start: 20.954 min\n Stop: 21.844 min\n 22551.8582 Da\nSignal: 119121.27 \n NA" 
- [39] "Start: 26.54 min\n Stop: 27.086 min\n 22842.4394 Da\nSignal: 392424.36 \n NA"  
- [40] "Start: 26.376 min\n Stop: 27.426 min\n 22843.3982 Da\nSignal: 542486.4 \n NA"  
- [41] "Start: 26.376 min\n Stop: 27.589 min\n 22844.51 Da\nSignal: 479845.29 \n NA"   
- [42] "Start: 26.376 min\n Stop: 27.369 min\n 22845.3989 Da\nSignal: 543254.66 \n NA" 
- [43] "Start: 26.376 min\n Stop: 27.194 min\n 22846.4252 Da\nSignal: 531113.95 \n NA" 
- [44] "Start: 26.376 min\n Stop: 27.481 min\n 22847.3701 Da\nSignal: 406982.44 \n NA" 
- [45] "Start: 24.086 min\n Stop: 25.557 min\n 22861.7644 Da\nSignal: 308139.62 \n NA" 
- [46] "Start: 24.031 min\n Stop: 26.213 min\n 22862.6859 Da\nSignal: 409918.28 \n NA" 
- [47] "Start: 24.086 min\n Stop: 25.34 min\n 22863.6642 Da\nSignal: 414495.24 \n NA"  
- [48] "Start: 24.031 min\n Stop: 25.394 min\n 22864.7956 Da\nSignal: 363755.89 \n NA" 
- [49] "Start: 23.975 min\n Stop: 25.285 min\n 22865.7123 Da\nSignal: 301098.36 \n NA" 
- [50] "Start: 24.578 min\n Stop: 25.068 min\n 22866.8354 Da\nSignal: 192486.81 \n NA" 
- [51] "Start: 19.155 min\n Stop: 19.648 min\n 23462.8111 Da\nSignal: 88248.7 \n NA"   
- [52] "Start: 18.992 min\n Stop: 19.594 min\n 23467.0927 Da\nSignal: 60660.88 \n NA"  
- [53] "Start: 21.014 min\n Stop: 21.566 min\n 23531.9093 Da\nSignal: 666605.59 \n NA" 
- [54] "Start: 20.899 min\n Stop: 21.566 min\n 23532.9696 Da\nSignal: 1007900.38 \n NA"
- [55] "Start: 21.014 min\n Stop: 22.282 min\n 23533.9423 Da\nSignal: 1031629.69 \n NA"
- [56] "Start: 20.954 min\n Stop: 21.844 min\n 23534.9514 Da\nSignal: 982501.59 \n NA" 
- [57] "Start: 21.126 min\n Stop: 21.677 min\n 23535.9023 Da\nSignal: 699400.93 \n NA" 
- [58] "Start: 22.065 min\n Stop: 22.5 min\n 23766.5442 Da\nSignal: 142147.99 \n NA"   
- [59] "Start: 22.065 min\n Stop: 22.554 min\n 23767.5671 Da\nSignal: 187069.96 \n NA" 
- [60] "Start: 22.01 min\n Stop: 22.554 min\n 23768.6258 Da\nSignal: 116903.31 \n NA"  
- [61] "Start: 22.01 min\n Stop: 22.446 min\n 23769.6153 Da\nSignal: 91688.77 \n NA"   
- [62] "Start: 24.25 min\n Stop: 24.85 min\n 23777.73 Da\nSignal: 25875.07 \n NA"      
- [63] "Start: 24.086 min\n Stop: 25.122 min\n 23778.8837 Da\nSignal: 22082.24 \n NA"  
- [64] "Start: 25.013 min\n Stop: 25.557 min\n 23815.9225 Da\nSignal: 19698.74 \n NA"  
- [65] "Start: 24.141 min\n Stop: 25.448 min\n 23856.3917 Da\nSignal: 62682.91 \n NA"  
- [66] "Start: 24.141 min\n Stop: 25.557 min\n 23857.3907 Da\nSignal: 64392.19 \n NA"  
- [67] "Start: 23.919 min\n Stop: 24.905 min\n 23860.4845 Da\nSignal: 41310.78 \n NA"  
- [68] "Start: 26.485 min\n Stop: 27.481 min\n 23880.2588 Da\nSignal: 68633.05 \n NA"  
- [69] "Start: 26.376 min\n Stop: 27.253 min\n 23881.3706 Da\nSignal: 81987.73 \n NA"  
- [70] "Start: 26.485 min\n Stop: 27.369 min\n 23882.4235 Da\nSignal: 75671.04 \n NA"  
- [71] "Start: 23.863 min\n Stop: 25.177 min\n 23899.4826 Da\nSignal: 43685.32 \n NA"  
- [72] "Start: 24.086 min\n Stop: 25.34 min\n 23903.5255 Da\nSignal: 69437.96 \n NA"   
- [73] "Start: 23.919 min\n Stop: 25.666 min\n 23904.65 Da\nSignal: 60609.56 \n NA"    
- [74] "Start: 24.25 min\n Stop: 24.85 min\n 23905.6818 Da\nSignal: 58732 \n NA"       
- [75] "Start: 26.322 min\n Stop: 27.369 min\n 23931.81 Da\nSignal: 75289.2 \n NA"     
- [76] "Start: 27.031 min\n Stop: 27.369 min\n 23932.8843 Da\nSignal: 40809.66 \n NA"  
- [77] "Start: 26.977 min\n Stop: 27.589 min\n 23935.081 Da\nSignal: 47235.35 \n NA"   
- [78] "Start: 26.485 min\n Stop: 27.253 min\n 23936.0183 Da\nSignal: 57192.01 \n NA"  
- [79] "Start: 26.322 min\n Stop: 27.14 min\n 23937.0146 Da\nSignal: 33506.35 \n NA"   
- [80] "Start: 24.905 min\n Stop: 25.231 min\n 23957.3335 Da\nSignal: 16932.48 \n NA"  
- [81] "Start: 24.031 min\n Stop: 25.394 min\n 24005.409 Da\nSignal: 35214.04 \n NA"   
- [82] "Start: 24.141 min\n Stop: 24.905 min\n 24065.683 Da\nSignal: 32652.83 \n NA"   
- [83] "Start: 18.555 min\n Stop: 19.101 min\n 24075.4193 Da\nSignal: 31651.31 \n NA"  
- [84] "Start: 18.61 min\n Stop: 18.992 min\n 24253.5167 Da\nSignal: 36751.64 \n NA"   
- [85] "Start: 18.555 min\n Stop: 19.212 min\n 24264.2614 Da\nSignal: 22336.65 \n NA"  
- [86] "Start: 18.555 min\n Stop: 19.212 min\n 24265.0729 Da\nSignal: 29094.49 \n NA"  
- [87] "Start: 19.101 min\n Stop: 19.539 min\n 24315.6919 Da\nSignal: 38885.79 \n NA"  
- [88] "Start: 29.007 min\n Stop: 29.716 min\n 24322.8477 Da\nSignal: 21813.5 \n NA"   
- [89] "Start: 20.954 min\n Stop: 21.899 min\n 24475.8353 Da\nSignal: 116269.09 \n NA" 
- [90] "Start: 28.733 min\n Stop: 29.444 min\n 24478.6902 Da\nSignal: 21099.43 \n NA"  
- [91] "Start: 28.46 min\n Stop: 29.444 min\n 24479.7247 Da\nSignal: 15450.03 \n NA"   
- [92] "Start: 21.014 min\n Stop: 22.065 min\n 24516.2482 Da\nSignal: 136687.86 \n NA" 
- [93] "Start: 20.851 min\n Stop: 21.732 min\n 24656.3555 Da\nSignal: 94574.21 \n NA"  
- [94] "Start: 20.141 min\n Stop: 20.74 min\n 24674.8562 Da\nSignal: 50540.42 \n NA"   
- [95] "Start: 20.141 min\n Stop: 21.014 min\n 24715.0466 Da\nSignal: 114288.06 \n NA" 
- [96] "Start: 20.086 min\n Stop: 20.899 min\n 24718.8846 Da\nSignal: 122812.55 \n NA" 
- [97] "Start: 20.086 min\n Stop: 20.74 min\n 24719.7887 Da\nSignal: 154491.43 \n NA"  
- [98] "Start: 20.086 min\n Stop: 20.74 min\n 24720.7966 Da\nSignal: 118270.96 \n NA"  
- [99] "Start: 20.032 min\n Stop: 21.014 min\n 24801.7096 Da\nSignal: 58944.05 \n NA"  
-[100] "Start: 24.25 min\n Stop: 24.85 min\n 24849.9335 Da\nSignal: 48485.54 \n NA"    
-[101] "Start: 23.919 min\n Stop: 24.578 min\n 24942.4401 Da\nSignal: 45916.99 \n NA"  
-[102] "Start: 24.196 min\n Stop: 24.905 min\n 25039.1523 Da\nSignal: 42889.92 \n NA"  
-[103] "Start: 27.971 min\n Stop: 29.553 min\n 25175.6708 Da\nSignal: 33283.53 \n NA"  
-[104] "Start: 28.351 min\n Stop: 29.171 min\n 25176.6035 Da\nSignal: 34067.53 \n NA"  
-[105] "Start: 28.733 min\n Stop: 29.499 min\n 25177.6289 Da\nSignal: 38529.11 \n NA"  
-[106] "Start: 27.862 min\n Stop: 29.061 min\n 25232.9492 Da\nSignal: 58735.6 \n NA"   
-[107] "Start: 27.862 min\n Stop: 28.46 min\n 25233.8746 Da\nSignal: 56923.45 \n NA"   
-[108] "Start: 27.971 min\n Stop: 28.624 min\n 25237.7352 Da\nSignal: 50380.05 \n NA"  
-[109] "Start: 22.065 min\n Stop: 22.717 min\n 25269.9591 Da\nSignal: 48217.22 \n NA"  
-[110] "Start: 18.338 min\n Stop: 19.155 min\n 25275.8372 Da\nSignal: 191112.28 \n NA" 
-[111] "Start: 18.446 min\n Stop: 19.266 min\n 25276.8026 Da\nSignal: 208460.3 \n NA"  
-[112] "Start: 18.446 min\n Stop: 19.155 min\n 25277.7516 Da\nSignal: 293237.73 \n NA" 
-[113] "Start: 18.5 min\n Stop: 19.155 min\n 25278.7894 Da\nSignal: 281465.24 \n NA"   
-[114] "Start: 18.5 min\n Stop: 19.212 min\n 25279.7409 Da\nSignal: 303318.27 \n NA"   
-[115] "Start: 18.555 min\n Stop: 19.212 min\n 25280.8483 Da\nSignal: 296779.22 \n NA" 
-[116] "Start: 28.297 min\n Stop: 29.171 min\n 25283.2454 Da\nSignal: 60976.3 \n NA"   
-[117] "Start: 27.971 min\n Stop: 28.897 min\n 25285.1521 Da\nSignal: 71442.67 \n NA"  
-[118] "Start: 27.971 min\n Stop: 29.39 min\n 25286.1592 Da\nSignal: 78482.47 \n NA"   
-[119] "Start: 27.971 min\n Stop: 29.499 min\n 25287.1636 Da\nSignal: 86248.34 \n NA"  
-[120] "Start: 27.862 min\n Stop: 29.007 min\n 25288.1062 Da\nSignal: 86020.88 \n NA"  
-[121] "Start: 28.188 min\n Stop: 29.335 min\n 25288.9978 Da\nSignal: 73038.19 \n NA"  
-[122] "Start: 27.862 min\n Stop: 29.771 min\n 25289.9727 Da\nSignal: 69312.09 \n NA"  
-[123] "Start: 27.807 min\n Stop: 28.134 min\n 25327.2956 Da\nSignal: 18368.51 \n NA"  
-[124] "Start: 28.243 min\n Stop: 29.225 min\n 25331.1866 Da\nSignal: 60534.88 \n NA"  
-[125] "Start: 28.679 min\n Stop: 29.39 min\n 25333.1295 Da\nSignal: 50439.24 \n NA"   
-[126] "Start: 27.698 min\n Stop: 29.88 min\n 25334.0616 Da\nSignal: 79463.82 \n NA"   
-[127] "Start: 28.025 min\n Stop: 29.88 min\n 25335.0288 Da\nSignal: 75171.99 \n NA"   
-[128] "Start: 27.753 min\n Stop: 29.553 min\n 25336.0129 Da\nSignal: 80450.09 \n NA"  
-[129] "Start: 27.971 min\n Stop: 29.935 min\n 25336.945 Da\nSignal: 78647.06 \n NA"   
-[130] "Start: 27.971 min\n Stop: 29.335 min\n 25339.8509 Da\nSignal: 42366.48 \n NA"  
-[131] "Start: 22.01 min\n Stop: 22.717 min\n 25342.2317 Da\nSignal: 55450.72 \n NA"   
-[132] "Start: 27.916 min\n Stop: 28.788 min\n 25376.233 Da\nSignal: 63757.93 \n NA"   
-[133] "Start: 27.916 min\n Stop: 29.28 min\n 25377.2584 Da\nSignal: 67043.02 \n NA"   
-[134] "Start: 27.807 min\n Stop: 30.099 min\n 25378.234 Da\nSignal: 64841.49 \n NA"   
-[135] "Start: 27.807 min\n Stop: 29.225 min\n 25379.1247 Da\nSignal: 66830.71 \n NA"  
-[136] "Start: 28.515 min\n Stop: 29.28 min\n 25380.1002 Da\nSignal: 61680.27 \n NA"   
-[137] "Start: 28.134 min\n Stop: 29.28 min\n 25381.0407 Da\nSignal: 71269.25 \n NA"   
-[138] "Start: 28.079 min\n Stop: 28.897 min\n 25381.9577 Da\nSignal: 49586.45 \n NA"  
-[139] "Start: 28.406 min\n Stop: 29.116 min\n 25382.9508 Da\nSignal: 47707.92 \n NA"  
-[140] "Start: 22.173 min\n Stop: 22.826 min\n 25407.6048 Da\nSignal: 26704.12 \n NA"  
-[141] "Start: 28.079 min\n Stop: 29.007 min\n 25416.9501 Da\nSignal: 43916.83 \n NA"  
-[142] "Start: 28.134 min\n Stop: 29.007 min\n 25417.9297 Da\nSignal: 45398.28 \n NA"  
-[143] "Start: 28.025 min\n Stop: 29.225 min\n 25418.8696 Da\nSignal: 50920.07 \n NA"  
-[144] "Start: 20.954 min\n Stop: 21.622 min\n 25418.9048 Da\nSignal: 68373.9 \n NA"   
-[145] "Start: 28.243 min\n Stop: 29.99 min\n 25419.8004 Da\nSignal: 51680.84 \n NA"   
-[146] "Start: 28.243 min\n Stop: 29.608 min\n 25420.8029 Da\nSignal: 39693.8 \n NA"   
-[147] "Start: 28.188 min\n Stop: 28.788 min\n 25454.5646 Da\nSignal: 18843.85 \n NA"  
-[148] "Start: 28.243 min\n Stop: 28.679 min\n 25455.5326 Da\nSignal: 18033.24 \n NA"  
-[149] "Start: 28.515 min\n Stop: 29.225 min\n 25456.5038 Da\nSignal: 24542.14 \n NA"  
-[150] "Start: 28.134 min\n Stop: 28.788 min\n 25490.6565 Da\nSignal: 21512.77 \n NA"  
-[151] "Start: 14.415 min\n Stop: 14.85 min\n 25618.2452 Da\nSignal: 7625.71 \n NA"    
-[152] "Start: 20.899 min\n Stop: 21.398 min\n 25772.3145 Da\nSignal: 12457.92 \n NA"  
-[153] "Start: 20.141 min\n Stop: 20.74 min\n 25790.2682 Da\nSignal: 1050153.42 \n NA" 
-[154] "Start: 20.141 min\n Stop: 20.899 min\n 25791.2116 Da\nSignal: 1192906.55 \n NA"
-[155] "Start: 20.086 min\n Stop: 20.954 min\n 25792.2344 Da\nSignal: 1234377.49 \n NA"
-[156] "Start: 20.086 min\n Stop: 20.63 min\n 25793.1905 Da\nSignal: 1359838.51 \n NA" 
-[157] "Start: 20.032 min\n Stop: 20.74 min\n 25794.2731 Da\nSignal: 1262861.92 \n NA" 
-[158] "Start: 20.086 min\n Stop: 20.796 min\n 25795.2633 Da\nSignal: 1137402.53 \n NA"
-[159] "Start: 19.977 min\n Stop: 20.361 min\n 25979.3693 Da\nSignal: 28069.69 \n NA"  
-[160] "Start: 31.741 min\n Stop: 32.123 min\n 26175.9328 Da\nSignal: 2199.45 \n NA"   
-[161] "Start: 18.5 min\n Stop: 19.212 min\n 26271.809 Da\nSignal: 33423.07 \n NA"     
-[162] "Start: 22.119 min\n Stop: 22.662 min\n 26321.3171 Da\nSignal: 50494.33 \n NA"  
-[163] "Start: 18.992 min\n Stop: 19.594 min\n 26331.7594 Da\nSignal: 33141.96 \n NA"  
-[164] "Start: 22.01 min\n Stop: 22.989 min\n 26351.1566 Da\nSignal: 43327.16 \n NA"   
-[165] "Start: 22.065 min\n Stop: 22.881 min\n 26352.1051 Da\nSignal: 45747.38 \n NA"  
-[166] "Start: 28.025 min\n Stop: 29.39 min\n 26433.1753 Da\nSignal: 433085.78 \n NA"  
-[167] "Start: 28.025 min\n Stop: 29.444 min\n 26434.158 Da\nSignal: 496150.22 \n NA"  
-[168] "Start: 27.971 min\n Stop: 30.262 min\n 26435.2567 Da\nSignal: 544396.93 \n NA" 
-[169] "Start: 27.971 min\n Stop: 30.428 min\n 26436.2119 Da\nSignal: 524295.39 \n NA" 
-[170] "Start: 27.971 min\n Stop: 29.935 min\n 26437.1972 Da\nSignal: 509645.15 \n NA" 
-[171] "Start: 28.134 min\n Stop: 29.99 min\n 26438.2024 Da\nSignal: 458909.51 \n NA"  
-[172] "Start: 19.266 min\n Stop: 19.812 min\n 26718.5575 Da\nSignal: 15341.46 \n NA"  
-[173] "Start: 20.086 min\n Stop: 21.014 min\n 26823.5108 Da\nSignal: 165959.08 \n NA" 
-[174] "Start: 20.086 min\n Stop: 20.685 min\n 26826.6688 Da\nSignal: 154105.73 \n NA" 
-[175] "Start: 20.086 min\n Stop: 20.954 min\n 26865.5698 Da\nSignal: 187619.41 \n NA" 
-[176] "Start: 20.306 min\n Stop: 21.014 min\n 26866.5678 Da\nSignal: 165596.69 \n NA" 
-[177] "Start: 20.521 min\n Stop: 21.182 min\n 26908.0608 Da\nSignal: 47438.65 \n NA"  
-[178] "Start: 22.01 min\n Stop: 22.935 min\n 27291.7389 Da\nSignal: 341618.59 \n NA"  
-[179] "Start: 21.954 min\n Stop: 23.098 min\n 27292.716 Da\nSignal: 359284.56 \n NA"  
-[180] "Start: 22.065 min\n Stop: 23.098 min\n 27293.723 Da\nSignal: 310041.62 \n NA"  
-[181] "Start: 22.01 min\n Stop: 23.044 min\n 27294.7741 Da\nSignal: 265673.54 \n NA"  
-[182] "Start: 22.39 min\n Stop: 23.098 min\n 27295.7772 Da\nSignal: 192829.81 \n NA"  
-[183] "Start: 18.5 min\n Stop: 19.046 min\n 27298.0187 Da\nSignal: 31070.42 \n NA"    
-[184] "Start: 27.253 min\n Stop: 27.807 min\n 27350.0362 Da\nSignal: 31793.91 \n NA"  
-[185] "Start: 28.515 min\n Stop: 29.553 min\n 27418.0978 Da\nSignal: 25631.13 \n NA"  
-[186] "Start: 29.116 min\n Stop: 29.88 min\n 27449.4966 Da\nSignal: 14188.64 \n NA"   
-[187] "Start: 27.807 min\n Stop: 28.897 min\n 27450.4491 Da\nSignal: 42985.18 \n NA"  
-[188] "Start: 28.025 min\n Stop: 29.935 min\n 27451.5647 Da\nSignal: 45683.68 \n NA"  
-[189] "Start: 28.297 min\n Stop: 29.825 min\n 27452.5799 Da\nSignal: 50982.13 \n NA"  
-[190] "Start: 29.007 min\n Stop: 29.825 min\n 27454.6217 Da\nSignal: 25402.74 \n NA"  
-[191] "Start: 28.515 min\n Stop: 29.553 min\n 27456.736 Da\nSignal: 17584.1 \n NA"    
-[192] "Start: 29.007 min\n Stop: 29.662 min\n 27490.1512 Da\nSignal: 32618.74 \n NA"  
-[193] "Start: 27.862 min\n Stop: 28.843 min\n 27491.1827 Da\nSignal: 62273.23 \n NA"  
-[194] "Start: 29.061 min\n Stop: 29.662 min\n 27493.3091 Da\nSignal: 39196.29 \n NA"  
-[195] "Start: 28.134 min\n Stop: 29.662 min\n 27495.4134 Da\nSignal: 65427.3 \n NA"   
-[196] "Start: 27.807 min\n Stop: 29.553 min\n 27496.356 Da\nSignal: 66049.1 \n NA"    
-[197] "Start: 29.225 min\n Stop: 29.99 min\n 27499.6377 Da\nSignal: 6678.79 \n NA"    
-[198] "Start: 27.971 min\n Stop: 28.624 min\n 27534.2656 Da\nSignal: 87051.39 \n NA"  
-[199] "Start: 27.971 min\n Stop: 29.88 min\n 27535.3215 Da\nSignal: 89436.11 \n NA"   
-[200] "Start: 27.862 min\n Stop: 29.39 min\n 27536.3102 Da\nSignal: 89378.89 \n NA"   
-[201] "Start: 28.079 min\n Stop: 29.28 min\n 27539.42 Da\nSignal: 88107.07 \n NA"     
-[202] "Start: 14.959 min\n Stop: 15.558 min\n 27568.5618 Da\nSignal: 8269.82 \n NA"   
-[203] "Start: 28.897 min\n Stop: 29.499 min\n 27581.1248 Da\nSignal: 38753.51 \n NA"  
-[204] "Start: 27.971 min\n Stop: 29.99 min\n 27587.3914 Da\nSignal: 86462.38 \n NA"   
-[205] "Start: 27.971 min\n Stop: 29.662 min\n 27588.4724 Da\nSignal: 72492.96 \n NA"  
-[206] "Start: 28.079 min\n Stop: 28.788 min\n 27590.5759 Da\nSignal: 53133.39 \n NA"  
-[207] "Start: 20.361 min\n Stop: 21.294 min\n 27778.6711 Da\nSignal: 77930.94 \n NA"  
-[208] "Start: 20.466 min\n Stop: 21.294 min\n 27779.715 Da\nSignal: 97183.15 \n NA"   
-[209] "Start: 20.466 min\n Stop: 21.182 min\n 27780.5285 Da\nSignal: 101495.01 \n NA" 
-[210] "Start: 22.01 min\n Stop: 22.5 min\n 28147.4906 Da\nSignal: 16133.18 \n NA"     
-[211] "Start: 22.446 min\n Stop: 23.315 min\n 28232.4836 Da\nSignal: 35700.26 \n NA"  
-[212] "Start: 28.679 min\n Stop: 29.335 min\n 28261.5933 Da\nSignal: 8000.46 \n NA"   
-[213] "Start: 22.119 min\n Stop: 22.772 min\n 28266.0139 Da\nSignal: 47851.89 \n NA"  
-[214] "Start: 22.173 min\n Stop: 22.826 min\n 28267.1856 Da\nSignal: 70557.97 \n NA"  
-[215] "Start: 21.954 min\n Stop: 22.989 min\n 28268.099 Da\nSignal: 54067.51 \n NA"   
-[216] "Start: 22.119 min\n Stop: 22.881 min\n 28272.3966 Da\nSignal: 30614.3 \n NA"   
-[217] "Start: 26.758 min\n Stop: 27.698 min\n 28290.3236 Da\nSignal: 19510.02 \n NA"  
-[218] "Start: 22.119 min\n Stop: 23.152 min\n 28301.2563 Da\nSignal: 43851.04 \n NA"  
-[219] "Start: 22.282 min\n Stop: 22.989 min\n 28302.1535 Da\nSignal: 59313.86 \n NA"  
-[220] "Start: 26.758 min\n Stop: 27.426 min\n 28329.3517 Da\nSignal: 34416.83 \n NA"  
-[221] "Start: 22.282 min\n Stop: 22.772 min\n 28344.2294 Da\nSignal: 66668.18 \n NA"  
-[222] "Start: 26.923 min\n Stop: 27.589 min\n 28361.6211 Da\nSignal: 34852.88 \n NA"  
-[223] "Start: 26.977 min\n Stop: 28.297 min\n 28364.4563 Da\nSignal: 22243.91 \n NA"  
-[224] "Start: 27.426 min\n Stop: 28.025 min\n 28365.2146 Da\nSignal: 17991.94 \n NA"  
-[225] "Start: 22.119 min\n Stop: 23.044 min\n 28383.0851 Da\nSignal: 55593.03 \n NA"  
-[226] "Start: 22.228 min\n Stop: 22.989 min\n 28385.1703 Da\nSignal: 50750.52 \n NA"  
-[227] "Start: 28.351 min\n Stop: 28.843 min\n 28403.1922 Da\nSignal: 14078.27 \n NA"  
-[228] "Start: 25.557 min\n Stop: 26.267 min\n 28406.0128 Da\nSignal: 38035.24 \n NA"  
-[229] "Start: 22.065 min\n Stop: 22.935 min\n 28429.6574 Da\nSignal: 30513.73 \n NA"  
-[230] "Start: 28.406 min\n Stop: 28.788 min\n 28441.3058 Da\nSignal: 5623.48 \n NA"   
-[231] "Start: 27.031 min\n Stop: 27.535 min\n 28458.5844 Da\nSignal: 21093.08 \n NA"  
-[232] "Start: 28.569 min\n Stop: 29.116 min\n 28482.2882 Da\nSignal: 11109.05 \n NA"  
-[233] "Start: 29.335 min\n Stop: 30.044 min\n 28640.9916 Da\nSignal: 22461.45 \n NA"  
-[234] "Start: 19.703 min\n Stop: 20.086 min\n 28655.9369 Da\nSignal: 19965.32 \n NA"  
-[235] "Start: 26.322 min\n Stop: 26.867 min\n 28877.3206 Da\nSignal: 7102.82 \n NA"   
-[236] "Start: 22.282 min\n Stop: 22.989 min\n 29053.7448 Da\nSignal: 10909.58 \n NA"  
-[237] "Start: 22.065 min\n Stop: 22.826 min\n 29170.933 Da\nSignal: 25807.66 \n NA"   
-[238] "Start: 22.336 min\n Stop: 22.772 min\n 29244.6156 Da\nSignal: 46849.82 \n NA"  
-[239] "Start: 26.704 min\n Stop: 27.916 min\n 29375.1039 Da\nSignal: 83700.03 \n NA"  
-[240] "Start: 26.813 min\n Stop: 27.916 min\n 29376.1458 Da\nSignal: 108061.63 \n NA" 
-[241] "Start: 26.977 min\n Stop: 28.297 min\n 29377.0942 Da\nSignal: 102731.44 \n NA" 
-[242] "Start: 26.923 min\n Stop: 27.971 min\n 29379.2995 Da\nSignal: 60803.45 \n NA"  
-[243] "Start: 25.829 min\n Stop: 26.155 min\n 29497.1629 Da\nSignal: 19424.17 \n NA"  
-[244] "Start: 29.935 min\n Stop: 30.317 min\n 29606.3691 Da\nSignal: 4615.14 \n NA"   
-
-[[2]]$type
-[1] "scatter"
-
-[[2]]$mode
-[1] "markers"
-
-[[2]]$marker
-[[2]]$marker$autocolorscale
-[1] FALSE
-
-[[2]]$marker$color
-[1] "rgba(77,77,77,1)"
-
-[[2]]$marker$opacity
-[1] 0.8
-
-[[2]]$marker$size
-[1] 3.779528
-
-[[2]]$marker$symbol
-[1] "circle-open"
-
-[[2]]$marker$line
-[[2]]$marker$line$width
-[1] 1.889764
-
-[[2]]$marker$line$color
-[1] "rgba(77,77,77,1)"
-
-
-
-[[2]]$hoveron
-[1] "points"
-
-[[2]]$name
-[1] "(Not IDed,1)"
-
-[[2]]$legendgroup
-[1] "(Not IDed,1)"
-
-[[2]]$showlegend
-[1] TRUE
-
-[[2]]$xaxis
-[1] "x"
-
-[[2]]$yaxis
-[1] "y"
-
-[[2]]$hoverinfo
-[1] "text"
-
-
-[[3]]
-[[3]]$x
-[1] 27.528
-
-[[3]]$y
-[1] 29374.16
-
-[[3]]$text
-[1] "Start: 27.031 min\n Stop: 28.025 min\n 29374.1609 Da\nSignal: 69436.9 \n PSA4_HUMAN Proteasome subunit alpha type-4 OS=Homo sapiens GN=PSMA4 PE=1 SV=1"
-
-[[3]]$type
-[1] "scatter"
-
-[[3]]$mode
-[1] "markers"
-
-[[3]]$marker
-[[3]]$marker$autocolorscale
-[1] FALSE
-
-[[3]]$marker$color
-[1] "rgba(228,26,28,1)"
-
-[[3]]$marker$opacity
-[1] 0.8
-
-[[3]]$marker$size
-[1] 3.779528
-
-[[3]]$marker$symbol
-[1] "circle"
-
-[[3]]$marker$line
-[[3]]$marker$line$width
+[[1]]$ax
 [1] 0
 
-[[3]]$marker$line$color
-[1] "rgba(0,0,0,1)"
-
-
-
-[[3]]$hoveron
-[1] "points"
-
-[[3]]$name
-[1] "(PSA4_HUMAN Proteasome subunit alpha type-4 OS=Homo sapiens GN=PSMA4 PE=1 SV=1,1)"
-
-[[3]]$legendgroup
-[1] "(PSA4_HUMAN Proteasome subunit alpha type-4 OS=Homo sapiens GN=PSMA4 PE=1 SV=1,1)"
-
-[[3]]$showlegend
-[1] TRUE
-
-[[3]]$xaxis
-[1] "x"
-
-[[3]]$yaxis
-[1] "y"
-
-[[3]]$hoverinfo
-[1] "text"
-
-
-[[4]]
-[[4]]$x
-[1] 21.318 21.288
-
-[[4]]$y
-[1] 22461.69 22550.89
-
-[[4]]$text
-[1] "Start: 21.014 min\n Stop: 21.622 min\n 22461.6947 Da\nSignal: 71987.09 \n PSB1_HUMAN Proteasome subunit beta type-1 OS=Homo sapiens GN=PSMB1 PE=1 SV=2"
-[2] "Start: 20.899 min\n Stop: 21.677 min\n 22550.8924 Da\nSignal: 92383.54 \n PSB1_HUMAN Proteasome subunit beta type-1 OS=Homo sapiens GN=PSMB1 PE=1 SV=2"
-
-[[4]]$type
-[1] "scatter"
-
-[[4]]$mode
-[1] "markers"
-
-[[4]]$marker
-[[4]]$marker$autocolorscale
-[1] FALSE
-
-[[4]]$marker$color
-[1] "rgba(153,153,153,1)"
-
-[[4]]$marker$opacity
-[1] 0.8
-
-[[4]]$marker$size
-[1] 3.779528
-
-[[4]]$marker$symbol
-[1] "circle"
-
-[[4]]$marker$line
-[[4]]$marker$line$width
+[[1]]$ay
 [1] 0
 
-[[4]]$marker$line$color
+[[1]]$font
+[[1]]$font$color
 [1] "rgba(0,0,0,1)"
 
+[[1]]$font$family
+[1] ""
+
+[[1]]$font$size
+[1] 14.61187
 
 
-[[4]]$hoveron
-[1] "points"
+[[1]]$xref
+[1] "paper"
 
-[[4]]$name
-[1] "(PSB1_HUMAN Proteasome subunit beta type-1 OS=Homo sapiens GN=PSMB1 PE=1 SV=2,1)"
+[[1]]$yref
+[1] "paper"
 
-[[4]]$legendgroup
-[1] "(PSB1_HUMAN Proteasome subunit beta type-1 OS=Homo sapiens GN=PSMB1 PE=1 SV=2,1)"
+[[1]]$textangle
+[1] 0
 
-[[4]]$showlegend
+[[1]]$xanchor
+[1] "left"
+
+[[1]]$yanchor
+[1] "bottom"
+
+[[1]]$legendTitle
 [1] TRUE
-
-[[4]]$xaxis
-[1] "x"
-
-[[4]]$yaxis
-[1] "y"
-
-[[4]]$hoverinfo
-[1] "text"
 
 
