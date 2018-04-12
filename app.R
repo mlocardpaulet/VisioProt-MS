@@ -1161,14 +1161,14 @@ server <- function(input, output, clientData, session) {
             if (is.null(filedata0()) | input$MSTrace == FALSE) { # No MS trace
               g <- ggplot() + 
                 geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
-                coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)  + 
+                coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = TRUE)  + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Protein mass (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec))) 
               }
             } else if (input$MSTrace == TRUE) { # Overlay on MS trace
@@ -1180,7 +1180,7 @@ server <- function(input, output, clientData, session) {
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             }
@@ -1207,7 +1207,7 @@ server <- function(input, output, clientData, session) {
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             } else {
@@ -1219,7 +1219,7 @@ server <- function(input, output, clientData, session) {
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             }
@@ -1238,14 +1238,14 @@ server <- function(input, output, clientData, session) {
             if (is.null(filedata0()) | input$MSTrace == FALSE) { # No MS trace
               g <- ggplot() + 
                 geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
-                coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)  + 
+                coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = TRUE)  + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Protein mass (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec))) 
               }
             } else if (input$MSTrace == TRUE) { # Overlay on MS trace
@@ -1257,7 +1257,7 @@ server <- function(input, output, clientData, session) {
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = "white") +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             }
@@ -1294,23 +1294,20 @@ server <- function(input, output, clientData, session) {
                yaxis=list(fixedrange=TRUE),
                title = "") %>%
         config(displayModeBar = F) %>%
-        layout(margin = list(l = 110, b = 40, r = 3, t = 10, pad = -2))  %>% 
-        layout(legend = list(x = 0.25, y = -0.25))
+        layout(margin = list(l = 110, b = 40, r = 3, t = 10, pad = -2)) # %>% 
+      #layout(legend = list(x = 0.25, y = -0.25))
       # Remove IDed and Not IDed from the legend:
       if (input$MSModeCheck == "MS2") {
-        if (input$MSTrace & !is.null(filedata()) & filetype$RoWinPro > 0) {
-          if (input$HideMSMS) {
-            p <- style(p, showlegend = FALSE, traces = 2)
-          } else {
-            p <- style(p, showlegend = FALSE, traces = 2:3)
-          }
-        } else {
-          if (input$HideMSMS) {
-            p <- style(p, showlegend = FALSE, traces = 1)
-          } else {
-            p <- style(p, showlegend = FALSE, traces = 1:2)
-          }
-        }
+        vec <- sapply(p$x$data, function(x) {
+          grepl("ID", x$name)
+        })
+        #### TROUBLESHOOTING:
+        #sink("output.txt")
+        #print(which(vec))
+        #print(p$x$data)
+        #sink()
+        ####
+        p <- style(p, showlegend = FALSE, traces = which(vec))
       }
       p
     } else {
