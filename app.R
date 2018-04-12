@@ -160,24 +160,17 @@ ui <- fluidPage(
                  # Part 1:
                  conditionalPanel(condition="input.MSModeCheck== 'MS'",
                                   # File selection:
-                                  fluidRow(
-                                    column(11,
-                                           fileInput("fileMS", "Select input file(s):",  
-                                                     accept = c(
-                                                       "text/csv",
-                                                       "text/comma-separated-values,text/plain",
-                                                       ".txt",
-                                                       ".ms1ft",
-                                                       ".csv",
-                                                       ".msalign"),
-                                                     multiple = T,
-                                                     width = "100%"
-                                           )),
-                                    column(1, style = "margin-top: 30px",
-                                           tipify(bsButton("bsfileMS", "?", style = "default", size = "extra-small"),
-                                                  "Upload a file with deconvoluted MS data for plotting",
-                                                  placement = "right")
-                                    )),
+                                  fileInput("fileMS", "Select input file(s):",  
+                                            accept = c(
+                                              "text/csv",
+                                              "text/comma-separated-values,text/plain",
+                                              ".txt",
+                                              ".ms1ft",
+                                              ".csv",
+                                              ".msalign"),
+                                            multiple = T,
+                                            width = "100%"
+                                  ),
                                   checkboxInput("TestModeCheck", "Using test mode", FALSE),
                                   bsTooltip("TestModeCheck", 
                                             "Check to test the application without uploading any file. Then click on a button to upload a single test file or several for overlay",
@@ -200,24 +193,17 @@ ui <- fluidPage(
                                                    br()
                                   ),
                                   conditionalPanel(condition = "input.MS2TestModeCheck==false",
-                                                   fluidRow(
-                                                     column(11,
-                                                            fileInput("fileMS2", "Select input file for MS:",  
-                                                                      accept = c(
-                                                                        "text/csv",
-                                                                        "text/comma-separated-values,text/plain",
-                                                                        ".csv",
-                                                                        ".txt",
-                                                                        ".ms1ft",
-                                                                        ".msalign"),
-                                                                      multiple = F,
-                                                                      width = "100%"
-                                                            )),
-                                                     column(1, style = "margin-top: 30px", 
-                                                            tipify(bsButton(inputId = "fileMS2", label = "?", style = "default", size = "extra-small"),
-                                                                   title = "Upload a file with deconvoluted MS data for plotting with the corresponding results of a top-down analysis",
-                                                                   options = NULL)
-                                                     )),
+                                                   fileInput("fileMS2", "Select input file for MS:",  
+                                                             accept = c(
+                                                               "text/csv",
+                                                               "text/comma-separated-values,text/plain",
+                                                               ".csv",
+                                                               ".txt",
+                                                               ".ms1ft",
+                                                               ".msalign"),
+                                                             multiple = F,
+                                                             width = "100%"
+                                                   ),
                                                    radioButtons("PDPFModeCheck", "Origin of the MS2 files:",
                                                                 c("Proteome Discoverer" = 'PD',
                                                                   "MSPathFinder" = 'PF',
@@ -229,74 +215,39 @@ ui <- fluidPage(
                                                              "Choose the software utilized for analysing of the top-down data",
                                                              "right"),
                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'PD'", 
-                                                                    fluidRow(
-                                                                      column(11,
-                                                                             fileInput("MS2file", "Choose MS2 File:", 
-                                                                                       accept = c(
-                                                                                         "text/csv",
-                                                                                         "text/comma-separated-values,text/plain",
-                                                                                         ".txt")
-                                                                             )),
-                                                                      column(1, style = "margin-top: 30px",
-                                                                             tipify(bsButton("MS2file", "?", style = "default", size = "extra-small"),
-                                                                                    "Upload the corresponding MSMS file from Proteome Discoverer",
-                                                                                    placement = "right")
-                                                                      )),
-                                                                    fluidRow(
-                                                                      column(11,
-                                                                             fileInput("PSMfile", "Choose PSM File:", 
-                                                                                       accept = c(
-                                                                                         "text/csv",
-                                                                                         "text/comma-separated-values,text/plain",
-                                                                                         ".txt")
-                                                                             )),
-                                                                      column(1, style = "margin-top: 30px",
-                                                                             tipify(bsButton("PSMfile", "?", style = "default", size = "extra-small"),
-                                                                                    "Upload the corresponding PSMs file from Proteome Discoverer",
-                                                                                    placement = "right")
-                                                                      ))),
-                                                   conditionalPanel(condition = "input.PDPFModeCheck== 'PF'", 
-                                                                    fluidRow(
-                                                                      column(11,
-                                                                             fileInput("MS2filePF", "Choose IcTarget or IcTda File from MSPathFinder:", 
-                                                                                       accept = c(
-                                                                                         "text/csv",
-                                                                                         "text/comma-separated-values,text/plain",
-                                                                                         ".tsv")
-                                                                             )),
-                                                                      column(1, style = "margin-top: 30px",
-                                                                             tipify(bsButton("MS2filePF", "?", style = "default", size = "extra-small"),
-                                                                                    "Upload the corresponding IcTarget or IcTda file from MSPathFinder",
-                                                                                    placement = "right")
-                                                                      ))
-                                                   ),
-                                                   conditionalPanel(condition = "input.PDPFModeCheck== 'TP'", 
-                                                                    fluidRow(
-                                                                      column(11,
-                                                                             fileInput("MS2fileTP", "Choose MS2 File:", 
-                                                                                       accept = c(
-                                                                                         "text",
-                                                                                         "text/comma-separated-values,text/plain",
-                                                                                         ".msalign")
-                                                                             )),
-                                                                      column(1, style = "margin-top: 30px",
-                                                                             tipify(bsButton("MS2fileTP", "?", style = "default", size = "extra-small"),
-                                                                                    "Upload the corresponding \"_ms2.msalign\" file from TopPic",
-                                                                                    placement = "right")
-                                                                      )), 
-                                                                    fluidRow(
-                                                                      column(11,
-                                                                             fileInput("IDfileTP", "Choose the OUTPUT TABLE from TopPic:", 
-                                                                                       accept = c(
-                                                                                         "text",
-                                                                                         "text/comma-separated-values,text/plain",
-                                                                                         ".OUTPUT_TABLE")
-                                                                             )),
-                                                                      column(1, style = "margin-top: 30px",
-                                                                             tipify(bsButton("IDfileTP", "?", style = "default", size = "extra-small"),
-                                                                                    "Upload the corresponding \"_ms2.OUTPUT_TABLE\" file from TopPic",
-                                                                                    placement = "right")
-                                                                      )))
+                                                                    fileInput("MS2file", "Choose MS2 File:", 
+                                                                              accept = c(
+                                                                                "text/csv",
+                                                                                "text/comma-separated-values,text/plain",
+                                                                                ".txt")
+                                                                    ),
+                                                                    fileInput("PSMfile", "Choose PSM File:", 
+                                                                              accept = c(
+                                                                                "text/csv",
+                                                                                "text/comma-separated-values,text/plain",
+                                                                                ".txt")
+                                                                    ),
+                                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'PF'", 
+                                                                                     fileInput("MS2filePF", "Choose IcTarget or IcTda File from MSPathFinder:", 
+                                                                                               accept = c(
+                                                                                                 "text/csv",
+                                                                                                 "text/comma-separated-values,text/plain",
+                                                                                                 ".tsv")
+                                                                                     )
+                                                                    ),
+                                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'TP'", 
+                                                                                     fileInput("MS2fileTP", "Choose MS2 File:", 
+                                                                                               accept = c(
+                                                                                                 "text",
+                                                                                                 "text/comma-separated-values,text/plain",
+                                                                                                 ".msalign")
+                                                                                     ),
+                                                                                     fileInput("IDfileTP", "Choose the OUTPUT TABLE from TopPic:", 
+                                                                                               accept = c(
+                                                                                                 "text",
+                                                                                                 "text/comma-separated-values,text/plain",
+                                                                                                 ".OUTPUT_TABLE")
+                                                                                     )
                                   ),
                                   selectInput("SelectProt", "Select the ID to highlight:", 
                                               NULL,
