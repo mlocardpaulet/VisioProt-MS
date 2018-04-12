@@ -142,7 +142,15 @@ TopPicMS2Parsing <- function(fname) {
 ############################################################################
 
 ui <- fluidPage(
-  titlePanel("VisioProt-MS"),
+  fluidRow(
+    column(3, titlePanel("VisioProt-MS")
+           ),
+    column(1, actionButton(inputId='ab1', label="?", 
+                           onclick ="window.open('help/visioprothelp.html', '_blank')", 
+                           style="color: #fff; background-color: #673a49; border-color: #000000")
+           )
+  ),
+  tags$style(type='text/css', "#ab1 { width:80%; margin-top: 25px; font-family : Cursive; font-weight: 900; font-size: 160%;}"),
   #checkboxInput("MSModeCheck", "MS data only", TRUE), # to switch from MS data to MS2 mode
   radioButtons("MSModeCheck", "MS mode:",
                c("MS data only" = 'MS',
@@ -226,28 +234,29 @@ ui <- fluidPage(
                                                                                 "text/csv",
                                                                                 "text/comma-separated-values,text/plain",
                                                                                 ".txt")
+                                                                    )),
+                                                   conditionalPanel(condition = "input.PDPFModeCheck== 'PF'", 
+                                                                    fileInput("MS2filePF", "Choose IcTarget or IcTda File from MSPathFinder:", 
+                                                                              accept = c(
+                                                                                "text/csv",
+                                                                                "text/comma-separated-values,text/plain",
+                                                                                ".tsv")
+                                                                    )
+                                                   ),
+                                                   conditionalPanel(condition = "input.PDPFModeCheck== 'TP'", 
+                                                                    fileInput("MS2fileTP", "Choose MS2 File:", 
+                                                                              accept = c(
+                                                                                "text",
+                                                                                "text/comma-separated-values,text/plain",
+                                                                                ".msalign")
                                                                     ),
-                                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'PF'", 
-                                                                                     fileInput("MS2filePF", "Choose IcTarget or IcTda File from MSPathFinder:", 
-                                                                                               accept = c(
-                                                                                                 "text/csv",
-                                                                                                 "text/comma-separated-values,text/plain",
-                                                                                                 ".tsv")
-                                                                                     )
-                                                                    ),
-                                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'TP'", 
-                                                                                     fileInput("MS2fileTP", "Choose MS2 File:", 
-                                                                                               accept = c(
-                                                                                                 "text",
-                                                                                                 "text/comma-separated-values,text/plain",
-                                                                                                 ".msalign")
-                                                                                     ),
-                                                                                     fileInput("IDfileTP", "Choose the OUTPUT TABLE from TopPic:", 
-                                                                                               accept = c(
-                                                                                                 "text",
-                                                                                                 "text/comma-separated-values,text/plain",
-                                                                                                 ".OUTPUT_TABLE")
-                                                                                     )
+                                                                    fileInput("IDfileTP", "Choose the OUTPUT TABLE from TopPic:", 
+                                                                              accept = c(
+                                                                                "text",
+                                                                                "text/comma-separated-values,text/plain",
+                                                                                ".OUTPUT_TABLE")
+                                                                    )
+                                                   )
                                   ),
                                   selectInput("SelectProt", "Select the ID to highlight:", 
                                               NULL,
@@ -309,9 +318,7 @@ ui <- fluidPage(
                  # Buttons for download:
                  downloadButton("Download", "Download .pdf"),
                  downloadButton("Download1", "Download .png"),
-                 downloadButton("Download2", "Download .svg"),
-                 br(),
-                 a("Help", href="Help/VisioProtHelp.html", target="blank") # Access to help
+                 downloadButton("Download2", "Download .svg")
     ),
     # Main panel for plotting (output different in function of the checkbox DataPoints):
     mainPanel(width = 8,
