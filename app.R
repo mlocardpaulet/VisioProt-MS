@@ -649,6 +649,12 @@ server <- function(input, output, clientData, session) {
                       "Select the ID to highlight:",
                       c(""))
   })
+  
+  # Unstore axis limits when uploading new MS file.
+  observeEvent(c(input$fileMS, input$fileMS2), {
+    ranges$x <- NULL
+    ranges$y <- NULL
+  })
   ########################################
   
   ftype <- reactive({
@@ -804,8 +810,6 @@ server <- function(input, output, clientData, session) {
     return(list("MS2file" = MS2, "PSMfile" = PSM))
   })
   
-  #filedataMS2PF <- reactiveVal(NULL)
-  #observeEvent(c(input$MS2filePF, input$fileMS2), {
   filedataMS2PF <- reactive({
     if (is.null(input$MS2filePF) | is.null(input$fileMS2)) {
       return(NULL)
