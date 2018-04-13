@@ -146,7 +146,7 @@ ui <- fluidPage(
     column(3, titlePanel("VisioProt-MS")
            ),
     column(1, actionButton(inputId='ab1', label="?", 
-                           onclick ="window.open('help/visioprothelp.html', '_blank')", 
+                           onclick ="window.open('help/visioprothelp.html', '_blank')",
                            style="color: #fff; background-color: #673a49; border-color: #000000")
            )
   ),
@@ -1015,7 +1015,10 @@ server <- function(input, output, clientData, session) {
   
   plotInput1 <- function(){
     validate(
-      need(input$pch <= 10, "Please define a smaller size of points (max. 10).")
+      need(input$pch <= 10 & input$pch >= 0.1, "Please define a size of points between 0.1 and 10.")
+    )
+    validate(
+      need(input$IntensityThresh <= 100 & input$IntensityThresh >= 0.1, "Please define a threshold between 0.1 and 100. This value corresponds to the proportion of the points in the data set that you want to upload (highest intensities).")
     )
     if (is.null(filedata()) & is.null(filedataMS2()) & is.null(filedataMS2PF()) & is.null(filedataMS2TP())) {
       return(NULL)
