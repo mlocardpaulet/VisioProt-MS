@@ -146,7 +146,7 @@ ui <- fluidPage(
     column(3, titlePanel("VisioProt-MS")
            ),
     column(1, actionButton(inputId='ab1', label="?", 
-                           onclick ="window.open('help/visioprothelp.html', '_blank')",
+                           onclick ="window.open('https://masstools.ipbs.fr/visioprothelp.html', '_blank')",
                            style="color: #fff; background-color: #673a49; border-color: #000000")
            )
   ),

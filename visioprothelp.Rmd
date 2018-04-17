@@ -1,6 +1,6 @@
 ---
 title: "VisioProt - Utilisation manual"
-author: "Marie Locard-Paulet"
+author: "Toulouse Proteomics Infrastructure"
 date: '`r date()`' 
 output: 
     html_document:
@@ -15,25 +15,25 @@ require(knitr)
 require(kableExtra)
 require(dplyr)
 require(ggplot2)
-
-setwd("T:/RRelatedWork/VisioProt-MS/")
-
 ```
 
 
-## General description
+# General description
 
-VisioProt-MS plots the masses of eluting proteins as a function of their retention time to allow inspection and analysis of runs from liquid chromatography coupled to mass spectrometry (LC-MS). The Shiny-based web application VisioProt-MS is suitable for non-R users. It can be found on our [team\'s webpage](https://masstools.ipbs.fr/mstools/visioprot-ms/) and the corresponding scripts are accessible [here](https://github.com/mlocardpaulet/VisioProt-MS). It is governed by the [CeCILL license](http://www.cecill.info).
+[VisioProt-MS](https://masstools.ipbs.fr/mstools/visioprot-ms/) plots the masses of eluting proteins as a function of their retention time to allow inspection and analysis of runs from liquid chromatography coupled to mass spectrometry (LC-MS). It is also possible to overlay MS/MS results from top-down analysis. The Shiny-based web application VisioProt-MS is suitable for non-R users. It can be found on our [team\'s webpage](https://masstools.ipbs.fr/mstools/) and the corresponding scripts are accessible [here](https://github.com/mlocardpaulet/VisioProt-MS). It is governed by the [CeCILL license](http://www.cecill.info).
+
+# MS data only
+
 
 ## Input files
 
-Here are examples of the 3 supported format files (5 first rows of the input tables):
+Here are examples of the supported format files for MS data (5 first rows of the input tables):
 
 ```{r}
 tab1 <- read.table("files/Unique/OEJPA170302_93_Job_1_results.csv", sep = "\t", header = F, nrows = 5) # RoWinPro
 tab2 <- read.table("files/test/TestBioPharma.txt", sep = "\t", header = T, nrows = 5) # BioPharma Finder
 tab3 <- read.table("files/test/Std_Orexin_1-100_Slot2-46_01_1147_DeconvolutedPeaks.csv", sep = ",", header = F, skip = 2, nrows = 5)
-tab4 <- readLines("files/test/TopPic2/OFJMX160905_30.raw_ms1.msalign")[1:20]
+tab4 <- read.table("files/test/OFJMX180309_09_ProMex.ms1ft", sep = "\t", header = T, nrows = 5) # ProMex
 
 k1 <- kable(tab1)
 k2 <- kable(tab2)
@@ -57,9 +57,38 @@ kable(tab2, "html") %>%
   scroll_box(width = "700px", height = "255px")
 ```
 
-**TopPic MS1 export:**
+**TopFD export:**
 
-`r kable(k4)`
+````
+#TopFD 1.1.2
+#Timestamp: Mon Apr 09 18:09:14 2018
+#********************** Parameters **********************
+#Input file:                             //PathToFile.raw.mzML
+#Data type:                              centroided
+#Maximum charge:                         35
+#Maximum monoisotopic mass:              35000 Dalton
+#Error tolerance:                        0.02 m/z
+#Signal/noise ratio:                     100
+#Precursor window size:                  3 m/z
+#********************** Parameters **********************
+BEGIN IONS
+ID=0
+SCANS=1
+RETENTION_TIME=0.17631924798
+414.02989409375	2528063.580133613	1
+428.0819265644531	2389228.119140054	1
+502.1008769804688	1382504.42265122	1
+488.0488760273437	318094.7944793177	1
+518.1322490507812	263985.5443196355	1
+````
+
+**ProMex export:**
+
+```{r}
+kable(tab4, "html") %>%
+  kable_styling(font_size = 12) %>%
+  scroll_box(width = "700px", height = "255px")
+```
 
 ## Test mode
 
@@ -70,7 +99,95 @@ It is possible to check the box `Using test mode (to test the app. whithout inpu
 * `Multiple test files` uploads three files from a RoWinPro export. These are plotted together in order to be compared.
 
 
-## General options
+# MS2 overlay
+
+## Input files
+
+To overlay MS/MS identification results to a given MS trace, you need to upload a MS file (same input formats as the ones described above for the `MS data only` mode) and the corresponding MS/MS results. These can originate from ThermoFisher Scientific Proteome discoverer, MSPathFinder or TopPic.  
+
+Here are examples of the supported format files for MS/MS data (5 first rows of the input tables):
+
+```{r}
+tab1 <- read.table("files/MS2/OFJMX160905_30-(1)_MSMSSpectrumInfo.txt", sep = "\t", header = T, nrows = 5) # PSM Thermo
+tab2 <- read.table("files/MS2/OFJMX160905_30-(1)_PSMs.txt", sep = "\t", header = T, nrows = 5) # MSMS Thermo
+tab3 <- read.table("files/test/TopPic2/OFJMX160905_30.raw_ms2.OUTPUT_TABLE", sep = "\t", header = T, nrows = 5, skip = 24) # TopPic output table
+tab4 <- read.table("files/test/OFJMX160905_30_IcTarget.tsv", sep = "\t", header = T, nrows = 5, comment.char = "#")
+
+k1 <- kable(tab1)
+k2 <- kable(tab2)
+k3 <- kable(tab3)
+k4 <- kable(tab4)
+```
+
+**Proteome Discoverer export:**
+
+To plot MS/MS results from Proteome Discoverer, the user needs to upload 2 .txt files resulting from the same search:
+- the MSMS file:
+
+```{r}
+kable(tab1, "html") %>%
+  kable_styling(font_size = 12) %>%
+  scroll_box(width = "700px", height = "255px")
+```
+
+- the corresponding PSM file:
+
+```{r}
+kable(tab2, "html") %>%
+  kable_styling(font_size = 12) %>%
+  scroll_box(width = "700px", height = "255px")
+```
+
+**MSPathFinder export:**
+
+To plot MS/MS results from MSPathFinder, the user needs to upload the IcTarget or IcTda file and the corresponding .ms1FT file (in "Select MS input file for MS"). Although other MS/MS input can be loaded without any MS data, it is not possible for the results of MSPathFinder. Here is an example of a IcTarget file:
+
+```{r}
+kable(tab3, "html") %>%
+  kable_styling(font_size = 12) %>%
+  scroll_box(width = "700px", height = "255px")
+```
+
+**TopPIC export:**
+
+To plot MS/MS results from TopPIC, the user needs to upload a ms2.msalign file and the OUTPUT table resulting from the same search:
+- the ms2.msalign file:
+
+```` 
+#TopFD 1.1.2
+#Timestamp: Mon Apr 09 18:07:40 2018
+#********************** Parameters **********************
+#Input file:                             //PathToFile.raw.mzML
+#Data type:                              centroided
+#Maximum charge:                         35
+#Maximum monoisotopic mass:              35000 Dalton
+#Error tolerance:                        0.02 m/z
+#Signal/noise ratio:                     100
+#Precursor window size:                  3 m/z
+#********************** Parameters **********************
+BEGIN IONS
+ID=0
+SCANS=3
+RETENTION_TIME=2.89206841602
+ACTIVATION=ETD
+MS_ONE_ID=1
+MS_ONE_SCAN=2
+PRECURSOR_MZ=873.2028195078125
+PRECURSOR_CHARGE=1
+PRECURSOR_MASS=872.1955435078124
+```` 
+
+- the corresponding OUTPUT table file:
+
+```{r}
+kable(tab4, "html") %>%
+  kable_styling(font_size = 12) %>%
+  scroll_box(width = "700px", height = "255px")
+```
+
+
+
+# General options
 
 
 
