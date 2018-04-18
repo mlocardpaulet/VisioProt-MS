@@ -153,8 +153,8 @@ ui <- fluidPage(
   tags$style(type='text/css', "#ab1 { width:80%; margin-top: 25px; font-family : Cursive; font-weight: 900; font-size: 160%;}"),
   #checkboxInput("MSModeCheck", "MS data only", TRUE), # to switch from MS data to MS2 mode
   radioButtons("MSModeCheck", "MS mode:",
-               c("MS data only" = 'MS',
-                 "MS2 overlay" = 'MS2'),
+               c("MS" = 'MS',
+                 "MS/MS" = 'MS2'),
                selected = 'MS',
                inline = TRUE
   ), # to switch from MS data to MS2 mode
