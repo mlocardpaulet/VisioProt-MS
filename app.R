@@ -1240,13 +1240,13 @@ server <- function(input, output, clientData, session) {
     if (input$DataPoints == TRUE) {
       
       g <- plotInput1() 
-      if (!is.null(linput())) {
-        if ((linput() > 1 & input$MSModeCheck == "MS")) {
+      #if (!is.null(linput())) {
+      #  if ((linput() > 1 & input$MSModeCheck == "MS")) {
           g <- g + 
             theme(legend.title = element_blank(), legend.direction ="vertical") +
             guides(fill=guide_legend(ncol=2))
-        }
-      }# else {
+     #  }
+     # }# else {
         #     g <- plotInput1()+ 
         #       theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
         #   }
