@@ -410,7 +410,8 @@ server <- function(input, output, clientData, session) {
   
   # Number of selected proteins for dimentions of exported plot:
   nProtSelection <- reactiveVal(0)
-  observeEvent(input$SelectProt, {
+  #observeEvent(c(input$SelectProt, plotInput1), {
+  observeEvent(plotInput1, {
     nProtSelection(length(input$SelectProt))
   })
   
