@@ -788,10 +788,10 @@ server <- function(input, output, clientData, session) {
       vec <- unlist(vec)
       val <- max(vec)
       validate(
-        need(grepl("IcT", InputFilesMS2PF()$name, fixed = T), "Error in file format for plotting MS2 data.\nYou have to upload the \"IcTarget\" or \"IcTda\" output file from MSPathFinder associated with the deconvoluted MS masses uploaded as \"input file for MS\".")
+        need(grepl("IcT", InputFilesMS2PF()$name, fixed = T), "Error in file format for plotting MS2 data.\nYou have to upload the \"IcTarget\" or \"IcTda\" output file from MSPathFinder associated with the deconvoluted MS weights uploaded as \"input file for MS\".")
       )
       validate(
-        need(grepl(".ms1ft", InputFileMS()$name, fixed = T), "Error in file format for plotting MS data.\nYou have to upload the \"IcTarget\" or \"IcTda\" output file from MSPathFinder associated with the deconvoluted MS masses uploaded as \"input file for MS\".")
+        need(grepl(".ms1ft", InputFileMS()$name, fixed = T), "Error in file format for plotting MS data.\nYou have to upload the \"IcTarget\" or \"IcTda\" output file from MSPathFinder associated with the deconvoluted MS weights uploaded as \"input file for MS\".")
       )
       validate(
         need(val==1, "Several IDs have been attributed to the same MS feature.")
@@ -819,7 +819,7 @@ server <- function(input, output, clientData, session) {
         need(grepl("_ms2.msalign", InputFilesMS2TP()$MS2file$name, fixed = T), "Error in file format for plotting MS2 data.\nYou have to upload the \"_ms2.msalign\" output file from TopPic associated with the \"_ms2.OUTPUT_TABLE\".")
       )
       validate(
-        need(grepl("_ms2.OUTPUT_TABLE", InputFilesMS2TP()$IDfile$name, fixed = T), "Error in file format for plotting ID data.\nYou have to upload the \"_ms2.OUTPUT_TABLE\" output file from TopPic associated with the deconvoluted MS2 masses uploaded as \"input file for MS2\".")
+        need(grepl("_ms2.OUTPUT_TABLE", InputFilesMS2TP()$IDfile$name, fixed = T), "Error in file format for plotting ID data.\nYou have to upload the \"_ms2.OUTPUT_TABLE\" output file from TopPic associated with the deconvoluted MS2 weights uploaded as \"input file for MS2\".")
       )
       allData <- readLines(InputFilesMS2TP()$IDfile$datapath)
       allData <- allData[-(1:23)]
@@ -1035,7 +1035,7 @@ server <- function(input, output, clientData, session) {
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
-              ylab("Protein mass (Da)") + 
+              ylab("Protein molecular weight (Da)") + 
               xlab("Retention time (min)")
           } else { # only one plot, no overlay
             g <- ggplot() + 
@@ -1043,7 +1043,7 @@ server <- function(input, output, clientData, session) {
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
-              ylab("Protein mass (Da)") + 
+              ylab("Protein molecular weight (Da)") + 
               xlab("Retention time (min)")
           }
         } else if (filetype$RoWinPro == 0) { # Only type BioPharma/Promex
@@ -1056,7 +1056,7 @@ server <- function(input, output, clientData, session) {
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
-              ylab("Protein mass (Da)") + 
+              ylab("Protein molecular weight (Da)") + 
               xlab("Retention time (min)")
           } else {
             g <- ggplot() + 
@@ -1065,7 +1065,7 @@ server <- function(input, output, clientData, session) {
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
-              ylab("Protein mass (Da)") + 
+              ylab("Protein molecular weight (Da)") + 
               xlab("Retention time (min)")
           }
         } else { # several types of input format
@@ -1085,7 +1085,7 @@ server <- function(input, output, clientData, session) {
             theme_bw() + 
             scale_colour_brewer(palette = colval()) + 
             geom_point(data = gtabRWP, aes(y = Mass, x = RT, col = File, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", File)), size = input$pch) + 
-            ylab("Protein mass (Da)") + 
+            ylab("Protein molecular weight (Da)") + 
             xlab("Retention time (min)")
         }
       }
@@ -1126,7 +1126,7 @@ server <- function(input, output, clientData, session) {
                 coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = TRUE)  + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
-                ylab("Protein mass (Da)") + 
+                ylab("Protein molecular weight (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
@@ -1138,7 +1138,7 @@ server <- function(input, output, clientData, session) {
                 geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
-                ylab("Protein mass (Da)") + 
+                ylab("Protein molecular weight (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
@@ -1165,7 +1165,7 @@ server <- function(input, output, clientData, session) {
                 geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
-                ylab("Protein mass (Da)") + 
+                ylab("Protein molecular weight (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
@@ -1177,7 +1177,7 @@ server <- function(input, output, clientData, session) {
                 geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
-                ylab("Protein mass (Da)") + 
+                ylab("Protein molecular weight (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
@@ -1203,7 +1203,7 @@ server <- function(input, output, clientData, session) {
                 coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = TRUE)  + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
-                ylab("Protein mass (Da)") + 
+                ylab("Protein molecular weight (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
@@ -1215,7 +1215,7 @@ server <- function(input, output, clientData, session) {
                 geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
-                ylab("Protein mass (Da)") + 
+                ylab("Protein molecular weight (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
