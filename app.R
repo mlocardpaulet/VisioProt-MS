@@ -411,7 +411,7 @@ server <- function(input, output, clientData, session) {
   # Number of selected proteins for dimentions of exported plot:
   nProtSelection <- reactiveVal(0)
   #observeEvent(c(input$SelectProt, plotInput1), {
-  observeEvent(plotInput1, {
+  observeEvent(c(plotInput1, input$SelectProt), {
     nProtSelection(length(input$SelectProt))
   })
   
@@ -1131,7 +1131,7 @@ server <- function(input, output, clientData, session) {
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch+1, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec))) 
               }
             } else if (input$MSTrace == TRUE) { # Overlay on MS trace
@@ -1143,7 +1143,7 @@ server <- function(input, output, clientData, session) {
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch+1, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             }
@@ -1170,7 +1170,7 @@ server <- function(input, output, clientData, session) {
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch+1, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             } else {
@@ -1182,7 +1182,7 @@ server <- function(input, output, clientData, session) {
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch+1, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             }
@@ -1208,7 +1208,7 @@ server <- function(input, output, clientData, session) {
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch+1, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec))) 
               }
             } else if (input$MSTrace == TRUE) { # Overlay on MS trace
@@ -1220,7 +1220,7 @@ server <- function(input, output, clientData, session) {
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT, y = Mass, fill = Protein.Descriptions, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch+1, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             }
@@ -1238,22 +1238,9 @@ server <- function(input, output, clientData, session) {
       need(!is.null(plotInput1()), '')
     )
     if (input$DataPoints == TRUE) {
-      
       g <- plotInput1() 
-      #if (!is.null(linput())) {
-      #  if ((linput() > 1 & input$MSModeCheck == "MS")) {
           g <- g + 
-            theme(legend.title = element_blank(), legend.direction ="vertical") +
-            guides(fill=guide_legend(ncol=2))
-     #  }
-     # }# else {
-        #     g <- plotInput1()+ 
-        #       theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
-        #   }
-        # } else {
-        #   g <- plotInput1()+ 
-        #     theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
-        # }
+            theme(legend.title = element_blank()) 
       p <- ggplotly(g, tooltip = "text", height = 800) %>%
         layout(dragmode = "select", 
                xaxis=list(fixedrange=TRUE),
@@ -1261,10 +1248,6 @@ server <- function(input, output, clientData, session) {
                title = "") %>%
         config(displayModeBar = F) %>%
         layout(margin = list(l = 110, b = 40, r = 3, t = 10, pad = -2))
-      # Remove title legend for proteins:
-      if (nProtSelection() > 0) {
-        p$x$layout$annotations[[1]]$text <- ""
-      }
       #### TROUBLESHOOTING:
       # sink("output.txt")
       # #print(which(vec))
@@ -1277,7 +1260,7 @@ server <- function(input, output, clientData, session) {
         #   vec <- sapply(p$x$data, function(x) {
         #     grepl("ID", x$name)
         #   })
-        #p <- style(p, showlegend = FALSE, traces = which(vec))
+        # p <- style(p, showlegend = FALSE, traces = which(vec))
         # Remove all legends:
         p <- style(p, showlegend = FALSE, traces = seq_len(length(p$x$data)))
       }
@@ -1294,7 +1277,11 @@ server <- function(input, output, clientData, session) {
     )
     if (input$DataPoints == F) {
       if (!is.null(linput())) {
-        if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
+        if ((linput() > 1 & input$MSModeCheck == "MS")) {
+          plotInput1() + 
+            theme(legend.direction ="vertical", legend.position="bottom") +
+            guides(fill=guide_legend(ncol=2))
+        } else if (nProtSelection() > 0 & input$MSModeCheck == "MS2") {
           plotInput1() + 
             theme(legend.direction ="vertical", legend.position="bottom") +
             guides(fill=guide_legend(ncol=2))
@@ -1302,6 +1289,10 @@ server <- function(input, output, clientData, session) {
           plotInput1()+ 
             theme(legend.direction ="vertical", legend.position="right") 
         }
+      } else if (nProtSelection() > 0 & input$MSModeCheck == "MS2") {
+          plotInput1() + 
+            theme(legend.direction ="vertical", legend.position="bottom") +
+            guides(fill=guide_legend(ncol=2))
       } else {
         plotInput1()+ 
           theme(legend.direction ="vertical", legend.position="right") 
