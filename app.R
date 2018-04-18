@@ -1036,7 +1036,7 @@ server <- function(input, output, clientData, session) {
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
-              ylab("molecular weight (Da)") + 
+              ylab("Molecular Weight (Da)") + 
               xlab("Retention time (min)")
           } else { # only one plot, no overlay
             g <- ggplot() + 
@@ -1044,7 +1044,7 @@ server <- function(input, output, clientData, session) {
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
-              ylab("molecular weight (Da)") + 
+              ylab("Molecular Weight (Da)") + 
               xlab("Retention time (min)")
           }
         } else if (filetype$RoWinPro == 0) { # Only type BioPharma/Promex
@@ -1057,7 +1057,7 @@ server <- function(input, output, clientData, session) {
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_brewer(palette = colval()) + 
-              ylab("molecular weight (Da)") + 
+              ylab("Molecular Weight (Da)") + 
               xlab("Retention time (min)")
           } else {
             g <- ggplot() + 
@@ -1066,7 +1066,7 @@ server <- function(input, output, clientData, session) {
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) + 
               theme_bw() + 
               scale_colour_distiller(palette = colval()) + 
-              ylab("molecular weight (Da)") + 
+              ylab("Molecular Weight (Da)") + 
               xlab("Retention time (min)")
           }
         } else { # several types of input format
@@ -1086,7 +1086,7 @@ server <- function(input, output, clientData, session) {
             theme_bw() + 
             scale_colour_brewer(palette = colval()) + 
             geom_point(data = gtabRWP, aes(y = Mass, x = RT, col = File, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", File)), size = input$pch) + 
-            ylab("molecular weight (Da)") + 
+            ylab("Molecular Weight (Da)") + 
             xlab("Retention time (min)")
         }
       }
@@ -1127,7 +1127,7 @@ server <- function(input, output, clientData, session) {
                 coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = TRUE)  + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
-                ylab("molecular weight (Da)") + 
+                ylab("Molecular Weight (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
@@ -1139,7 +1139,7 @@ server <- function(input, output, clientData, session) {
                 geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
-                ylab("molecular weight (Da)") + 
+                ylab("Molecular Weight (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
@@ -1166,7 +1166,7 @@ server <- function(input, output, clientData, session) {
                 geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
-                ylab("molecular weight (Da)") + 
+                ylab("Molecular Weight (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
@@ -1178,7 +1178,7 @@ server <- function(input, output, clientData, session) {
                 geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste("Start:", PeakStart, "min\n", "Stop:", PeakStop, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
-                ylab("molecular weight (Da)") + 
+                ylab("Molecular Weight (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
@@ -1204,7 +1204,7 @@ server <- function(input, output, clientData, session) {
                 coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = TRUE)  + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
-                ylab("molecular weight (Da)") + 
+                ylab("Molecular Weight (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
@@ -1216,7 +1216,7 @@ server <- function(input, output, clientData, session) {
                 geom_point(data = gtabMS2, aes(x = RT, y = Mass, shape = Identification, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
-                ylab("molecular weight (Da)") + 
+                ylab("Molecular Weight (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
