@@ -1239,19 +1239,20 @@ server <- function(input, output, clientData, session) {
     if (input$DataPoints == TRUE) {
       
       g <- plotInput1() 
-      # if (!is.null(linput())) {
-      #   if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
-      #     g <- plotInput1() + 
-      #       theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="bottom") +
-      #       guides(fill=guide_legend(ncol=2))
-      #   } else {
-      #     g <- plotInput1()+ 
-      #       theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
-      #   }
-      # } else {
-      #   g <- plotInput1()+ 
-      #     theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
-      # }
+      if (!is.null(linput())) {
+        if ((linput() > 1 & input$MSModeCheck == "MS")) {
+          g <- g + 
+            theme(legend.title = element_blank(), legend.direction ="vertical") +
+            guides(fill=guide_legend(ncol=2))
+        }
+      }# else {
+        #     g <- plotInput1()+ 
+        #       theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+        #   }
+        # } else {
+        #   g <- plotInput1()+ 
+        #     theme(legend.title = element_blank(), legend.direction ="vertical", legend.position="right") 
+        # }
       p <- ggplotly(g, tooltip = "text", height = 800) %>%
         layout(dragmode = "select", 
                xaxis=list(fixedrange=TRUE),
