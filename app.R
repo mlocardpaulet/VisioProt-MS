@@ -212,10 +212,10 @@ ui <- fluidPage(
                                                              multiple = F,
                                                              width = "100%"
                                                    ),
-                                                   radioButtons("PDPFModeCheck", "Origin of the MS2 files:",
+                                                   radioButtons("PDPFModeCheck", "Origin of the MS/MS files:",
                                                                 c("Proteome Discoverer" = 'PD',
                                                                   "MSPathFinder" = 'PF',
-                                                                  "TopPic" = 'TP'),
+                                                                  "TopPIC" = 'TP'),
                                                                 selected = 'PD',
                                                                 inline = TRUE
                                                    ),
@@ -223,7 +223,7 @@ ui <- fluidPage(
                                                              "Choose the software utilized for analysing of the top-down data",
                                                              "right"),
                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'PD'", 
-                                                                    fileInput("MS2file", "Choose MS2 File:", 
+                                                                    fileInput("MS2file", "Choose MSMSSpectrumInfo File:", 
                                                                               accept = c(
                                                                                 "text/csv",
                                                                                 "text/comma-separated-values,text/plain",
@@ -244,13 +244,13 @@ ui <- fluidPage(
                                                                     )
                                                    ),
                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'TP'", 
-                                                                    fileInput("MS2fileTP", "Choose MS2 File:", 
+                                                                    fileInput("MS2fileTP", "Choose MS/MS File:", 
                                                                               accept = c(
                                                                                 "text",
                                                                                 "text/comma-separated-values,text/plain",
                                                                                 ".msalign")
                                                                     ),
-                                                                    fileInput("IDfileTP", "Choose the OUTPUT TABLE from TopPic:", 
+                                                                    fileInput("IDfileTP", "Choose the OUTPUT_TABLE from TopPIC:", 
                                                                               accept = c(
                                                                                 "text",
                                                                                 "text/comma-separated-values,text/plain",
@@ -264,9 +264,9 @@ ui <- fluidPage(
                                   bsTooltip("SelectProt", 
                                             "Select among the identified proteins which one(s) to highlight on the plot",
                                             "right"),
-                                  checkboxInput("HideMSMS", "Hide MSMS withouth ID", FALSE),
+                                  checkboxInput("HideMSMS", "Hide MS/MS withouth ID", FALSE),
                                   bsTooltip("HideMSMS", 
-                                            "Removes the MSMS spectra from the top-down analysis that were not matched to a protein.",
+                                            "Removes the MS/MS spectra from the top-down analysis that were not matched to a protein.",
                                             "right"),
                                   checkboxInput("MSTrace", "Display the MS trace", TRUE),
                                   bsTooltip("MSTrace", 
@@ -356,12 +356,12 @@ server <- function(input, output, clientData, session) {
       if (x > 1) {
         updateSelectInput(session, "colourscale",
                           "Colour scale:",
-                          c("Set1" = "Set1",
+                          c("Paired" = "Paired",
+                            "Set1" = "Set1",
                             "Set2" = "Set2",
                             "Set3" = "Set3",
-                            "Dark2" = "Dark2", 
-                            "Paired" = "Paired",
-                            "Accent" = "Accent"
+                            "Set4" = "Dark2", 
+                            "Set5" = "Accent"
                           ))
       } else {
         updateSelectInput(session, "colourscale",
@@ -501,7 +501,7 @@ server <- function(input, output, clientData, session) {
     filetype$RoWinPro <- 4
     filetype$BioPharma <- 0
     filetype$ProMex <- 0
-    colval("Set1")
+    colval("Paired")
     InputFileMS(NULL)
     InputFilesMS2(NULL)
     InputFilesMS2PF(NULL)
@@ -550,7 +550,7 @@ server <- function(input, output, clientData, session) {
         linput(sum(as.numeric((c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex, filetype$TopPic)))))
       }
       if (linput() > 1) {
-        colval("Set1")
+        colval("Paired")
       } else {
         colval("Spectral")
       }
@@ -764,7 +764,7 @@ server <- function(input, output, clientData, session) {
         PSM <- read.table(InputFilesMS2()$PSMfile$datapath, sep = "\t", header = T)
         MS2 <- read.table(InputFilesMS2()$MS2file$datapath, sep = "\t", header = T, comment.char = "#")
         validate(
-          need(sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1, "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectrumInfo.txt file from BioPharma Finder (in the \"MS2 File\" field.\n- The corresponding PSMs.txt file (in the \"PSM File\" field).")
+          need(sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1, "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectrumInfo.txt file from BioPharma Finder (in the \"MS/MS File\" field).\n- The corresponding PSMs.txt file (in the \"PSM File\" field).")
         )
       }
     }
