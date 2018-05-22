@@ -1,5 +1,5 @@
 ---
-title: "VisioProt - Utilisation manual"
+title: "VisioProt-MS - Utilisation manual"
 author: "Toulouse Proteomics Infrastructure"
 date: '`r date()`' 
 output: 
@@ -7,6 +7,15 @@ output:
     toc: true
     toc_depth: 2
 ---
+
+
+<style>
+  .col2 {
+    columns: 2 200px;         /* number of columns and width in pixels*/
+    -webkit-columns: 2 200px; /* chrome, safari */
+    -moz-columns: 2 200px;    /* firefox */
+  }
+</style>
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = F)
@@ -18,16 +27,39 @@ require(ggplot2)
 ```
 
 
-# General description
 
 [VisioProt-MS](https://masstools.ipbs.fr/mstools/visioprot-ms/) plots the masses of eluting proteins as a function of their retention time to allow inspection and analysis of runs from liquid chromatography coupled to mass spectrometry (LC-MS). It is also possible to overlay MS/MS results from top-down analysis. The Shiny-based web application VisioProt-MS is suitable for non-R users. It can be found on our [team\'s webpage](https://masstools.ipbs.fr/mstools/) and the corresponding scripts are accessible [here](https://github.com/mlocardpaulet/VisioProt-MS). It is governed by the [CeCILL license](http://www.cecill.info).
 
-# MS data only
+# Step-by-step description of the options:
+
+***
+
+## MS mode:
+
+<div class="col2">
+
+![](Figures/MSMode.PNG) 
+
+The first check box allows to choose between "MS" and "MS/MS" for plotting deconvoluted LC-MS data or results of a top-down analysis. 
+
+</div>
+
+***
+
+### MS
+
+<div class="col2">
+
+![](Figures/InputMS.PNG) 
+
+Upload of the deconvoluted MS file. The user can select one or many files to plot. In that case, they have to be sure that files are located in the same folder. Maximum limit size for each file is 5 MB.
+
+</div>
 
 
-## Input files
+#### Input files
 
-Here are examples of the supported format files for MS data (5 first rows of the input tables):
+Here are examples of the head of supported format files for MS data followed by an example of VisioProt-MS output.
 
 ```{r}
 tab1 <- read.table("files/Unique/OEJPA170302_93_Job_1_results.csv", sep = "\t", header = F, nrows = 5) # RoWinPro
@@ -35,6 +67,8 @@ tab2 <- read.table("files/test/TestBioPharma.txt", sep = "\t", header = T, nrows
 tab3 <- read.table("files/test/Std_Orexin_1-100_Slot2-46_01_1147_DeconvolutedPeaks.csv", sep = ",", header = F, skip = 2, nrows = 5)
 tab4 <- read.table("files/test/OFJMX180309_09_ProMex.ms1ft", sep = "\t", header = T, nrows = 5) # ProMex
 
+names(tab1) <- rep("", length(names(tab1)))
+names(tab3) <- rep("", length(names(tab3)))
 k1 <- kable(tab1)
 k2 <- kable(tab2)
 k3 <- kable(tab3)
@@ -42,14 +76,29 @@ k4 <- kable(tab4)
 ```
 
 **RoWinPro export:**
+*(csv files)*
 
 `r kable_styling(k1, bootstrap_options = "striped", full_width = F)`
 
-**Bruker export:**
+![](Figures/RoWinPro.PNG) 
+<br />
+
+***
+
+**Bruker Data Analysis export:** 
+*(csv files)*
 
 `r kable_styling(k3, bootstrap_options = "striped", full_width = F)`
 
-**BioPharma Finder export:**
+![](Figures/BrukerMS2Example.PNG) 
+<br />
+
+***
+
+**Intact Protein Analysis (BioPharma Finder) export:**
+*(txt tab-separated files)*
+
+*The user has to export result tables at the "Component Level only" and to convert the exported .xlsx files in tab-separated text files.*
 
 ```{r}
 kable(tab2, "html") %>%
@@ -57,7 +106,13 @@ kable(tab2, "html") %>%
   scroll_box(width = "700px", height = "255px")
 ```
 
+![](Figures/BioPharma.PNG) 
+<br />
+
+***
+
 **TopFD export:**
+*(ms1.msalign files)*
 
 ````
 #TopFD 1.1.2
@@ -82,7 +137,13 @@ RETENTION_TIME=0.17631924798
 518.1322490507812	263985.5443196355	1
 ````
 
+![](Figures/TopPICMSTrace.PNG) 
+<br />
+
+***
+
 **ProMex export:**
+*(ms1ft files)*
 
 ```{r}
 kable(tab4, "html") %>%
@@ -90,22 +151,53 @@ kable(tab4, "html") %>%
   scroll_box(width = "700px", height = "255px")
 ```
 
-## Test mode
+![](Figures/ProMex.PNG)
 
-It is possible to check the box `Using test mode (to test the app. whithout input file-s)` to test the app without loading any input file. Upon checking the box, two buttons appear:
+***
 
+#### Test mode
+
+
+<div class="col2">
+
+<br />
+![](Figures/testModeMS.PNG) 
+<br />
+<br />
+
+It is possible to check the box `Using test mode` to test the app and all of the functionalities without loading any input file. 
+
+Upon checking the box, two buttons appear:
 
 * `Single test file` uploads a test file in a RoWinPro format.
 * `Multiple test files` uploads three files from a RoWinPro export. These are plotted together in order to be compared.
 
+</div>
 
-# MS2 overlay
+***
 
-## Input files
+### MS/MS
 
-To overlay MS/MS identification results to a given MS trace, you need to upload a MS file (same input formats as the ones described above for the `MS data only` mode) and the corresponding MS/MS results. These can originate from ThermoFisher Scientific Proteome discoverer, MSPathFinder or TopPic.  
+#### Input files
 
-Here are examples of the supported format files for MS/MS data (5 first rows of the input tables):
+<div class="col2">
+
+<br />
+![](Figures/MS2Origin.PNG) 
+<br />
+<br />
+<br />
+<br />
+
+To overlay MS/MS identification results to a given MS trace, the user needs to upload a MS file (same input formats as the ones described above for the `MS` mode) and the corresponding MS/MS results. These can originate from Proteome Discoverer (Thermo Fisher Scientific), MSPathFinder (Informed Proteomics) or TopPIC (TopPIC Suite).  
+
+</div>
+
+<br />
+
+***
+
+Here are examples of the supported format files for MS/MS data:
 
 ```{r}
 tab1 <- read.table("files/MS2/OFJMX160905_30-(1)_MSMSSpectrumInfo.txt", sep = "\t", header = T, nrows = 5) # PSM Thermo
@@ -121,16 +213,31 @@ k4 <- kable(tab4)
 
 **Proteome Discoverer export:**
 
-To plot MS/MS results from Proteome Discoverer, the user needs to upload 2 .txt files resulting from the same search:
-- the MSMS file:
+
+<div class="col2">
+
+
+![](Figures/PDMS2.PNG) 
+<br />
+
+<br />
+<br />
+To plot MS/MS results from Proteome Discoverer, the user needs to upload two .txt files resulting from the same search.
+
+</div>
+<br />
+
+
+- The MS/MS file:
 
 ```{r}
 kable(tab1, "html") %>%
   kable_styling(font_size = 12) %>%
   scroll_box(width = "700px", height = "255px")
 ```
+<br />
 
-- the corresponding PSM file:
+- The corresponding PSM file:
 
 ```{r}
 kable(tab2, "html") %>%
@@ -138,20 +245,52 @@ kable(tab2, "html") %>%
   scroll_box(width = "700px", height = "255px")
 ```
 
+<br />
+
+***
+
 **MSPathFinder export:**
 
-To plot MS/MS results from MSPathFinder, the user needs to upload the IcTarget or IcTda file and the corresponding .ms1FT file (in "Select MS input file for MS"). Although other MS/MS input can be loaded without any MS data, it is not possible for the results of MSPathFinder. Here is an example of a IcTarget file:
+<div class="col2">
+
+
+![](Figures/PFMS2.PNG) 
+
+
+<br />
+
+To plot MS/MS results from MSPathFinder, the user needs to upload the IcTarget.tsv or IcTda.tsv file and the corresponding .ms1FT file (in "Select MS input file for MS"). Although other MS/MS input can be loaded without any MS data, it is not possible with workflow analysis using Informed-Proteomics solution.
+
+</div>
+<br />
+
+Here is an example of a IcTarget.tsv file:
 
 ```{r}
 kable(tab3, "html") %>%
   kable_styling(font_size = 12) %>%
   scroll_box(width = "700px", height = "255px")
 ```
+<br />
+
+***
 
 **TopPIC export:**
 
-To plot MS/MS results from TopPIC, the user needs to upload a ms2.msalign file and the OUTPUT table resulting from the same search:
-- the ms2.msalign file:
+<div class="col2">
+
+
+![](Figures/TopPIC.PNG) 
+
+
+<br />
+
+To plot MS/MS results from TopPIC, the user needs to upload a ms2.msalign file and the OUTPUT_TABLE file resulting from the same search.
+
+</div>
+<br />
+
+- The ms2.msalign file:
 
 ```` 
 #TopFD 1.1.2
@@ -177,21 +316,93 @@ PRECURSOR_CHARGE=1
 PRECURSOR_MASS=872.1955435078124
 ```` 
 
-- the corresponding OUTPUT table file:
+- The corresponding OUTPUT_TABLE file:
 
 ```{r}
 kable(tab4, "html") %>%
   kable_styling(font_size = 12) %>%
   scroll_box(width = "700px", height = "255px")
 ```
+<br />
+
+***
+
+#### Select ID to highlight
+
+<div class="col2">
+
+<br />
+![](Figures/IDSelect.PNG) 
+<br />
+<br />
+
+All identified proteins in the input MS2 file appear in this selection box upon loading. This allows the user to select and pinpoint some proteins of interest. These will then be highlighted in the plot with as many colours as proteins selected. *The colour of the proteins depends on the number of selected IDs.*
+
+</div>
+
+***
+
+#### Hiding the MS/MS points that did not lead to protein identification
+
+<div class="col2">
+
+![](Figures/HideMSMS.PNG) 
+<br />
+<br />
+
+This check box allows the user to hide the MS/MS spectra that were not matched to a protein identification. This allows to focus on the identified proteins.
+
+</div>
+
+***
+
+### Displaying/hiding the MS trace
+
+<div class="col2">
+
+![](Figures/DisplayMS.PNG) 
+<br />
+
+This check box allows the user to display/hide the MS data to focus on the analysis of the MS/MS data.
+
+</div>
+
+***
+
+## General options
+
+All of the following parameters are common to the MS and MS/MS modes.
+
+### Show data labels
+
+<div class="col2">
+
+<br /> 
+![](Figures/ShowDataLabel.PNG) 
+<br />
+<br />
+<br />
+
+
+This check box allows the user to enter in a dynamic mode where labels appear when hovering the mouse on data points. *This renders the application significatively slower, so we strongly advise to only use this mode at the end of the plotting optimization (after having defined point size, colour scale, threshold and zooming).* 
+
+</div>
+
+
+*Because the information is displayed in the labels, when this box is checked in the MS2 mode, there is no legend for the protein IDs. Nevertheless, the legend will be present in the exported figure when clicking on one of the Download button (or when unchecking the Show data labels box).*
+
+***
+
+### Plot parameters
+
+
+It is possible to change the specifications of the plot on the fly with the following parameters:
+
+![](Figures/PlotParams.PNG) 
 
 
 
-# General options
-
-
-
-## Colours
+#### Colours
 
 Two sets of colour schemes are available for plotting single or multiple files:
 
@@ -199,13 +410,15 @@ Two sets of colour schemes are available for plotting single or multiple files:
 
 These have been chosen to visualise the signal intensities in a single file.
 
-Spectral:
-
 ```{r}
 # c("Spectral", "Red/yellow/blue", "Red/yellow/green", "yellow to red")
 # c("Spectral", "RdYlBu", "RdYlGn", "YlOrRd")
 gtab <- data.frame("x" = seq(1, 100, length.out = 100), "y" = rep(1, each = 100), stringsAsFactors = F)
 ```
+
+<div class="col2">
+
+*Spectral:*
 
 ```{r, fig.height=1}
 ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "Spectral") + theme(axis.line=element_blank(),
@@ -222,7 +435,11 @@ ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette
       plot.background=element_blank())
 ```
 
-Red/yellow/blue:
+</div>
+
+<div class="col2">
+
+*Red/yellow/blue:*
 
 ```{r, fig.height=1}
 ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "RdYlBu") + theme(axis.line=element_blank(),
@@ -239,7 +456,11 @@ ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette
       plot.background=element_blank())
 ```
 
-Red/yellow/green:
+</div>
+
+<div class="col2">
+
+*Red/yellow/green:*
 
 ```{r, fig.height=1}
 ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "RdYlGn") + theme(axis.line=element_blank(),
@@ -256,7 +477,11 @@ ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette
       plot.background=element_blank())
 ```
 
-yellow to red:
+</div>
+
+<div class="col2">
+
+*yellow to red:*
 
 ```{r, fig.height=1}
 ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "YlOrRd") + theme(axis.line=element_blank(),
@@ -273,11 +498,15 @@ ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette
       plot.background=element_blank())
 ```
 
+</div>
+
 **Colour schemes for multiple files:**
 
 These have been chosen to differenciate the signal from the distinct files.
 
-Set1:
+<div class="col2">
+
+*Paired:*
 
 ```{r}
 # "Set1" = "Set1",
@@ -288,74 +517,6 @@ Set1:
 # "Set3" = "Set3
 gtab <- data.frame("x" = seq(1, 9, length.out = 9), "y" = rep(1, each = 9), stringsAsFactors = F)
 ```
-
-```{r, fig.height=1}
-ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "Set1") + theme(axis.line=element_blank(),
-      axis.text.x=element_blank(),
-      axis.text.y=element_blank(),
-      axis.ticks=element_blank(),
-      axis.title.x=element_blank(),
-      axis.title.y=element_blank(),
-      legend.position="none",
-      panel.background=element_blank(),
-      panel.border=element_blank(),
-      panel.grid.major=element_blank(),
-      panel.grid.minor=element_blank(),
-      plot.background=element_blank())
-```
-
-Set2:
-
-```{r, fig.height=1}
-ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "Set2") + theme(axis.line=element_blank(),
-      axis.text.x=element_blank(),
-      axis.text.y=element_blank(),
-      axis.ticks=element_blank(),
-      axis.title.x=element_blank(),
-      axis.title.y=element_blank(),
-      legend.position="none",
-      panel.background=element_blank(),
-      panel.border=element_blank(),
-      panel.grid.major=element_blank(),
-      panel.grid.minor=element_blank(),
-      plot.background=element_blank())
-```
-
-Set3:
-
-```{r, fig.height=1}
-ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "Set3") + theme(axis.line=element_blank(),
-      axis.text.x=element_blank(),
-      axis.text.y=element_blank(),
-      axis.ticks=element_blank(),
-      axis.title.x=element_blank(),
-      axis.title.y=element_blank(),
-      legend.position="none",
-      panel.background=element_blank(),
-      panel.border=element_blank(),
-      panel.grid.major=element_blank(),
-      panel.grid.minor=element_blank(),
-      plot.background=element_blank())
-```
-
-Dark2:
-
-```{r, fig.height=1}
-ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "Dark2") + theme(axis.line=element_blank(),
-      axis.text.x=element_blank(),
-      axis.text.y=element_blank(),
-      axis.ticks=element_blank(),
-      axis.title.x=element_blank(),
-      axis.title.y=element_blank(),
-      legend.position="none",
-      panel.background=element_blank(),
-      panel.border=element_blank(),
-      panel.grid.major=element_blank(),
-      panel.grid.minor=element_blank(),
-      plot.background=element_blank())
-```
-
-Paired:
 
 ```{r, fig.height=1}
 ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "Paired") + theme(axis.line=element_blank(),
@@ -372,7 +533,95 @@ ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette
       plot.background=element_blank())
 ```
 
-Accent:
+</div>
+
+<div class="col2">
+
+*Set1:*
+
+```{r, fig.height=1}
+ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "Set1") + theme(axis.line=element_blank(),
+      axis.text.x=element_blank(),
+      axis.text.y=element_blank(),
+      axis.ticks=element_blank(),
+      axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position="none",
+      panel.background=element_blank(),
+      panel.border=element_blank(),
+      panel.grid.major=element_blank(),
+      panel.grid.minor=element_blank(),
+      plot.background=element_blank())
+```
+
+</div>
+
+<div class="col2">
+
+*Set2:*
+
+```{r, fig.height=1}
+ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "Set2") + theme(axis.line=element_blank(),
+      axis.text.x=element_blank(),
+      axis.text.y=element_blank(),
+      axis.ticks=element_blank(),
+      axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position="none",
+      panel.background=element_blank(),
+      panel.border=element_blank(),
+      panel.grid.major=element_blank(),
+      panel.grid.minor=element_blank(),
+      plot.background=element_blank())
+```
+
+</div>
+
+<div class="col2">
+
+*Set3:*
+
+```{r, fig.height=1}
+ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "Set3") + theme(axis.line=element_blank(),
+      axis.text.x=element_blank(),
+      axis.text.y=element_blank(),
+      axis.ticks=element_blank(),
+      axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position="none",
+      panel.background=element_blank(),
+      panel.border=element_blank(),
+      panel.grid.major=element_blank(),
+      panel.grid.minor=element_blank(),
+      plot.background=element_blank())
+```
+
+</div>
+
+<div class="col2">
+
+*Set4:*
+
+```{r, fig.height=1}
+ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "Dark2") + theme(axis.line=element_blank(),
+      axis.text.x=element_blank(),
+      axis.text.y=element_blank(),
+      axis.ticks=element_blank(),
+      axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position="none",
+      panel.background=element_blank(),
+      panel.border=element_blank(),
+      panel.grid.major=element_blank(),
+      panel.grid.minor=element_blank(),
+      plot.background=element_blank())
+```
+
+</div>
+
+<div class="col2">
+
+*Set5:*
 
 ```{r, fig.height=1}
 ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette = "Accent") + theme(axis.line=element_blank(),
@@ -389,3 +638,40 @@ ggplot(gtab, aes(x=x, y=y, fill=x)) + geom_tile() + scale_fill_distiller(palette
       plot.background=element_blank())
 ```
 
+</div>
+
+#### Point size
+
+This defines the size of the points / thickness of the lines. 
+
+#### Threshold
+
+This defines the percentage of highest intensity features of the MS data to display. *It is only applied to MS data, even in MS/MS mode.*
+
+***
+
+### Zooming options
+
+<div class="col2">
+![](Figures/Zooming.PNG)
+<br />
+<br />
+
+Left button unzooms one step back (only once). It reverts back to the previous x- and y-axis limits.
+
+The button "Total unzoom" unzooms to the limits of the LC-MS data uploaded.
+
+</div>
+
+***
+
+### Result export
+
+<div class="col2">
+<br />
+![](Figures/Download.PNG) 
+<br />
+<br />
+
+These buttons instantly download an image corresponding to the current VisioProt-MS plot. The user can choose between three file formats. The file will be saved in the Downloads folder of the user, and will be named "VisioProt-MS_" with the name of the input MS file and the date of the day.
+</div>
