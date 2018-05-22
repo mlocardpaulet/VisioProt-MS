@@ -59,26 +59,13 @@ Upload of the deconvoluted MS file. The user can select one or many files to plo
 
 #### Input files
 
-Here are examples of the head of supported format files for MS data followed by an example of VisioProt-MS output.
+Here are downloadable examples of the head of supported format files for MS data followed by an example of VisioProt-MS output.
 
-```{r}
-tab1 <- read.table("files/Unique/OEJPA170302_93_Job_1_results.csv", sep = "\t", header = F, nrows = 5) # RoWinPro
-tab2 <- read.table("files/test/TestBioPharma.txt", sep = "\t", header = T, nrows = 5) # BioPharma Finder
-tab3 <- read.table("files/test/Std_Orexin_1-100_Slot2-46_01_1147_DeconvolutedPeaks.csv", sep = ",", header = F, skip = 2, nrows = 5)
-tab4 <- read.table("files/test/OFJMX180309_09_ProMex.ms1ft", sep = "\t", header = T, nrows = 5) # ProMex
-
-names(tab1) <- rep("", length(names(tab1)))
-names(tab3) <- rep("", length(names(tab3)))
-k1 <- kable(tab1)
-k2 <- kable(tab2)
-k3 <- kable(tab3)
-k4 <- kable(tab4)
-```
 
 **RoWinPro export:**
-*(csv files)*
+*(tab-separated csv files)*
 
-`r kable_styling(k1, bootstrap_options = "striped", full_width = F)`
+[Download example](./files/Unique/OEJPA170302_93_Job_1_results.csv).
 
 ![](Figures/RoWinPro.PNG) 
 <br />
@@ -86,9 +73,9 @@ k4 <- kable(tab4)
 ***
 
 **Bruker Data Analysis export:** 
-*(csv files)*
+*(coma-separated csv files with two rows of comments)*
 
-`r kable_styling(k3, bootstrap_options = "striped", full_width = F)`
+[Download example](./files/test/Std_Orexin_1-100_Slot2-46_01_1147_DeconvolutedPeaks.csv).
 
 ![](Figures/BrukerMS2Example.PNG) 
 <br />
@@ -96,15 +83,11 @@ k4 <- kable(tab4)
 ***
 
 **Intact Protein Analysis (BioPharma Finder) export:**
-*(txt tab-separated files)*
+*(tab-separated txt files)*
 
 *The user has to export result tables at the "Component Level only" and to convert the exported .xlsx files in tab-separated text files.*
 
-```{r}
-kable(tab2, "html") %>%
-  kable_styling(font_size = 12) %>%
-  scroll_box(width = "700px", height = "255px")
-```
+[Download example](./files/test/TestBioPharma.txt).
 
 ![](Figures/BioPharma.PNG) 
 <br />
@@ -114,28 +97,8 @@ kable(tab2, "html") %>%
 **TopFD export:**
 *(ms1.msalign files)*
 
-````
-#TopFD 1.1.2
-#Timestamp: Mon Apr 09 18:09:14 2018
-#********************** Parameters **********************
-#Input file:                             //PathToFile.raw.mzML
-#Data type:                              centroided
-#Maximum charge:                         35
-#Maximum monoisotopic mass:              35000 Dalton
-#Error tolerance:                        0.02 m/z
-#Signal/noise ratio:                     100
-#Precursor window size:                  3 m/z
-#********************** Parameters **********************
-BEGIN IONS
-ID=0
-SCANS=1
-RETENTION_TIME=0.17631924798
-414.02989409375	2528063.580133613	1
-428.0819265644531	2389228.119140054	1
-502.1008769804688	1382504.42265122	1
-488.0488760273437	318094.7944793177	1
-518.1322490507812	263985.5443196355	1
-````
+[Download example](./files/test/OFJMX180309_09.raw_ms1.msalign).
+
 
 ![](Figures/TopPICMSTrace.PNG) 
 <br />
@@ -145,11 +108,7 @@ RETENTION_TIME=0.17631924798
 **ProMex export:**
 *(ms1ft files)*
 
-```{r}
-kable(tab4, "html") %>%
-  kable_styling(font_size = 12) %>%
-  scroll_box(width = "700px", height = "255px")
-```
+[Download example](./files/test/OFJMX180309_09_ProMex.ms1ft).
 
 ![](Figures/ProMex.PNG)
 
@@ -197,7 +156,7 @@ To overlay MS/MS identification results to a given MS trace, the user needs to u
 
 ***
 
-Here are examples of the supported format files for MS/MS data:
+Here are downloadable examples of the supported format files for MS/MS data:
 
 ```{r}
 tab1 <- read.table("files/MS2/OFJMX160905_30-(1)_MSMSSpectrumInfo.txt", sep = "\t", header = T, nrows = 5) # PSM Thermo
@@ -230,20 +189,13 @@ To plot MS/MS results from Proteome Discoverer, the user needs to upload two .tx
 
 - The MS/MS file:
 
-```{r}
-kable(tab1, "html") %>%
-  kable_styling(font_size = 12) %>%
-  scroll_box(width = "700px", height = "255px")
-```
+[Download example](./files/MS2/OFJMX160905_30-(1)_MSMSSpectrumInfo.txt).
+
 <br />
 
 - The corresponding PSM file:
 
-```{r}
-kable(tab2, "html") %>%
-  kable_styling(font_size = 12) %>%
-  scroll_box(width = "700px", height = "255px")
-```
+[Download example](./files/MS2/OFJMX160905_30-(1)_PSMs.txt).
 
 <br />
 
@@ -266,11 +218,8 @@ To plot MS/MS results from MSPathFinder, the user needs to upload the IcTarget.t
 
 Here is an example of a IcTarget.tsv file:
 
-```{r}
-kable(tab3, "html") %>%
-  kable_styling(font_size = 12) %>%
-  scroll_box(width = "700px", height = "255px")
-```
+[Download example](./files/test/TopPic2/OFJMX160905_30.raw_ms2.OUTPUT_TABLE).
+
 <br />
 
 ***
@@ -292,37 +241,8 @@ To plot MS/MS results from TopPIC, the user needs to upload a ms2.msalign file a
 
 - The ms2.msalign file:
 
-```` 
-#TopFD 1.1.2
-#Timestamp: Mon Apr 09 18:07:40 2018
-#********************** Parameters **********************
-#Input file:                             //PathToFile.raw.mzML
-#Data type:                              centroided
-#Maximum charge:                         35
-#Maximum monoisotopic mass:              35000 Dalton
-#Error tolerance:                        0.02 m/z
-#Signal/noise ratio:                     100
-#Precursor window size:                  3 m/z
-#********************** Parameters **********************
-BEGIN IONS
-ID=0
-SCANS=3
-RETENTION_TIME=2.89206841602
-ACTIVATION=ETD
-MS_ONE_ID=1
-MS_ONE_SCAN=2
-PRECURSOR_MZ=873.2028195078125
-PRECURSOR_CHARGE=1
-PRECURSOR_MASS=872.1955435078124
-```` 
+[Download example](./files/test/OFJMX160905_30_IcTarget.tsv).
 
-- The corresponding OUTPUT_TABLE file:
-
-```{r}
-kable(tab4, "html") %>%
-  kable_styling(font_size = 12) %>%
-  scroll_box(width = "700px", height = "255px")
-```
 <br />
 
 ***
