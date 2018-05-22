@@ -158,18 +158,6 @@ To overlay MS/MS identification results to a given MS trace, the user needs to u
 
 Here are downloadable examples of the supported format files for MS/MS data:
 
-```{r}
-tab1 <- read.table("files/MS2/OFJMX160905_30-(1)_MSMSSpectrumInfo.txt", sep = "\t", header = T, nrows = 5) # PSM Thermo
-tab2 <- read.table("files/MS2/OFJMX160905_30-(1)_PSMs.txt", sep = "\t", header = T, nrows = 5) # MSMS Thermo
-tab3 <- read.table("files/test/TopPic2/OFJMX160905_30.raw_ms2.OUTPUT_TABLE", sep = "\t", header = T, nrows = 5, skip = 24) # TopPic output table
-tab4 <- read.table("files/test/OFJMX160905_30_IcTarget.tsv", sep = "\t", header = T, nrows = 5, comment.char = "#")
-
-k1 <- kable(tab1)
-k2 <- kable(tab2)
-k3 <- kable(tab3)
-k4 <- kable(tab4)
-```
-
 **Proteome Discoverer export:**
 
 
@@ -218,7 +206,7 @@ To plot MS/MS results from MSPathFinder, the user needs to upload the IcTarget.t
 
 Here is an example of a IcTarget.tsv file:
 
-[Download example](./files/test/TopPic2/OFJMX160905_30.raw_ms2.OUTPUT_TABLE).
+[Download example](./files/test/OFJMX160905_30_IcTarget.tsv).
 
 <br />
 
@@ -241,7 +229,13 @@ To plot MS/MS results from TopPIC, the user needs to upload a ms2.msalign file a
 
 - The ms2.msalign file:
 
-[Download example](./files/test/OFJMX160905_30_IcTarget.tsv).
+[Download example](./files/test/TopPic2/OFJMX160905_30.raw_ms2.msalign).
+
+<br />
+
+- The OUTPUT_TABLE file:
+
+[Download example](./files/test/TopPic2/OFJMX160905_30.raw_ms2.OUTPUT_TABLE).
 
 <br />
 
