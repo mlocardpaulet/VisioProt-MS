@@ -52,7 +52,7 @@ The first check box allows to choose between "MS" and "MS/MS" for plotting decon
 
 ![](Figures/InputMS.PNG) 
 
-Upload of the deconvoluted MS file. The user can select one or many files to plot. In that case, they have to be sure that files are located in the same folder. Maximum limit size for each file is 5 MB.
+Upload of the deconvoluted MS file. The user can select one or many files to plot. In that case, they have to be sure that files are located in the same folder. We advise not to exceed a maximum limit size of 5 MB per file. Uploading larger files will significantly decrease the application speed.
 
 </div>
 
