@@ -534,7 +534,7 @@ server <- function(input, output, clientData, session) {
       l3 <- list()
       l4 <- list()
       for(i in 1:nrow(InputFileMS)){
-        l[[i]] <- grepl("Monoisotopic Mass", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T)  # TRUE if Biopharma
+        l[[i]] <- grepl("Mass", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T)  # TRUE if Biopharma
         l2[[i]] <- substr(readLines(InputFileMS[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
         l3[[i]] <- grepl(".ms1ft", InputFileMS$name[i], fixed = T) # TRUE if ProMex
         l4[[i]] <- grepl("ms1.msalign", InputFileMS$name[i], fixed = T) # TRUE if TopPic
@@ -628,7 +628,7 @@ server <- function(input, output, clientData, session) {
       for(i in 1:nrow(InputFileMS)){
         validationText <- "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".\n- TopPic export of the deconvoluted MS data: \"_ms1.msalign\" files."
         
-        val <- grepl("Monoisotopic Mass", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) # T for BioPharma, F for RoWinPro
+        val <- grepl("Mass", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) # T for BioPharma, F for RoWinPro
         val2 <- substr(readLines(InputFileMS[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
         val3 <- grepl(".ms1ft", InputFileMS$name[i]) # TRUE if ProMex
         val4 <- grepl("ms1.msalign", InputFileMS$name[i]) # TRUE if TopPic
@@ -704,7 +704,8 @@ server <- function(input, output, clientData, session) {
         for(i in 1:nrow(InputFileMS)){
           if (ftype()[i] == "BioPharma") { # If the file is from Thermo BioPharma
             lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = "\t", header = T)
-            lfiles[[i]] <- lfiles[[i]][,c("Apex.RT", "Monoisotopic.Mass", "Sum.Intensity", "Start.Time..min.", "Stop.Time..min.")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
+            names(lfiles[[i]])[names(lfiles[[i]])=="Monoisotopic.Mass"|names(lfiles[[i]])=="Average.Mass"] <- "Mass"
+            lfiles[[i]] <- lfiles[[i]][,c("Apex.RT", "Mass", "Sum.Intensity", "Start.Time..min.", "Stop.Time..min.")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
           } else if (ftype()[i] == "RoWinPro")  { # RoWinPro output
             lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = "\t", header = F)
             lfiles[[i]] <- cbind(lfiles[[i]][,1:3], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
