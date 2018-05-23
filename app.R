@@ -23,6 +23,8 @@ library(shinyBS)
 library(data.table)
 
 
+options(shiny.maxRequestSize=20*1024^2) # Set max input size to 20M
+
 ############################################################################
 # Functions:
 ############################################################################
@@ -142,7 +144,6 @@ TopPicMS2Parsing <- function(fname) {
 ############################################################################
 
 ui <- fluidPage(
-  options(shiny.maxRequestSize=20*1024^2), # Set max input size to 20M
   fluidRow(
     column(3, titlePanel("VisioProt-MS")
            ),
