@@ -3,6 +3,9 @@ Shiny application for visualisation and analysis of intact protein MS 2D maps.
 
 ## free access to the application: https://masstools.ipbs.fr/mstools/visioprot-ms/
 
+## Publication in Bioinformatics:
+Marie Locard-Paulet, Julien Parra, Renaud Albigot, Emmanuelle Mouton-Barbosa, Laurent Bardi, Odile Burlet-Schiltz, Julien Marcoux; VisioProt-MS: interactive 2D maps from intact protein mass spectrometry, Bioinformatics, , bty680, https://doi.org/10.1093/bioinformatics/bty680
+
 ## Copyright CNRS 2017
 ## Contributor : Marie Locard-Paulet (21/11/2017)
 This software is governed by the CeCILL license under French law and abiding by the rules of distribution of free software. You can  use, modify and/or redistribute the software under the terms of the CeCILL license as circulated by CEA, CNRS and INRIA at the following URL "http://www.cecill.info". 
