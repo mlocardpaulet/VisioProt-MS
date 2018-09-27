@@ -30,6 +30,9 @@ require(ggplot2)
 
 [VisioProt-MS](https://masstools.ipbs.fr/mstools/visioprot-ms/) plots the masses of eluting proteins as a function of their retention time to allow inspection and analysis of runs from liquid chromatography coupled to mass spectrometry (LC-MS). It is also possible to overlay MS/MS results from top-down analysis. The Shiny-based web application VisioProt-MS is suitable for non-R users. It can be found on our [team\'s webpage](https://masstools.ipbs.fr/mstools/) and the corresponding scripts are accessible [here](https://github.com/mlocardpaulet/VisioProt-MS). It is governed by the [CeCILL license](http://www.cecill.info).
 
+If you use VisioProt-MS for your research please cite:
+Marie Locard-Paulet, Julien Parra, Renaud Albigot, Emmanuelle Mouton-Barbosa, Laurent Bardi, Odile Burlet-Schiltz, Julien Marcoux; VisioProt-MS: interactive 2D maps from intact protein mass spectrometry, Bioinformatics, , bty680, https://doi.org/10.1093/bioinformatics/bty680
+
 # Step-by-step description of the options:
 
 ***

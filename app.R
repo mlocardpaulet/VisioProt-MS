@@ -320,7 +320,11 @@ ui <- fluidPage(
                  # Buttons for download:
                  downloadButton("Download", "Download .pdf"),
                  downloadButton("Download1", "Download .png"),
-                 downloadButton("Download2", "Download .svg")
+                 downloadButton("Download2", "Download .svg"),
+                 HTML(paste("<br/><br/>",
+                   h4("If you use VisioProt-MS for your research please cite:"),
+                   "<br/>Marie Locard-Paulet, Julien Parra, Renaud Albigot, Emmanuelle Mouton-Barbosa, Laurent Bardi, Odile Burlet-Schiltz, Julien Marcoux; VisioProt-MS: interactive 2D maps from intact protein mass spectrometry, Bioinformatics, bty680, https://doi.org/10.1093/bioinformatics/bty680")
+                 )
     ),
     # Main panel for plotting (output different in function of the checkbox DataPoints):
     mainPanel(width = 8,
