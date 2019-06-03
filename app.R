@@ -122,7 +122,8 @@ TopPicMS2Parsing <- function(fname) {
   # Return a table in the style of RoWinPro tables for use in VisioProt.
   # fname is the path to the file to parse.
   allData <- readLines(fname)
-  allData <- allData[-(1:11)]
+  numline <- which(grepl("^[^P]+Parameters ", allData, perl = T))[2]
+  allData <- allData[-(1:numline)]
   rep_ions_entries = which(allData=="BEGIN IONS")
   IDs <- gsub("ID=", "", allData[rep_ions_entries+1])
   SCANs <- gsub("SCANS=", "", allData[rep_ions_entries+2])
@@ -252,7 +253,7 @@ ui <- fluidPage(
                                                                                 "text/comma-separated-values,text/plain",
                                                                                 ".msalign")
                                                                     ),
-                                                                    fileInput("IDfileTP", "Choose the OUTPUT_TABLE from TopPIC:", 
+                                                                    fileInput("IDfileTP", "Choose the OUTPUT_TABLE/_ms2_toppic (saved at tab-delimited .txt) from TopPIC:", 
                                                                               accept = c(
                                                                                 "text",
                                                                                 "text/comma-separated-values,text/plain",
@@ -827,7 +828,7 @@ server <- function(input, output, clientData, session) {
         need(grepl("_ms2.msalign", InputFilesMS2TP()$MS2file$name, fixed = T), "Error in file format for plotting MS2 data.\nYou have to upload the \"_ms2.msalign\" output file from TopPic associated with the \"_ms2.OUTPUT_TABLE\".")
       )
       validate(
-        need(grepl("_ms2.OUTPUT_TABLE", InputFilesMS2TP()$IDfile$name, fixed = T), "Error in file format for plotting ID data.\nYou have to upload the \"_ms2.OUTPUT_TABLE\" output file from TopPic associated with the deconvoluted MS2 weights uploaded as \"input file for MS2\".")
+        need(grepl("_ms2.OUTPUT_TABLE", InputFilesMS2TP()$IDfile$name, fixed = T) | grepl("_ms2_toppic", InputFilesMS2TP()$IDfile$name, fixed = T), "Error in file format for plotting ID data.\nYou have to upload the \"_ms2.OUTPUT_TABLE\", or \"_ms2_toppic\" output file from TopPic associated with the deconvoluted MS2 weights uploaded as \"input file for MS2\".")
       )
       allData <- readLines(InputFilesMS2TP()$IDfile$datapath)
       allData <- allData[-(1:23)]
@@ -837,7 +838,7 @@ server <- function(input, output, clientData, session) {
       MS2TP <- TopPicMS2Parsing(InputFilesMS2TP()$MS2file$datapath)
       names(IDTP)[names(IDTP) == "Spectrum ID"] <- "Scan"
       dat <- merge(MS2TP, IDTP, by = "Scan", all = T)
-      names(dat)[names(dat)=="Protein name"] <- "Protein.Descriptions"
+      names(dat)[names(dat)=="Protein accession"] <- "Protein.Descriptions"
       dat$Mass <- as.numeric(dat$Mass)
       dat$Identification <- ifelse(!is.na(as.character(dat$Protein.Descriptions)), "IDed", "Not IDed")
       return(dat)

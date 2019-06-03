@@ -2,3 +2,5 @@
 rsconnect/
 *.swp
 Figures/
+.Rproj.user
+*.Rproj
