@@ -1362,9 +1362,9 @@ server <- function(input, output, clientData, session) {
       } else if (linput() > 1) {
         h <- h+(linput()*0.152)
       }
-      device <- function(..., width, height) {
-        grDevices::pdf(..., width = 10, height = h)
-      }
+      # device <- function(..., width, height) {
+      #   grDevices::pdf(..., width = 10, height = h)
+      # }
       if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
         g <- plotInput1() + 
           theme(legend.direction ="vertical", legend.position="bottom")
@@ -1372,7 +1372,7 @@ server <- function(input, output, clientData, session) {
         g <- plotInput1()+ 
           theme(legend.direction ="vertical", legend.position="right") 
       }
-      ggsave(file, plot = g, device = device)
+      ggsave(file, plot = g, device = "pdf", width = 10, height = h)
     })
   # png output:
   output$Download1 <- downloadHandler(
