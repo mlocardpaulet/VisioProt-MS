@@ -23,7 +23,7 @@ library(shinyBS)
 library(data.table)
 
 
-options(shiny.maxRequestSize=20*1024^2) # Set max input size to 20M
+options(shiny.maxRequestSize=40*1024^2) # Set max input size to 40M
 
 ############################################################################
 # Functions:
@@ -335,7 +335,7 @@ ui <- fluidPage(
   # Footer
   tabsetPanel(
     tabPanel(
-      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V2.0</font></footer>')
+      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V2.1</font></footer>')
     )
   )
 )
@@ -765,15 +765,23 @@ server <- function(input, output, clientData, session) {
     } else {
       if (testfileinput() == 3) {
         infileMS2 <- list.files("files/MS2/", pattern = "MSMS", full.names = T)[[1]]
-        infilePSM <- list.files("files/MS2/", pattern = "PSM", full.names = T)[[1]]
-        PSM <- read.table(infilePSM, sep = "\t", header = T)
+        infilePSM <- list.files("files/MS2/", pattern = "SMs.txt", full.names = T)[[1]]
+        PSM <- read.table(infilePSM, sep = "\t", header = T, comment.char = "#")
         MS2 <- read.table(infileMS2, sep = "\t", header = T)
       } else {
         PSM <- read.table(InputFilesMS2()$PSMfile$datapath, sep = "\t", header = T)
         MS2 <- read.table(InputFilesMS2()$MS2file$datapath, sep = "\t", header = T, comment.char = "#")
         validate(
-          need(sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1, "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectrumInfo.txt file from BioPharma Finder (in the \"MS/MS File\" field).\n- The corresponding PSMs.txt file (in the \"PSM File\" field).")
+          need((sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1) | (sum(grepl("Protein.Accessions", names(PSM))) == 1 & sum(grepl("RT..min.", names(MS2))) == 1), 
+               "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectrumInfo.txt file from BioPharma Finder (in the \"MS/MS File\" field).\n- The corresponding PSMs.txt or PrSMs.txt file (in the \"PSM File\" field).")
         )
+        # Change field names for compatibility between PSMs and PrSMs tables:
+        if (sum(grepl("Master.Protein.Description", names(PSM))) == 0) {
+          names(PSM)[names(PSM) == "Protein.Accessions"] <- "Master.Protein.Descriptions"
+        }
+        names(PSM)[names(PSM) == "RT..min."] <- "RT.in.min"
+        names(MS2)[names(MS2) == "RT..min."] <- "RT.in.min"
+        names(MS2)[names(MS2) == "Precursor.MH...Da."] <- "Precursor.MHplus.in.Da"
       }
     }
     return(list("MS2file" = MS2, "PSMfile" = PSM))
@@ -1106,20 +1114,29 @@ server <- function(input, output, clientData, session) {
           if (input$PDPFModeCheck == "PD" | testfileinput() == 3) {
             PSM <- filedataMS2()$PSM
             MS2 <- filedataMS2()$MS2
-            PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$First.Scan)
-            MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$First.Scan)
+            if (sum(grepl("First.Scan", names(PSM))) == 1 & sum(grepl("First.Scan", names(MS2))) == 1) {
+              PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$First.Scan)
+              MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$First.Scan)
+            } else {
+              PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$m.z..Da.)
+              MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$Precursor.m.z..Da.)
+              MS2$Master.Protein.Descriptions <- PSM$Master.Protein.Descriptions[match(MS2$ID, PSM$ID)]
+            }
             # Retrieve protein IDs in the MS2 table:
             MS2$Master.Protein.Descriptions <- PSM$Master.Protein.Descriptions[match(MS2$ID, PSM$ID)]
             # Plot:
-            gtabMS2 <- MS2[,c("RT.in.min", "Precursor.MHplus.in.Da", "Precursor.Intensity", "Master.Protein.Descriptions")]
+            # gtabMS2 <- MS2[,c("RT.in.min", "Precursor.MHplus.in.Da", "Precursor.Intensity", "Master.Protein.Descriptions")]
+            # print(head(MS2))
+            gtabMS2 <- MS2[,c("RT.in.min", "Precursor.MHplus.in.Da", "Master.Protein.Descriptions")]
             gtabMS2$Identification <- ifelse(!is.na(gtabMS2$Master.Protein.Descriptions), "IDed", "Not IDed")
+            # print(head(gtabMS2))
             
             # Action button:
             if (input$HideMSMS == TRUE) {
               gtabMS2 <- gtabMS2[gtabMS2$Identification == "IDed",]
             }
             
-            names(gtabMS2)[3] <- "intensity"
+            # names(gtabMS2)[3] <- "intensity"
             gtabMS2 <- gtabMS2[order(gtabMS2$Identification, decreasing = T),]
             
             if (!is.null(input$SelectProt) & input$PDPFModeCheck == "PD") {
@@ -1131,7 +1148,7 @@ server <- function(input, output, clientData, session) {
             
             if (is.null(filedata0()) | input$MSTrace == FALSE) { # No MS trace
               g <- ggplot() + 
-                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
+                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = TRUE)  + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
@@ -1139,19 +1156,19 @@ server <- function(input, output, clientData, session) {
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch+1, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\n", Protein.Descriptions)), shape = 21, size = input$pch+1, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec))) 
               }
             } else if (input$MSTrace == TRUE) { # Overlay on MS trace
               g <- g +
-                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
+                geom_point(data = gtabMS2, aes(x = RT.in.min, y = Precursor.MHplus.in.Da, shape = Identification, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\n", Protein.Descriptions)), alpha = 0.8, size = input$pch, col = "grey30", show.legend = FALSE) + 
                 theme_bw() + 
                 scale_shape_manual(values = c(16, 1)) + 
                 ylab("Molecular Weight (Da)") + 
                 xlab("Retention time (min)")
               if (!is.null(input$SelectProt)) {
                 g <- g + 
-                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\nSignal:", intensity, "\n", Protein.Descriptions)), shape = 21, size = input$pch+1, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
+                  geom_point(data = gtabMS2[gtabMS2$Protein.Descriptions %in% input$SelectProt[!is.na(input$SelectProt)],], aes(x = RT.in.min, y = Precursor.MHplus.in.Da, fill = Protein.Descriptions, text = paste(RT.in.min, "min\n", Precursor.MHplus.in.Da, "Da\n", Protein.Descriptions)), shape = 21, size = input$pch+1, alpha = 0.8, stroke = 0, col = alpha("black", 1)) +
                   scale_fill_manual(values = getPalette(length(vec)))
               }
             }
