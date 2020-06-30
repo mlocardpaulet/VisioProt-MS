@@ -346,7 +346,7 @@ ui <- fluidPage(
   # Footer
   tabsetPanel(
     tabPanel(
-      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V2.1</font></footer>')
+      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V2.2</font></footer>')
     )
   )
 )
