@@ -122,8 +122,9 @@ TopPicMS1Parsing <- function(fname) {
   # For the functions to come (thresholding, renaming):
   dat[,4] <- rep(NA, nrow(dat))
   dat[,5] <- rep(NA, nrow(dat))
-  return(dat)
   cat("== End parsing TopPIC MS1 ==\n\n")
+  return(dat)
+  
 }
 
 TopPicMS2Parsing <- function(fname) {
@@ -145,9 +146,27 @@ TopPicMS2Parsing <- function(fname) {
   dat <- data.frame("RT"=RT, "Mass"=Mass, "intensity"=intensity, "Scan"=SCANs, stringsAsFactors = F)
   c("Change from seconds to minutes\n")
   dat[,1] <- as.numeric(dat[,1])/60
-  return(dat)
   cat("== End parsing TopPIC MS2 ==\n\n")
+  return(dat)
+  
 }
+
+TopPicIDParsing <- function(fname) {
+  
+  cat("== Start parsing TopPIC data ID ==\n")
+  # Return a table in the style of RoWinPro tables for use in VisioProt.
+  # fname is the path to the file to parse.
+  allData <- readLines(fname)
+  numline <- which(grepl("^[^P]+Parameters ", allData, perl = T))[2]
+  allData <- allData[-(1:numline)]
+  allData[1] <- gsub("#", "", allData[1])
+  dat <- fread(paste(allData, collapse = "\n"), sep = "\t", header = T, stringsAsFactors = F)
+  class(dat) <- "data.frame"
+  cat("== End parsing TopPIC ID ==\n\n")
+  return(dat)
+  
+}
+
 ############################################################################
 
 # App:
@@ -849,11 +868,7 @@ server <- function(input, output, clientData, session) {
       validate(
         need(grepl("_ms2.OUTPUT_TABLE", InputFilesMS2TP()$IDfile$name, fixed = T) | grepl("_ms2_toppic", InputFilesMS2TP()$IDfile$name, fixed = T), "Error in file format for plotting ID data.\nYou have to upload the \"_ms2.OUTPUT_TABLE\", or \"_ms2_toppic\" output file from TopPic associated with the deconvoluted MS2 weights uploaded as \"input file for MS2\".")
       )
-      allData <- readLines(InputFilesMS2TP()$IDfile$datapath)
-      allData <- allData[-(1:23)]
-      allData[1] <- gsub("#", "", allData[1])
-      IDTP <- fread(paste(allData, collapse = "\n"), sep = "\t", header = T, stringsAsFactors = F)
-      class(IDTP) <- "data.frame"
+      IDTP <- TopPicIDParsing(InputFilesMS2TP()$IDfile$datapath)
       MS2TP <- TopPicMS2Parsing(InputFilesMS2TP()$MS2file$datapath)
       names(IDTP)[names(IDTP) == "Spectrum ID"] <- "Scan"
       dat <- merge(MS2TP, IDTP, by = "Scan", all = T)
