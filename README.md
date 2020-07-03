@@ -14,6 +14,11 @@ The fact that you are presently reading this means that you have had knowledge o
 
 ## Version history:
 
-*V2.0: version corresponding to the paper.
-*V2.1: November 2019 - Make the MS/MS visualisation compatible with the new file formats of TopPic and Proteome Discoverer.
+
+* V2.0: version corresponding to the paper.
+
+* V2.1: November 2019 - Make the MS/MS visualisation compatible with the new file formats of TopPic and Proteome Discoverer.
         In this new version, the intensity of the precursor for the MSMS that gave the protein ID is not provided on hovering because this information is missing from the new outputs of Proteome Discoverer
+        
+* V2.2: July 2020 - adapt to new TopPIC input format for msalign files.
+
