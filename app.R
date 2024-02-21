@@ -23,7 +23,7 @@ library(shinyBS)
 library(data.table)
 
 
-options(shiny.maxRequestSize=40*1024^2) # Set max input size to 40M
+options(shiny.maxRequestSize=90*1024^2) # Set max input size to 40M
 
 ############################################################################
 # Functions:
