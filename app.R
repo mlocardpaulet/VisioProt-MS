@@ -67,16 +67,19 @@ options(shiny.maxRequestSize=90*1024^2) # Set maximum upload size to 90MB for la
 # These functions are stored in separate files for modularity and reusability
 
 # Filter data to keep only the highest intensity features for each mass/RT pair
-source("Rfiles/Keep_highest_signal.R", local = TRUE)
+source("files/Rfiles/Keep_highest_signal.R", local = TRUE)
 
 # Custom function to efficiently combine multiple data frames
-source("Rfiles/custom_rbindlist.R", local = TRUE)
+source("files/Rfiles/custom_rbindlist.R", local = TRUE)
 
 # Parse and process TopPIC software output files
-source("Rfiles/Parse_TopPIC_input.R", local = TRUE)
+source("files/Rfiles/Parse_TopPIC_input.R", local = TRUE)
 
 # Standardize column names across different deconvolution software formats
-source("Rfiles/rename_input_columns.R", local = TRUE)
+source("files/Rfiles/rename_input_coulumns.R", local = TRUE)
+
+# Check input files with adapted error messages
+source("files/Rfiles/check_input_tables_MS2.R", local = TRUE)
 
 ############################################################################
 # USER INTERFACE (UI) DEFINITION
@@ -980,19 +983,10 @@ server <- function(input, output, clientData, session) {
         MS2 <- read.table(InputFilesMS2()$MS2file$datapath, sep = "\t", header = T, comment.char = "#")
         
         # Validate file formats for Proteome Discoverer compatibility
-        validate(
-          need((sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1) | 
-               (sum(grepl("Protein.Accessions", names(PSM))) == 1 & sum(grepl("RT..min.", names(MS2))) == 1), 
-               "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectrumInfo.txt file from BioPharma Finder (in the \"MS/MS File\" field).\n- The corresponding PSMs.txt or PrSMs.txt file (in the \"PSM File\" field).")
-        )
+        PD_MS2_check(PSM_tab = PSM, MSMS_tab = MS2)
         
-        # Standardize column names for compatibility between PSMs and PrSMs tables
-        if (sum(grepl("Master.Protein.Description", names(PSM))) == 0) {
-          names(PSM)[names(PSM) == "Protein.Accessions"] <- "Master.Protein.Descriptions"
-        }
-        names(PSM)[names(PSM) == "RT..min."] <- "RT.in.min"
-        names(MS2)[names(MS2) == "RT..min."] <- "RT.in.min"
-        names(MS2)[names(MS2) == "Precursor.MH...Da."] <- "Precursor.MHplus.in.Da"
+        RenamePDPrSM(PSM)
+        RenamePDMSMS(MSMS)
       }
     }
     return(list("MS2file" = MS2, "PSMfile" = PSM))
