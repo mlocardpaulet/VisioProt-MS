@@ -1,4 +1,5 @@
 ############################################################################
+# VisioProt-MS: Interactive 2D maps from intact protein mass spectrometry
 # Copyright CNRS 2017
 # Contributor : Marie Locard-Paulet (21/11/2017) [marie.locard@ipbs.fr]
 # This software is a computer program whose purpose is to visualize and inspect deconvoluted MS 2D maps.
@@ -8,201 +9,296 @@
 ############################################################################
 
 
+#=============================================================================
+# STEP 1: LOAD REQUIRED PACKAGES AND SET GLOBAL OPTIONS
+#=============================================================================
 
-# Packages:
-############################################################################
-
-library(shiny)
+# Load required R packages for the Shiny application
+library(shiny)         # Core Shiny framework for web applications
 # devtools::install_github('hadley/ggplot2')
-library(ggplot2)
-library(plotly)
-library(dplyr)
-library(RColorBrewer)
-library(shinyBS)
-library(data.table)
+library(ggplot2)       # Grammar of graphics plotting system
+library(plotly)        # Interactive web-based data visualization
+library(dplyr)         # Data manipulation and transformation
+library(RColorBrewer)  # Color palettes for data visualization
+library(shinyBS)       # Bootstrap components for Shiny (tooltips, modals, etc.)
+library(data.table)    # High-performance data manipulation
 
-options(shiny.maxRequestSize=90*1024^2) # Set max input size to 40M
+# Set global options for the Shiny application
+options(shiny.maxRequestSize=90*1024^2) # Set maximum file upload size to 90MB
 
-############################################################################
-# Functions:
-############################################################################
+#=============================================================================
+# STEP 2: SOURCE EXTERNAL HELPER FUNCTIONS
+#=============================================================================
 
-source("Rfiles/Keep_highest_signal.R", local = TRUE)
-source("Rfiles/custom_rbindlist.R", local = TRUE)
-source("Rfiles/Parse_TopPIC_input.R", local = TRUE)
-source("Rfiles/rename_input_columns.R", local = TRUE)
+# Load custom R functions from external files
+# These functions handle specific data processing tasks for different MS formats
+source("files/Rfiles/Keep_highest_signal.R", local = TRUE)        # Filter data to keep highest intensity features
+source("files/Rfiles/custom_rbindlist.R", local = TRUE)           # Custom function to combine data frames
+source("files/Rfiles/Parse_TopPIC_input.R", local = TRUE)         # Parse TopPIC software output files
+source("files/Rfiles/rename_input_coulumns.R", local = TRUE)      # Standardize column names across different formats
 
-############################################################################
+#=============================================================================
+# STEP 3: DEFINE USER INTERFACE (UI)
+#=============================================================================
 
-# App:
-############################################################################
-## UI:
-############################################################################
-
+# Create the main user interface layout using Shiny's fluidPage
 ui <- fluidPage(
+  #---------------------------------------------------------------------------
+  # Header Section: Application title and help button
+  #---------------------------------------------------------------------------
   fluidRow(
+    # Application title in a 3-column span
     column(3, titlePanel("VisioProt-MS")
            ),
+    # Help button in a 1-column span that opens documentation in new tab
     column(1, actionButton(inputId='ab1', label="?", 
                            onclick ="window.open('https://masstools.ipbs.fr/visioprothelp.html', '_blank')",
                            style="color: #fff; background-color: #673a49; border-color: #000000")
            )
   ),
+  # Custom CSS styling for the help button
   tags$style(type='text/css', "#ab1 { width:80%; margin-top: 25px; font-family : Cursive; font-weight: 900; font-size: 160%;}"),
-  #checkboxInput("MSModeCheck", "MS data only", TRUE), # to switch from MS data to MS2 mode
+  
+  #---------------------------------------------------------------------------
+  # Mode Selection: Choose between MS-only or MS/MS analysis
+  #---------------------------------------------------------------------------
+  #checkboxInput("MSModeCheck", "MS data only", TRUE), # Legacy checkbox - now replaced by radio buttons
   radioButtons("MSModeCheck", "MS mode:",
-               c("MS" = 'MS',
-                 "MS/MS" = 'MS2'),
-               selected = 'MS',
-               inline = TRUE
-  ), # to switch from MS data to MS2 mode
+               c("MS" = 'MS',           # MS data only mode
+                 "MS/MS" = 'MS2'),      # MS/MS overlay mode
+               selected = 'MS',         # Default to MS mode
+               inline = TRUE            # Display options horizontally
+  ),
+  # Add tooltip explaining the mode selection
   bsTooltip("MSModeCheck", 
             "Choose between plotting MS data only or overlaying results of Top-Down searches",
             "right"),
-  # Control side bar:
+  
+  #---------------------------------------------------------------------------
+  # Main Layout: Sidebar for controls and main panel for plots
+  #---------------------------------------------------------------------------
   sidebarLayout( 
+    #-------------------------------------------------------------------------
+    # Sidebar Panel: Contains all user controls and file inputs
+    #-------------------------------------------------------------------------
     sidebarPanel(width = 4,
-                 # Conditional panels:
-                 # Part 1:
+                 #---------------------------------------------------------------------
+                 # Conditional Panels: Different UI elements based on selected mode
+                 #---------------------------------------------------------------------
+                 
+                 #===================================================================
+                 # MS Mode Panel: For uploading and processing MS data only
+                 #===================================================================
                  conditionalPanel(condition="input.MSModeCheck== 'MS'",
-                                  # File selection:
+                                  #---------------------------------------------------------
+                                  # File Input Section for MS Mode
+                                  #---------------------------------------------------------
                                   fileInput("fileMS", "Select input file(s):",  
                                             accept = c(
-                                              "text/csv",
-                                              "text/comma-separated-values,text/plain",
-                                              ".txt",
-                                              ".ms1ft",
-                                              ".csv",
-                                              ".msalign"),
-                                            multiple = T,
+                                              "text/csv",                              # CSV files
+                                              "text/comma-separated-values,text/plain", # Text files
+                                              ".txt",                                  # Text files
+                                              ".ms1ft",                               # ProMex format
+                                              ".csv",                                 # CSV files
+                                              ".msalign"),                            # TopPIC format
+                                            multiple = T,                             # Allow multiple file selection
                                             width = "100%"
                                   ),
+                                  #---------------------------------------------------------
+                                  # Test Mode Controls for MS Mode
+                                  #---------------------------------------------------------
                                   checkboxInput("TestModeCheck", "Using test mode", FALSE),
                                   bsTooltip("TestModeCheck", 
                                             "Check to test the application without uploading any file. Then click on a button to upload a single test file or several for overlay",
-                                            "right"), # to switch from user data to test mode
-                                  # Modifying output when passing in test mode:
+                                            "right"),
+                                  # Show test file buttons only when test mode is enabled
                                   conditionalPanel(condition="input.TestModeCheck==true",
-                                                   actionButton("TestFile1", "Single test file"),
-                                                   actionButton("TestFile2", "Multiple test files")
+                                                   actionButton("TestFile1", "Single test file"),    # Load one test file
+                                                   actionButton("TestFile2", "Multiple test files")  # Load multiple test files for comparison
                                   )
                  ),
-                 # Part 2:
+                 
+                 #===================================================================
+                 # MS/MS Mode Panel: For uploading MS data with MS/MS identification overlay
+                 #===================================================================
                  conditionalPanel(condition="input.MSModeCheck== 'MS2'", 
+                                  #---------------------------------------------------------
+                                  # Test Mode Controls for MS/MS Mode
+                                  #---------------------------------------------------------
                                   checkboxInput("MS2TestModeCheck", "Using test mode", FALSE),
                                   bsTooltip("MS2TestModeCheck", 
                                             "Check to test the application without uploading any file",
-                                            "right"), # to switch from user data to test mode
-                                  # Modifying output when passing in test mode:
+                                            "right"),
+                                  # Display test mode message when enabled
                                   conditionalPanel(condition = "input.MS2TestModeCheck==true",
                                                    tags$span(style="color:red", "You are in test mode. Click on a button to select a single test file or multiple test files.\nUncheck to exit and upload your own data."),
                                                    br()
                                   ),
+                                  
+                                  #---------------------------------------------------------
+                                  # File Input Section for MS/MS Mode (when not in test mode)
+                                  #---------------------------------------------------------
                                   conditionalPanel(condition = "input.MS2TestModeCheck==false",
+                                                   # MS data file input
                                                    fileInput("fileMS2", "Select input file for MS:",  
                                                              accept = c(
                                                                "text/csv",
                                                                "text/comma-separated-values,text/plain",
                                                                ".csv",
                                                                ".txt",
-                                                               ".ms1ft",
-                                                               ".msalign"),
-                                                             multiple = F,
+                                                               ".ms1ft",                    # ProMex format
+                                                               ".msalign"),                 # TopPIC format
+                                                             multiple = F,                  # Single file only for MS background
                                                              width = "100%"
                                                    ),
+                                                   
+                                                   #-------------------------------------------------
+                                                   # Software Selection: Choose MS/MS analysis software
+                                                   #-------------------------------------------------
                                                    radioButtons("PDPFModeCheck", "Origin of the MS/MS files:",
-                                                                c("Proteome Discoverer" = 'PD',
-                                                                  "MSPathFinder" = 'PF',
-                                                                  "TopPIC" = 'TP'),
-                                                                selected = 'PD',
+                                                                c("Proteome Discoverer" = 'PD',    # Thermo Fisher software
+                                                                  "MSPathFinder" = 'PF',           # PNNL software
+                                                                  "TopPIC" = 'TP'),                # TopPIC software
+                                                                selected = 'PD',                   # Default to Proteome Discoverer
                                                                 inline = TRUE
                                                    ),
                                                    bsTooltip("PDPFModeCheck", 
                                                              "Choose the software utilized for analysing of the top-down data",
                                                              "right"),
+                                                   
+                                                   #=================================================
+                                                   # Proteome Discoverer File Inputs
+                                                   #=================================================
                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'PD'", 
+                                                                    # MS/MS spectrum information file
                                                                     fileInput("MS2file", "Choose MSMSSpectrumInfo File:", 
                                                                               accept = c(
                                                                                 "text/csv",
                                                                                 "text/comma-separated-values,text/plain",
                                                                                 ".txt")
                                                                     ),
+                                                                    # Peptide/protein identification file
                                                                     fileInput("PSMfile", "Choose PSM File:", 
                                                                               accept = c(
                                                                                 "text/csv",
                                                                                 "text/comma-separated-values,text/plain",
                                                                                 ".txt")
                                                                     )),
+                                                   
+                                                   #=================================================
+                                                   # MSPathFinder File Inputs
+                                                   #=================================================
                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'PF'", 
+                                                                    # MSPathFinder output file
                                                                     fileInput("MS2filePF", "Choose IcTarget or IcTda File from MSPathFinder:", 
                                                                               accept = c(
                                                                                 "text/csv",
                                                                                 "text/comma-separated-values,text/plain",
-                                                                                ".tsv")
+                                                                                ".tsv")                           # Tab-separated values
                                                                     )
                                                    ),
+                                                   
+                                                   #=================================================
+                                                   # TopPIC File Inputs
+                                                   #=================================================
                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'TP'", 
+                                                                    # TopPIC MS/MS file
                                                                     fileInput("MS2fileTP", "Choose MS/MS File:", 
                                                                               accept = c(
                                                                                 "text",
                                                                                 "text/comma-separated-values,text/plain",
-                                                                                ".msalign")
+                                                                                ".msalign")                       # TopPIC MS/MS format
                                                                     ),
+                                                                    # TopPIC identification results file
                                                                     fileInput("IDfileTP", "Choose the OUTPUT_TABLE/_ms2_toppic (saved at tab-delimited .txt) from TopPIC:", 
                                                                               accept = c(
                                                                                 "text",
                                                                                 "text/comma-separated-values,text/plain",
-                                                                                ".OUTPUT_TABLE")
+                                                                                ".OUTPUT_TABLE")                  # TopPIC output format
                                                                     )
                                                    )
                                   ),
+                                  
+                                  #---------------------------------------------------------
+                                  # Protein Selection and Display Options for MS/MS Mode
+                                  #---------------------------------------------------------
+                                  # Dropdown to select which identified proteins to highlight
                                   selectInput("SelectProt", "Select the ID to highlight:", 
-                                              NULL,
-                                              multiple = TRUE),
+                                              NULL,                                           # Options populated dynamically
+                                              multiple = TRUE),                               # Allow multiple protein selection
                                   bsTooltip("SelectProt", 
                                             "Select among the identified proteins which one(s) to highlight on the plot",
                                             "right"),
+                                  
+                                  # Option to hide unidentified MS/MS spectra
                                   checkboxInput("HideMSMS", "Hide MS/MS withouth ID", FALSE),
                                   bsTooltip("HideMSMS", 
                                             "Removes the MS/MS spectra from the top-down analysis that were not matched to a protein.",
                                             "right"),
+                                  
+                                  # Option to show/hide the underlying MS trace
                                   checkboxInput("MSTrace", "Display the MS trace", TRUE),
                                   bsTooltip("MSTrace", 
                                             "Adds the MS trace to the plot.",
                                             "right")
                  ),
-                 checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
+                 
+                 #---------------------------------------------------------------------
+                 # Common Controls: Available in both MS and MS/MS modes
+                 #---------------------------------------------------------------------
+                 
+                 # Toggle between static plot and interactive plot with data labels
+                 checkboxInput("DataPoints", "Show data labels (slower)", FALSE),
                  bsTooltip("DataPoints", 
                            "Switch to \"data\" mode: data appears on hovering",
                            "right"),
-                 # Parameters for the plot:
+                 
+                 #---------------------------------------------------------------------
+                 # Plot Customization Parameters
+                 #---------------------------------------------------------------------
                  fluidRow(
+                   #-------------------------------------------------------------------
+                   # Color Scale Selection
+                   #-------------------------------------------------------------------
                    column(5,
-                          # Selection of the colour scales. This depends on the number of input files:
-                          # With updateSelectInput:
-                          selectInput("colourscale", "Colour scale:", # for continuous scales
-                                      c("Spectral" = "Spectral",
-                                        "Red/yellow/blue" = "RdYlBu", 
-                                        "Red/yellow/green" = "RdYlGn",
-                                        "yellow to red" = "YlOrRd"
+                          # Color palette dropdown (options change based on number of files)
+                          selectInput("colourscale", "Colour scale:",
+                                      c("Spectral" = "Spectral",                # Spectral color scheme
+                                        "Red/yellow/blue" = "RdYlBu",           # Diverging color scheme
+                                        "Red/yellow/green" = "RdYlGn",          # Diverging color scheme
+                                        "yellow to red" = "YlOrRd"              # Sequential color scheme
                                       )),
                           bsTooltip("colourscale", 
                                     "Select the colour scale for the MS data.",
                                     "right")),
+                   
+                   #-------------------------------------------------------------------
+                   # Point Size Control
+                   #-------------------------------------------------------------------
                    column(3,
                           numericInput("pch", label = "Point size:", value = 1, min = 0.1, step = 0.1, max = 10),
                           bsTooltip("pch", 
                                     "Define the size of the point (from 0.1 to 10).",
                                     "right")),
+                   
+                   #-------------------------------------------------------------------
+                   # Intensity Threshold Control
+                   #-------------------------------------------------------------------
                    column(4,
                           numericInput("IntensityThresh", label = "Threshold:", value = 20, min = 0, max = 100, step = 1),
                           bsTooltip("IntensityThresh", 
                                     "Define the percentage of highest intensity features of the MS data to display.",
                                     "right"))
                  ),
-                 # Information regarding how to zoom (depends on the plotting type):
+                 
+                 #---------------------------------------------------------------------
+                 # Zoom and Navigation Controls
+                 #---------------------------------------------------------------------
+                 # Dynamic instructions that change based on plot type (static vs interactive)
                  htmlOutput("ZoomParam"),
                  br(),
+                 
+                 # Zoom control buttons
                  actionButton("DeZoom", "Unzoom one step", style='padding:8px; font-size:150%'),
                  bsTooltip("DeZoom", 
                            "Unzoom to previous window (only once).",
@@ -213,26 +309,38 @@ ui <- fluidPage(
                            "right"),
                  br(),
                  br(),
-                 # Buttons for download:
-                 downloadButton("Download", "Download .pdf"),
-                 downloadButton("Download1", "Download .png"),
-                 downloadButton("Download2", "Download .svg"),
+                 
+                 #---------------------------------------------------------------------
+                 # Export Controls: Download plot in different formats
+                 #---------------------------------------------------------------------
+                 downloadButton("Download", "Download .pdf"),      # PDF format for publications
+                 downloadButton("Download1", "Download .png"),     # PNG format for presentations
+                 downloadButton("Download2", "Download .svg"),     # SVG format for vector graphics
+                 
+                 #---------------------------------------------------------------------
+                 # Citation Information
+                 #---------------------------------------------------------------------
                  HTML(paste("<br/><br/>",
                    h4("If you use VisioProt-MS for your research please cite:"),
                    "<br/>Marie Locard-Paulet, Julien Parra, Renaud Albigot, Emmanuelle Mouton-Barbosa, Laurent Bardi, Odile Burlet-Schiltz, Julien Marcoux; VisioProt-MS: interactive 2D maps from intact protein mass spectrometry, Bioinformatics, bty680, https://doi.org/10.1093/bioinformatics/bty680")
                  )
     ),
-    # Main panel for plotting (output different in function of the checkbox DataPoints):
+    
+    #-------------------------------------------------------------------------
+    # Main Panel: Contains the plot output area
+    #-------------------------------------------------------------------------
     mainPanel(width = 8,
+              # Dynamic UI that switches between static and interactive plots
               uiOutput("plotUI")
     )
   ),
-  # Footer
+  
+  #---------------------------------------------------------------------------
+  # Footer Section
+  #---------------------------------------------------------------------------
   tabsetPanel(
     tabPanel(
-
       HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V2.2</font></footer>')
-
     )
   )
 )
@@ -287,10 +395,10 @@ server <- function(input, output, clientData, session) {
   # Add the protein IDs to select to highlight them in the plot:
   observe({
     if (!is.null(filedataMS2())) {
-      if (length(filedataMS2()$PSMfile$Master.Protein.Descriptions[!is.na(filedataMS2()$PSMfile$Master.Protein.Descriptions)]) > 0) {
+      if (length(filedataMS2()$PSMfile$Majority.Protein.Accessions[!is.na(filedataMS2()$PSMfile$Majority.Protein.Accessions)]) > 0) { # Proteome Discoverer
         updateSelectInput(session, "SelectProt",
                           "Select the ID to highlight:",
-                          sort(unique(filedataMS2()$PSMfile$Master.Protein.Descriptions[!is.na(filedataMS2()$PSMfile$Master.Protein.Descriptions)]))
+                          sort(unique(filedataMS2()$PSMfile$Majority.Protein.Accessions[!is.na(filedataMS2()$PSMfile$Majority.Protein.Accessions)]))
         )
       }
     }
@@ -672,13 +780,8 @@ server <- function(input, output, clientData, session) {
           need((sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1) | (sum(grepl("Protein.Accessions", names(PSM))) == 1 & sum(grepl("RT..min.", names(MS2))) == 1), 
                "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectrumInfo.txt file from BioPharma Finder (in the \"MS/MS File\" field).\n- The corresponding PSMs.txt or PrSMs.txt file (in the \"PSM File\" field).")
         )
-        # Change field names for compatibility between PSMs and PrSMs tables:
-        if (sum(grepl("Master.Protein.Description", names(PSM))) == 0) {
-          names(PSM)[names(PSM) == "Protein.Accessions"] <- "Master.Protein.Descriptions"
-        }
-        names(PSM)[names(PSM) == "RT..min."] <- "RT.in.min"
-        names(MS2)[names(MS2) == "RT..min."] <- "RT.in.min"
-        names(MS2)[names(MS2) == "Precursor.MH...Da."] <- "Precursor.MHplus.in.Da"
+        PSM <- RenamePDPrSM(PSM)
+        MS2 <- RenamePDMSMS(MS2)
       }
     }
     return(list("MS2file" = MS2, "PSMfile" = PSM))
@@ -1007,6 +1110,10 @@ server <- function(input, output, clientData, session) {
           if (input$PDPFModeCheck == "PD" | testfileinput() == 3) {
             PSM <- filedataMS2()$PSM
             MS2 <- filedataMS2()$MS2
+            print("PSM:\n")
+            print(str(PSM))
+            print("MSMS:\n")
+            print(str(MS2))
             if (sum(grepl("First.Scan", names(PSM))) == 1 & sum(grepl("First.Scan", names(MS2))) == 1) {
               PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$First.Scan)
               MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$First.Scan)
