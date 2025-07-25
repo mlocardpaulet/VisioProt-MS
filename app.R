@@ -1,5 +1,6 @@
 ############################################################################
 # VisioProt-MS: Interactive 2D maps from intact protein mass spectrometry
+# VisioProt-MS: Interactive 2D maps from intact protein mass spectrometry
 # Copyright CNRS 2017
 # Contributor : Marie Locard-Paulet (21/11/2017) [marie.locard@ipbs.fr]
 # This software is a computer program whose purpose is to visualize and inspect deconvoluted MS 2D maps.
@@ -9,6 +10,12 @@
 ############################################################################
 
 
+#=============================================================================
+# STEP 1: LOAD REQUIRED PACKAGES AND SET GLOBAL OPTIONS
+#=============================================================================
+
+# Load required R packages for the Shiny application
+library(shiny)         # Core Shiny framework for web applications
 #=============================================================================
 # STEP 1: LOAD REQUIRED PACKAGES AND SET GLOBAL OPTIONS
 #=============================================================================
@@ -42,14 +49,45 @@ source("files/Rfiles/rename_input_coulumns.R", local = TRUE)      # Standardize 
 #=============================================================================
 
 # Create the main user interface layout using Shiny's fluidPage
+library(ggplot2)       # Grammar of graphics plotting system
+library(plotly)        # Interactive web-based data visualization
+library(dplyr)         # Data manipulation and transformation
+library(RColorBrewer)  # Color palettes for data visualization
+library(shinyBS)       # Bootstrap components for Shiny (tooltips, modals, etc.)
+library(data.table)    # High-performance data manipulation
+
+# Set global options for the Shiny application
+options(shiny.maxRequestSize=90*1024^2) # Set maximum file upload size to 90MB
+
+#=============================================================================
+# STEP 2: SOURCE EXTERNAL HELPER FUNCTIONS
+#=============================================================================
+
+# Load custom R functions from external files
+# These functions handle specific data processing tasks for different MS formats
+source("files/Rfiles/Keep_highest_signal.R", local = TRUE)        # Filter data to keep highest intensity features
+source("files/Rfiles/custom_rbindlist.R", local = TRUE)           # Custom function to combine data frames
+source("files/Rfiles/Parse_TopPIC_input.R", local = TRUE)         # Parse TopPIC software output files
+source("files/Rfiles/rename_input_coulumns.R", local = TRUE)      # Standardize column names across different formats
+
+#=============================================================================
+# STEP 3: DEFINE USER INTERFACE (UI)
+#=============================================================================
+
+# Create the main user interface layout using Shiny's fluidPage
 ui <- fluidPage(
+  #---------------------------------------------------------------------------
+  # Header Section: Application title and help button
+  #---------------------------------------------------------------------------
   #---------------------------------------------------------------------------
   # Header Section: Application title and help button
   #---------------------------------------------------------------------------
   fluidRow(
     # Application title in a 3-column span
+    # Application title in a 3-column span
     column(3, titlePanel("VisioProt-MS")
            ),
+    # Help button in a 1-column span that opens documentation in new tab
     # Help button in a 1-column span that opens documentation in new tab
     column(1, actionButton(inputId='ab1', label="?", 
                            onclick ="window.open('https://masstools.ipbs.fr/visioprothelp.html', '_blank')",
@@ -57,13 +95,25 @@ ui <- fluidPage(
            )
   ),
   # Custom CSS styling for the help button
+  # Custom CSS styling for the help button
   tags$style(type='text/css', "#ab1 { width:80%; margin-top: 25px; font-family : Cursive; font-weight: 900; font-size: 160%;}"),
   
   #---------------------------------------------------------------------------
   # Mode Selection: Choose between MS-only or MS/MS analysis
   #---------------------------------------------------------------------------
   #checkboxInput("MSModeCheck", "MS data only", TRUE), # Legacy checkbox - now replaced by radio buttons
+  
+  #---------------------------------------------------------------------------
+  # Mode Selection: Choose between MS-only or MS/MS analysis
+  #---------------------------------------------------------------------------
+  #checkboxInput("MSModeCheck", "MS data only", TRUE), # Legacy checkbox - now replaced by radio buttons
   radioButtons("MSModeCheck", "MS mode:",
+               c("MS" = 'MS',           # MS data only mode
+                 "MS/MS" = 'MS2'),      # MS/MS overlay mode
+               selected = 'MS',         # Default to MS mode
+               inline = TRUE            # Display options horizontally
+  ),
+  # Add tooltip explaining the mode selection
                c("MS" = 'MS',           # MS data only mode
                  "MS/MS" = 'MS2'),      # MS/MS overlay mode
                selected = 'MS',         # Default to MS mode
@@ -77,7 +127,14 @@ ui <- fluidPage(
   #---------------------------------------------------------------------------
   # Main Layout: Sidebar for controls and main panel for plots
   #---------------------------------------------------------------------------
+  
+  #---------------------------------------------------------------------------
+  # Main Layout: Sidebar for controls and main panel for plots
+  #---------------------------------------------------------------------------
   sidebarLayout( 
+    #-------------------------------------------------------------------------
+    # Sidebar Panel: Contains all user controls and file inputs
+    #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
     # Sidebar Panel: Contains all user controls and file inputs
     #-------------------------------------------------------------------------
@@ -89,7 +146,17 @@ ui <- fluidPage(
                  #===================================================================
                  # MS Mode Panel: For uploading and processing MS data only
                  #===================================================================
+                 #---------------------------------------------------------------------
+                 # Conditional Panels: Different UI elements based on selected mode
+                 #---------------------------------------------------------------------
+                 
+                 #===================================================================
+                 # MS Mode Panel: For uploading and processing MS data only
+                 #===================================================================
                  conditionalPanel(condition="input.MSModeCheck== 'MS'",
+                                  #---------------------------------------------------------
+                                  # File Input Section for MS Mode
+                                  #---------------------------------------------------------
                                   #---------------------------------------------------------
                                   # File Input Section for MS Mode
                                   #---------------------------------------------------------
@@ -102,8 +169,18 @@ ui <- fluidPage(
                                               ".csv",                                 # CSV files
                                               ".msalign"),                            # TopPIC format
                                             multiple = T,                             # Allow multiple file selection
+                                              "text/csv",                              # CSV files
+                                              "text/comma-separated-values,text/plain", # Text files
+                                              ".txt",                                  # Text files
+                                              ".ms1ft",                               # ProMex format
+                                              ".csv",                                 # CSV files
+                                              ".msalign"),                            # TopPIC format
+                                            multiple = T,                             # Allow multiple file selection
                                             width = "100%"
                                   ),
+                                  #---------------------------------------------------------
+                                  # Test Mode Controls for MS Mode
+                                  #---------------------------------------------------------
                                   #---------------------------------------------------------
                                   # Test Mode Controls for MS Mode
                                   #---------------------------------------------------------
@@ -112,7 +189,11 @@ ui <- fluidPage(
                                             "Check to test the application without uploading any file. Then click on a button to upload a single test file or several for overlay",
                                             "right"),
                                   # Show test file buttons only when test mode is enabled
+                                            "right"),
+                                  # Show test file buttons only when test mode is enabled
                                   conditionalPanel(condition="input.TestModeCheck==true",
+                                                   actionButton("TestFile1", "Single test file"),    # Load one test file
+                                                   actionButton("TestFile2", "Multiple test files")  # Load multiple test files for comparison
                                                    actionButton("TestFile1", "Single test file"),    # Load one test file
                                                    actionButton("TestFile2", "Multiple test files")  # Load multiple test files for comparison
                                   )
@@ -121,13 +202,22 @@ ui <- fluidPage(
                  #===================================================================
                  # MS/MS Mode Panel: For uploading MS data with MS/MS identification overlay
                  #===================================================================
+                 
+                 #===================================================================
+                 # MS/MS Mode Panel: For uploading MS data with MS/MS identification overlay
+                 #===================================================================
                  conditionalPanel(condition="input.MSModeCheck== 'MS2'", 
+                                  #---------------------------------------------------------
+                                  # Test Mode Controls for MS/MS Mode
+                                  #---------------------------------------------------------
                                   #---------------------------------------------------------
                                   # Test Mode Controls for MS/MS Mode
                                   #---------------------------------------------------------
                                   checkboxInput("MS2TestModeCheck", "Using test mode", FALSE),
                                   bsTooltip("MS2TestModeCheck", 
                                             "Check to test the application without uploading any file",
+                                            "right"),
+                                  # Display test mode message when enabled
                                             "right"),
                                   # Display test mode message when enabled
                                   conditionalPanel(condition = "input.MS2TestModeCheck==true",
@@ -138,7 +228,12 @@ ui <- fluidPage(
                                   #---------------------------------------------------------
                                   # File Input Section for MS/MS Mode (when not in test mode)
                                   #---------------------------------------------------------
+                                  
+                                  #---------------------------------------------------------
+                                  # File Input Section for MS/MS Mode (when not in test mode)
+                                  #---------------------------------------------------------
                                   conditionalPanel(condition = "input.MS2TestModeCheck==false",
+                                                   # MS data file input
                                                    # MS data file input
                                                    fileInput("fileMS2", "Select input file for MS:",  
                                                              accept = c(
@@ -149,13 +244,24 @@ ui <- fluidPage(
                                                                ".ms1ft",                    # ProMex format
                                                                ".msalign"),                 # TopPIC format
                                                              multiple = F,                  # Single file only for MS background
+                                                               ".ms1ft",                    # ProMex format
+                                                               ".msalign"),                 # TopPIC format
+                                                             multiple = F,                  # Single file only for MS background
                                                              width = "100%"
                                                    ),
                                                    
                                                    #-------------------------------------------------
                                                    # Software Selection: Choose MS/MS analysis software
                                                    #-------------------------------------------------
+                                                   
+                                                   #-------------------------------------------------
+                                                   # Software Selection: Choose MS/MS analysis software
+                                                   #-------------------------------------------------
                                                    radioButtons("PDPFModeCheck", "Origin of the MS/MS files:",
+                                                                c("Proteome Discoverer" = 'PD',    # Thermo Fisher software
+                                                                  "MSPathFinder" = 'PF',           # PNNL software
+                                                                  "TopPIC" = 'TP'),                # TopPIC software
+                                                                selected = 'PD',                   # Default to Proteome Discoverer
                                                                 c("Proteome Discoverer" = 'PD',    # Thermo Fisher software
                                                                   "MSPathFinder" = 'PF',           # PNNL software
                                                                   "TopPIC" = 'TP'),                # TopPIC software
@@ -169,7 +275,12 @@ ui <- fluidPage(
                                                    #=================================================
                                                    # Proteome Discoverer File Inputs
                                                    #=================================================
+                                                   
+                                                   #=================================================
+                                                   # Proteome Discoverer File Inputs
+                                                   #=================================================
                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'PD'", 
+                                                                    # MS/MS spectrum information file
                                                                     # MS/MS spectrum information file
                                                                     fileInput("MS2file", "Choose MSMSSpectrumInfo File:", 
                                                                               accept = c(
@@ -177,6 +288,7 @@ ui <- fluidPage(
                                                                                 "text/comma-separated-values,text/plain",
                                                                                 ".txt")
                                                                     ),
+                                                                    # Peptide/protein identification file
                                                                     # Peptide/protein identification file
                                                                     fileInput("PSMfile", "Choose PSM File:", 
                                                                               accept = c(
@@ -188,12 +300,18 @@ ui <- fluidPage(
                                                    #=================================================
                                                    # MSPathFinder File Inputs
                                                    #=================================================
+                                                   
+                                                   #=================================================
+                                                   # MSPathFinder File Inputs
+                                                   #=================================================
                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'PF'", 
+                                                                    # MSPathFinder output file
                                                                     # MSPathFinder output file
                                                                     fileInput("MS2filePF", "Choose IcTarget or IcTda File from MSPathFinder:", 
                                                                               accept = c(
                                                                                 "text/csv",
                                                                                 "text/comma-separated-values,text/plain",
+                                                                                ".tsv")                           # Tab-separated values
                                                                                 ".tsv")                           # Tab-separated values
                                                                     )
                                                    ),
@@ -201,19 +319,27 @@ ui <- fluidPage(
                                                    #=================================================
                                                    # TopPIC File Inputs
                                                    #=================================================
+                                                   
+                                                   #=================================================
+                                                   # TopPIC File Inputs
+                                                   #=================================================
                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'TP'", 
+                                                                    # TopPIC MS/MS file
                                                                     # TopPIC MS/MS file
                                                                     fileInput("MS2fileTP", "Choose MS/MS File:", 
                                                                               accept = c(
                                                                                 "text",
                                                                                 "text/comma-separated-values,text/plain",
                                                                                 ".msalign")                       # TopPIC MS/MS format
+                                                                                ".msalign")                       # TopPIC MS/MS format
                                                                     ),
+                                                                    # TopPIC identification results file
                                                                     # TopPIC identification results file
                                                                     fileInput("IDfileTP", "Choose the OUTPUT_TABLE/_ms2_toppic (saved at tab-delimited .txt) from TopPIC:", 
                                                                               accept = c(
                                                                                 "text",
                                                                                 "text/comma-separated-values,text/plain",
+                                                                                ".OUTPUT_TABLE")                  # TopPIC output format
                                                                                 ".OUTPUT_TABLE")                  # TopPIC output format
                                                                     )
                                                    )
@@ -223,7 +349,14 @@ ui <- fluidPage(
                                   # Protein Selection and Display Options for MS/MS Mode
                                   #---------------------------------------------------------
                                   # Dropdown to select which identified proteins to highlight
+                                  
+                                  #---------------------------------------------------------
+                                  # Protein Selection and Display Options for MS/MS Mode
+                                  #---------------------------------------------------------
+                                  # Dropdown to select which identified proteins to highlight
                                   selectInput("SelectProt", "Select the ID to highlight:", 
+                                              NULL,                                           # Options populated dynamically
+                                              multiple = TRUE),                               # Allow multiple protein selection
                                               NULL,                                           # Options populated dynamically
                                               multiple = TRUE),                               # Allow multiple protein selection
                                   bsTooltip("SelectProt", 
@@ -231,10 +364,14 @@ ui <- fluidPage(
                                             "right"),
                                   
                                   # Option to hide unidentified MS/MS spectra
+                                  
+                                  # Option to hide unidentified MS/MS spectra
                                   checkboxInput("HideMSMS", "Hide MS/MS withouth ID", FALSE),
                                   bsTooltip("HideMSMS", 
                                             "Removes the MS/MS spectra from the top-down analysis that were not matched to a protein.",
                                             "right"),
+                                  
+                                  # Option to show/hide the underlying MS trace
                                   
                                   # Option to show/hide the underlying MS trace
                                   checkboxInput("MSTrace", "Display the MS trace", TRUE),
@@ -249,9 +386,20 @@ ui <- fluidPage(
                  
                  # Toggle between static plot and interactive plot with data labels
                  checkboxInput("DataPoints", "Show data labels (slower)", FALSE),
+                 
+                 #---------------------------------------------------------------------
+                 # Common Controls: Available in both MS and MS/MS modes
+                 #---------------------------------------------------------------------
+                 
+                 # Toggle between static plot and interactive plot with data labels
+                 checkboxInput("DataPoints", "Show data labels (slower)", FALSE),
                  bsTooltip("DataPoints", 
                            "Switch to \"data\" mode: data appears on hovering",
                            "right"),
+                 
+                 #---------------------------------------------------------------------
+                 # Plot Customization Parameters
+                 #---------------------------------------------------------------------
                  
                  #---------------------------------------------------------------------
                  # Plot Customization Parameters
@@ -260,7 +408,16 @@ ui <- fluidPage(
                    #-------------------------------------------------------------------
                    # Color Scale Selection
                    #-------------------------------------------------------------------
+                   #-------------------------------------------------------------------
+                   # Color Scale Selection
+                   #-------------------------------------------------------------------
                    column(5,
+                          # Color palette dropdown (options change based on number of files)
+                          selectInput("colourscale", "Colour scale:",
+                                      c("Spectral" = "Spectral",                # Spectral color scheme
+                                        "Red/yellow/blue" = "RdYlBu",           # Diverging color scheme
+                                        "Red/yellow/green" = "RdYlGn",          # Diverging color scheme
+                                        "yellow to red" = "YlOrRd"              # Sequential color scheme
                           # Color palette dropdown (options change based on number of files)
                           selectInput("colourscale", "Colour scale:",
                                       c("Spectral" = "Spectral",                # Spectral color scheme
@@ -275,11 +432,19 @@ ui <- fluidPage(
                    #-------------------------------------------------------------------
                    # Point Size Control
                    #-------------------------------------------------------------------
+                   
+                   #-------------------------------------------------------------------
+                   # Point Size Control
+                   #-------------------------------------------------------------------
                    column(3,
                           numericInput("pch", label = "Point size:", value = 1, min = 0.1, step = 0.1, max = 10),
                           bsTooltip("pch", 
                                     "Define the size of the point (from 0.1 to 10).",
                                     "right")),
+                   
+                   #-------------------------------------------------------------------
+                   # Intensity Threshold Control
+                   #-------------------------------------------------------------------
                    
                    #-------------------------------------------------------------------
                    # Intensity Threshold Control
@@ -295,8 +460,15 @@ ui <- fluidPage(
                  # Zoom and Navigation Controls
                  #---------------------------------------------------------------------
                  # Dynamic instructions that change based on plot type (static vs interactive)
+                 
+                 #---------------------------------------------------------------------
+                 # Zoom and Navigation Controls
+                 #---------------------------------------------------------------------
+                 # Dynamic instructions that change based on plot type (static vs interactive)
                  htmlOutput("ZoomParam"),
                  br(),
+                 
+                 # Zoom control buttons
                  
                  # Zoom control buttons
                  actionButton("DeZoom", "Unzoom one step", style='padding:8px; font-size:150%'),
@@ -320,6 +492,17 @@ ui <- fluidPage(
                  #---------------------------------------------------------------------
                  # Citation Information
                  #---------------------------------------------------------------------
+                 
+                 #---------------------------------------------------------------------
+                 # Export Controls: Download plot in different formats
+                 #---------------------------------------------------------------------
+                 downloadButton("Download", "Download .pdf"),      # PDF format for publications
+                 downloadButton("Download1", "Download .png"),     # PNG format for presentations
+                 downloadButton("Download2", "Download .svg"),     # SVG format for vector graphics
+                 
+                 #---------------------------------------------------------------------
+                 # Citation Information
+                 #---------------------------------------------------------------------
                  HTML(paste("<br/><br/>",
                    h4("If you use VisioProt-MS for your research please cite:"),
                    "<br/>Marie Locard-Paulet, Julien Parra, Renaud Albigot, Emmanuelle Mouton-Barbosa, Laurent Bardi, Odile Burlet-Schiltz, Julien Marcoux; VisioProt-MS: interactive 2D maps from intact protein mass spectrometry, Bioinformatics, bty680, https://doi.org/10.1093/bioinformatics/bty680")
@@ -329,11 +512,20 @@ ui <- fluidPage(
     #-------------------------------------------------------------------------
     # Main Panel: Contains the plot output area
     #-------------------------------------------------------------------------
+    
+    #-------------------------------------------------------------------------
+    # Main Panel: Contains the plot output area
+    #-------------------------------------------------------------------------
     mainPanel(width = 8,
+              # Dynamic UI that switches between static and interactive plots
               # Dynamic UI that switches between static and interactive plots
               uiOutput("plotUI")
     )
   ),
+  
+  #---------------------------------------------------------------------------
+  # Footer Section
+  #---------------------------------------------------------------------------
   
   #---------------------------------------------------------------------------
   # Footer Section
@@ -416,6 +608,7 @@ server <- function(input, output, clientData, session) {
       if (length(filedataMS2()$PSMfile$Majority.Protein.Accessions[!is.na(filedataMS2()$PSMfile$Majority.Protein.Accessions)]) > 0) {
         updateSelectInput(session, "SelectProt",
                           "Select the ID to highlight:",
+                          sort(unique(filedataMS2()$PSMfile$Majority.Protein.Accessions[!is.na(filedataMS2()$PSMfile$Majority.Protein.Accessions)]))
                           sort(unique(filedataMS2()$PSMfile$Majority.Protein.Accessions[!is.na(filedataMS2()$PSMfile$Majority.Protein.Accessions)]))
         )
       }
