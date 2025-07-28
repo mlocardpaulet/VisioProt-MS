@@ -642,9 +642,11 @@ The button "Total unzoom" unzooms to the limits of the LC-MS data uploaded.
 
 <div class="col2">
 <br />
-![](Figures/Download.PNG) 
+![](Figures/Download.PNG) # TO UPDATE
 <br />
 <br />
 
 These buttons instantly download an image corresponding to the current VisioProt-MS plot. The user can choose between three file formats. The file will be saved in the Downloads folder of the user, and will be named "VisioProt-MS_" with the name of the input MS file and the date of the day.
+
+The button `Download table` exports a tab-delimited tsv file with the values for all points in the plot. 
 </div>
