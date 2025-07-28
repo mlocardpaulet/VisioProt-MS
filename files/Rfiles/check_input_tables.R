@@ -121,17 +121,22 @@ PD_MS2_check <- function(PSM_tab = NULL, MSMS_tab = NULL) { # works for v3.0
   validate(need(sum(grepl("Master.Protein.Descriptions", names(PSM_tab))) == 1 | sum(grepl("Protein.Accessions", names(PSM_tab))) == 1, 
                 paste0("Error in file format for plotting MS2 data:\n",
                        "You have uploaded a file from Proteome Discoverer.\n",
-                       "One of the columns of the columns shoule be \"Master.Protein.Descriptions\" or \"Protein.Accessions\" in the PrSM table.")
+                       "One of the columns should be \"Master.Protein.Descriptions\" or \"Protein.Accessions\" in the PrSM table.")
   ))
   validate(need(sum(grepl("RT.in.min", names(MSMS_tab))) == 1 | sum(grepl("RT..min.", names(MSMS_tab))) == 1, 
                 paste0("Error in file format for plotting MS2 data:\n",
                        "You have uploaded a file from Proteome Discoverer.\n",
-                       "One of the columns of the columns shoule be \"RT.in.min\" or \"RT..min.\" in the MSMS table.")
+                       "One of the columns should be \"RT.in.min\" or \"RT..min.\" in the MSMS table.")
   ))
-  validate(need(sum(grepl("Spectrum.File", names(MSMS_tab))) == 1 & sum(grepl("First.Scan", names(PSM_tab))) == 1, 
+  validate(need(sum(grepl("Spectrum.File", names(MSMS_tab))) == 1 & sum(grepl("Spectrum.File", names(PSM_tab))) == 1, 
                 paste0("Error in file format for plotting MS2 data:\n",
                        "You have uploaded a file from Proteome Discoverer.\n",
-                       "One of the columns of the columns shoule be \"Spectrum.File\" in the MSMS table and \"First.Scan\" in the PrSM table.")
+                       "There should be a column \"Spectrum.File\" in the PrSM and in the MSMS table.")
+  ))
+  validate(need(sum(grepl("mz.in.Da", names(PSM_tab))) == 1 & sum(grepl("Precursor.MHplus.in.Da", names(MSMS_tab))) == 1, 
+                paste0("Error in file format for plotting MS2 data:\n",
+                       "You have uploaded a file from Proteome Discoverer.\n",
+                       "The columns \"mz.in.Da\" and \"Precursor.MHplus.in.Da\" should be present in the PrSM and in the MSMS table, respectively.")
   ))
 }
 

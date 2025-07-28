@@ -24,7 +24,14 @@ RenamePDPrSM <- function(tab) {
   if (sum(grepl("Master.Protein.Description", names(tab))) == 0) {
     names(tab)[names(tab) == "Protein.Accessions"] <- "Master.Protein.Descriptions"
   }
+  if (sum(grepl("Precursor.MHplus.in.Da", names(tab))) == 0) {
+    names(tab)[names(tab) == "Precursor.m.z..Da."] <- "Precursor.MHplus.in.Da"
+    names(tab)[names(tab) == "mz.in.Da"] <- "Precursor.MHplus.in.Da"
+  }
   names(tab)[names(tab) == "RT..min."] <- "RT.in.min"
+  if (sum(names(tab) == "Modifications") > 0) {
+    tab$Master.Protein.Descriptions <- paste0(tab$Master.Protein.Descriptions, "|", tab$Modifications)
+  }
   return(tab)
 }
 

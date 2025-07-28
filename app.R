@@ -962,8 +962,8 @@ server <- function(input, output, clientData, session) {
         # Validate file formats for Proteome Discoverer compatibility
         PD_MS2_check(PSM_tab = PSM, MSMS_tab = MS2)
         
-        RenamePDPrSM(PSM)
-        RenamePDMSMS(MSMS)
+        PSM <- RenamePDPrSM(PSM)
+        MS2 <- RenamePDMSMS(MS2)
       }
     }
     return(list("MS2file" = MS2, "PSMfile" = PSM))
@@ -1367,22 +1367,20 @@ server <- function(input, output, clientData, session) {
           if (input$PDPFModeCheck == "PD" | testfileinput() == 3) {
             PSM <- filedataMS2()$PSM
             MS2 <- filedataMS2()$MS2
-            if (sum(grepl("First.Scan", names(PSM))) == 1 & sum(grepl("First.Scan", names(MS2))) == 1) {
-              PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$First.Scan)
-              MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$First.Scan)
-            } else {
-              PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$m.z..Da.)
-              MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$Precursor.m.z..Da.)
-              MS2$Master.Protein.Descriptions <- PSM$Master.Protein.Descriptions[match(MS2$ID, PSM$ID)]
-            }
+            PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$RT, "|", PSM$Precursor.MHplus.in.Da)
+            MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$RT, "|", MS2$Precursor.MHplus.in.Da)
+            print(MS2[MS2$ID %in% PSM$ID,])
+        
             # Retrieve protein IDs in the MS2 table:
             MS2$Master.Protein.Descriptions <- PSM$Master.Protein.Descriptions[match(MS2$ID, PSM$ID)]
-            # Plot:
-            # gtabMS2 <- MS2[,c("RT.in.min", "Precursor.MHplus.in.Da", "Precursor.Intensity", "Master.Protein.Descriptions")]
-            # print(head(MS2))
+            print(head(MS2))
+            print(MS2$Master.Protein.Descriptions[!is.na(MS2$Master.Protein.Descriptions)])
+            
+            # Make table for plot:
             gtabMS2 <- MS2[,c("RT.in.min", "Precursor.MHplus.in.Da", "Master.Protein.Descriptions")]
             gtabMS2$Identification <- ifelse(!is.na(gtabMS2$Master.Protein.Descriptions), "IDed", "Not IDed")
             # print(head(gtabMS2))
+            # print(gtabMS2$Master.Protein.Descriptions)
             
             # Action button:
             if (input$HideMSMS == TRUE) {

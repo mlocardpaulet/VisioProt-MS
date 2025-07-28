@@ -194,7 +194,7 @@ Here are downloadable examples of the supported format files for MS/MS data:
 
 <br />
 <br />
-To plot MS/MS results from Proteome Discoverer, the user needs to upload two .txt files resulting from the same search.
+To plot MS/MS results from Proteome Discoverer, the user needs to upload two .txt files resulting from the same search. With this output, the points for the MS/MS data will have the MH+ mass, so we expect + ~1 Da when compared to the MS trace. The PrSM IDs will be a concatenation of the protein description and the modification(s), unless the column "Modifications" is missing from the PrSM table.
 
 </div>
 <br />
@@ -207,7 +207,8 @@ To plot MS/MS results from Proteome Discoverer, the user needs to upload two .tx
 This file must contain the following information:
 
   + Retention time in a column "RT.in.min" or "R..min.".
-  + Link to the PrSM file ("Spectrum.File").
+  + "Precursor.MHplus.in.Da".
+  + "Spectrum.File"
 
 <br />
 
@@ -216,7 +217,8 @@ This file must contain the following information:
 [Download example](./files/MS2/OFJMX160905_30-(1)_PSMs.txt).
 
   + The protein or proteoform identifier in a column "Master.Protein.Descriptions" or "Protein.Accessions".
-  + Link to the MS/MS file ("First.Scan").
+  + Precursor MH+ ("mz.in.Da").
+  + "Spectrum.File"
 
 <br />
 

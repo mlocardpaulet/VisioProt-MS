@@ -351,7 +351,7 @@ display: none;
 
 <h1 class="title toc-ignore">VisioProt-MS - Utilisation manual</h1>
 <h4 class="author">Toulouse Proteomics Infrastructure</h4>
-<h4 class="date">Mon Jul 28 13:04:48 2025</h4>
+<h4 class="date">Mon Jul 28 15:23:55 2025</h4>
 
 </div>
 
@@ -492,7 +492,11 @@ MS/MS data:</p>
 <div class="col2">
 <p><img role="img" src="Figures/PDMS2.PNG" /> <br /></p>
 <p><br /> <br /> To plot MS/MS results from Proteome Discoverer, the
-user needs to upload two .txt files resulting from the same search.</p>
+user needs to upload two .txt files resulting from the same search. With
+this output, the points for the MS/MS data will have the MH+ mass, so we
+expect + ~1 Da when compared to the MS trace. The PrSM IDs will be a
+concatenation of the protein description and the modification(s), unless
+the column “Modifications” is missing from the PrSM table.</p>
 </div>
 <p><br /></p>
 <ul>
@@ -503,7 +507,8 @@ example</a>.</p>
 <p>This file must contain the following information:</p>
 <ul>
 <li>Retention time in a column “RT.in.min” or “R..min.”.</li>
-<li>Link to the PrSM file (“Spectrum.File”).</li>
+<li>“Precursor.MHplus.in.Da”.</li>
+<li>“Spectrum.File”</li>
 </ul>
 <p><br /></p>
 <ul>
@@ -514,7 +519,8 @@ example</a>.</p>
 <ul>
 <li>The protein or proteoform identifier in a column
 “Master.Protein.Descriptions” or “Protein.Accessions”.</li>
-<li>Link to the MS/MS file (“First.Scan”).</li>
+<li>Precursor MH+ (“mz.in.Da”).</li>
+<li>“Spectrum.File”</li>
 </ul>
 <p><br /></p>
 <hr />
