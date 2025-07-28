@@ -79,7 +79,7 @@ source("files/Rfiles/Parse_TopPIC_input.R", local = TRUE)
 source("files/Rfiles/rename_input_coulumns.R", local = TRUE)
 
 # Check input files with adapted error messages
-source("files/Rfiles/check_input_tables_MS2.R", local = TRUE)
+source("files/Rfiles/check_input_tables.R", local = TRUE)
 
 ############################################################################
 # USER INTERFACE (UI) DEFINITION
@@ -674,20 +674,16 @@ server <- function(input, output, clientData, session) {
       # Check each uploaded file for format markers
       for(i in 1:nrow(InputFileMS)){
         # BioPharma detection: check for specific column headers
-        l[[i]] <- grepl("Mass", readLines(InputFileMS[i, 'datapath'])[1]) & 
-          grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1]) & 
-          grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & 
-          grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & 
-          grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T)
+        l[[i]] <- is_biopharama_MS_input(input = InputFileMS[i, 'datapath'])
         
         # Bruker detection: check for specific header pattern
-        l2[[i]] <- substr(readLines(InputFileMS[i, 'datapath'])[2], 0, 13) == "Compound Name"
+        l2[[i]] <- is_Bruker_MS_input(input = InputFileMS[i, 'datapath'])
         
         # ProMex detection: check file extension
-        l3[[i]] <- grepl(".ms1ft", InputFileMS$name[i], fixed = T)
+        l3[[i]] <- is_ProMex_MS_input(input = InputFileMS$name[i])
         
         # TopPIC detection: check file extension  
-        l4[[i]] <- grepl("ms1.msalign", InputFileMS$name[i], fixed = T)
+        l4[[i]] <- is_TopFD_input(input = InputFileMS$name[i])
       }
       
       # Convert to logical vectors
@@ -806,19 +802,12 @@ server <- function(input, output, clientData, session) {
       
       # Check each uploaded file
       for(i in 1:nrow(InputFileMS)){
-        # Error message for invalid file formats
-        validationText <- "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".\n- TopPic export of the deconvoluted MS data: \"_ms1.msalign\" files."
         
         # Initial format detection
-        val <- grepl("Mass", readLines(InputFileMS[i, 'datapath'])[1]) & 
-          grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1]) & 
-          grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & 
-          grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & 
-          grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T)
-        
-        val2 <- substr(readLines(InputFileMS[i, 'datapath'])[2], 0, 13) == "Compound Name"  # Bruker format
-        val3 <- grepl(".ms1ft", InputFileMS$name[i])                                       # ProMex format
-        val4 <- grepl("ms1.msalign", InputFileMS$name[i])                                  # TopPIC format
+        val <- is_biopharama_MS_input(input = InputFileMS[i, 'datapath'])
+        val2 <- is_Bruker_MS_input(input = InputFileMS[i, 'datapath'])  # Bruker format
+        val3 <- is_ProMex_MS_input(input = InputFileMS$name[i]) # ProMex format
+        val4 <- is_TopFD_input(InputFileMS$name[i]) # TopPIC format
         
         # Classify file type based on detection results
         val <- ifelse(val,  "BioPharma", "RoWinPro")
@@ -830,44 +819,29 @@ server <- function(input, output, clientData, session) {
         # Format-specific validation checks
         #=======================================================================
         
-        # BioPharma format validation
-        if (val == "BioPharma") {
-          if (!grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1])) {
-            val <- "DoNotApply"
-            validate(need(val!="DoNotApply", validationText))
-          }
-        }
+        # # BioPharma format validation 
+        # if (val == "BioPharma") { 
+        #
+        # }
         
         # RoWinPro format validation (should have exactly 4 columns)
         if (val == "RoWinPro") {
-          if (length(as.numeric(gregexpr("\t", readLines(InputFileMS[i, 'datapath'])[1])[[1]]))!=3) {
-            val <- "DoNotApply"
-            validate(need(val!="DoNotApply", validationText))
-          }
+          RoWinPro_MS_check(input = InputFileMS[i, 'datapath'])
         }
         
         # Bruker format validation
         if (val == "Bruker") {
-          if (!(!grepl(",", readLines(InputFileMS[i, 'datapath'])[1]) & grepl(" RT", readLines(InputFileMS[i, 'datapath'])[2]))) {
-            val <- "DoNotApply"
-            validate(need(val!="DoNotApply", validationText))
-          }
+          Bruker_MS_check(input = InputFileMS[i, 'datapath'])
         }
         
         # ProMex format validation
         if (val == "ProMex") {
-          if (!grepl("MinElutionTime", readLines(InputFileMS[i, 'datapath'])[1])) {
-            val <- "DoNotApply"
-            validate(need(val!="DoNotApply", validationText))
-          }
+          ProMex_MS_check(input = InputFileMS[i, 'datapath'])
         }
         
         # TopPIC format validation
         if (val == "TopPic") {
-          if (!grepl("#TopFD", readLines(InputFileMS[i, 'datapath'])[1], fixed = T)) {
-            val <- "DoNotApply"
-            validate(need(val!="DoNotApply", validationText))
-          }
+          TopFD_MS_check(input = InputFileMS[i, 'datapath'])
         }
         
         l[[i]] <- val
@@ -889,7 +863,9 @@ server <- function(input, output, clientData, session) {
     if (testfileinput() == 0) { 
       # Regular file upload mode (not test mode)
       validate(
-        need((input$TestModeCheck==FALSE & input$MSModeCheck == "MS") | (input$MS2TestModeCheck == FALSE & input$MSModeCheck == "MS2"), "You are in test mode. Click on a button to select a single test file or multiple test files.\nUncheck to exit and upload your own data.")
+        need((input$TestModeCheck==FALSE & input$MSModeCheck == "MS") | (input$MS2TestModeCheck == FALSE & input$MSModeCheck == "MS2"), 
+             "You are in test mode. Click on a button to select a single test file or multiple test files.\nUncheck to exit and upload your own data."
+             )
       )
       if (is.null(InputFileMS())) {
         # User has not uploaded a file yet
@@ -898,7 +874,8 @@ server <- function(input, output, clientData, session) {
         # Validation: prevent mixing different file types with multiple files
         validate(
           need(!(max(table(ftype())) > 1 & length(unique(ftype())) > 1), 
-               "With multiple files, all files need to be from the same deconvolution software.")
+               "With multiple files, all files need to be from the same deconvolution software."
+               )
         )
         InputFileMS <- InputFileMS()
         lfiles <- list()
@@ -1006,31 +983,11 @@ server <- function(input, output, clientData, session) {
              "You need to upload the MS2 with the associated MS file to plot MS2 results from MSPathFinder.")
       )
       
+      # File format validation
+      MSPathFinder_MS2_check(inputMSMS = InputFilesMS2PF(), inputMS = InputFileMS())
+      
       # Load MSPathFinder results
       MS2PF <- read.table(InputFilesMS2PF()$datapath, sep = "\t", header = F, skip = 1)
-      
-      # Validate that each MS feature has only one identification
-      vec <- lapply(unique(MS2PF[,15]), function(x) {
-        MS2PF[MS2PF[,15]==x,8]
-      })
-      vec <- lapply(vec, function(x) {
-        length(unique(x))
-      })
-      vec <- unlist(vec)
-      val <- max(vec)
-      
-      # File format validation
-      validate(
-        need(grepl("IcT", InputFilesMS2PF()$name, fixed = T), 
-             "Error in file format for plotting MS2 data.\nYou have to upload the \"IcTarget\" or \"IcTda\" output file from MSPathFinder associated with the deconvoluted MS weights uploaded as \"input file for MS\".")
-      )
-      validate(
-        need(grepl(".ms1ft", InputFileMS()$name, fixed = T), 
-             "Error in file format for plotting MS data.\nYou have to upload the \"IcTarget\" or \"IcTda\" output file from MSPathFinder associated with the deconvoluted MS weights uploaded as \"input file for MS\".")
-      )
-      validate(
-        need(val==1, "Several IDs have been attributed to the same MS feature.")
-      )
       
       # Standardize column names
       names(MS2PF)[8] <- "Protein.Descriptions"

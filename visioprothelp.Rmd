@@ -68,7 +68,9 @@ Here are downloadable examples of the head of supported format files for MS data
 **RoWinPro export:**
 *(tab-separated csv files)*
 
-[Download example](./files/Unique/OEJPA170302_93_Job_1_results.csv).
+[Download example](./files/Unique/Rowinpro_MS_OEJPA170302_93_Job_1_results.csv).
+
+The table must have 4 tab-delimited columns without headers.
 
 ![](Figures/RoWinPro.PNG) 
 <br />
@@ -78,7 +80,14 @@ Here are downloadable examples of the head of supported format files for MS data
 **Bruker Data Analysis export:** 
 *(coma-separated csv files with two rows of comments)*
 
-[Download example](./files/test/Std_Orexin_1-100_Slot2-46_01_1147_DeconvolutedPeaks.csv).
+[Download example](./files/test/Bruker_file_Std_Orexin_1-100_Slot2-46_01_1147_DeconvolutedPeaks.csv).
+
+This file must contain the following information:
+
+  + The first column (in line 2 of the file) should be "Compound Name"
+  + "RT / min"
+  + "MW"
+  + "Intensity"
 
 ![](Figures/BrukerMS2Example.PNG) 
 <br />
@@ -92,6 +101,14 @@ Here are downloadable examples of the head of supported format files for MS data
 
 [Download example](./files/test/TestBioPharma.txt).
 
+This file must contain the following information:
+
+  + "Mass"
+  + "Apex RT"
+  + "Sum Intensity"
+  + "Start Time (min)"
+  + "Stop Time (min)"
+
 ![](Figures/BioPharma.PNG) 
 <br />
 
@@ -102,6 +119,7 @@ Here are downloadable examples of the head of supported format files for MS data
 
 [Download example](./files/test/OFJMX180309_09.raw_ms1.msalign).
 
+The file must start with "#TopFD".
 
 ![](Figures/TopPICMSTrace.PNG) 
 <br />
@@ -109,9 +127,11 @@ Here are downloadable examples of the head of supported format files for MS data
 ***
 
 **ProMex export:**
-*(ms1ft files)*
+*(.ms1ft files)*
 
 [Download example](./files/test/OFJMX180309_09_ProMex.ms1ft).
+
+The table must contain a column with the header "MinElutionTime".
 
 ![](Figures/ProMex.PNG)
 
@@ -178,15 +198,23 @@ To plot MS/MS results from Proteome Discoverer, the user needs to upload two .tx
 <br />
 
 
-- The MS/MS file:
+- <u>The MS/MS file:</u>
 
 [Download example](./files/MS2/OFJMX160905_30-(1)_MSMSSpectrumInfo.txt).
 
+This file must contain the following information:
+
+  + Retention time in a column "RT.in.min" or "R..min.".
+  + Link to the PrSM file ("Spectrum.File").
+
 <br />
 
-- The corresponding PSM file:
+- <u>The corresponding PrSM file:</u>
 
 [Download example](./files/MS2/OFJMX160905_30-(1)_PSMs.txt).
+
+  + The protein or proteoform identifier in a column "Master.Protein.Descriptions" or "Protein.Accessions".
+  + Link to the MS/MS file ("First.Scan").
 
 <br />
 
@@ -209,7 +237,20 @@ To plot MS/MS results from MSPathFinder, the user needs to upload the IcTarget.t
 
 Here is an example of a IcTarget.tsv file:
 
-[Download example](./files/test/OFJMX160905_30_IcTarget.tsv).
+[Download example](./files/test/MSPathFinder_OFJMX160905_30_IcTarget.tsv).
+
+
+In these tables, the Protein ID should be in column 8 and the MS1 feature ID in column 15. And each MS1 feature should be matched to only one protein ID.
+
+Th columns should be ordered as follows:
+
+2. mass
+3. intensity
+4. peak start RT
+5. peak stop RT
+8. protein ID
+15. MS1 feature ID
+
 
 <br />
 
