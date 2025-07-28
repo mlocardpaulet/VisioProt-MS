@@ -171,3 +171,17 @@ MSPathFinder_MS2_check <- function(inputMSMS = NULL, inputMS = NULL) {
          )
   )
 }
+
+# TopFD: ----------------------------------------------------------------
+
+TopFD_MS2_check <- function(input = NULL) {
+  validate(
+    need(grepl("_ms2.msalign", input$MS2file$name, fixed = T), 
+         "Error in file format for plotting MS2 data.\nYou have to upload the \"_ms2.msalign\" output file from TopPic associated with the \"_ms2.OUTPUT_TABLE\".")
+  )
+  validate(
+    need(grepl("_ms2.OUTPUT_TABLE", input$IDfile$name, fixed = T) | grepl("_ms2_toppic", input$IDfile$name, fixed = T), 
+         "Error in file format for plotting ID data.\nYou have to upload the \"_ms2.OUTPUT_TABLE\", or \"_ms2_toppic\" output file from TopPic associated with the deconvoluted MS2 weights uploaded as \"input file for MS2\".")
+  )
+  
+}

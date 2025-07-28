@@ -1013,20 +1013,12 @@ server <- function(input, output, clientData, session) {
   # 6.4: MS/MS data loading for TopPIC
   #--------------------------------------------------------------------------
   # Load and process TopPIC identification data
-  # Load and process TopPIC identification data
   filedataMS2TP <- reactive({
     if (is.null(InputFilesMS2TP())) {
       return(NULL)
     } else if (input$MSModeCheck == "MS2" & input$PDPFModeCheck == "TP")  {
       # Validate TopPIC file formats
-      validate(
-        need(grepl("_ms2.msalign", InputFilesMS2TP()$MS2file$name, fixed = T), 
-             "Error in file format for plotting MS2 data.\nYou have to upload the \"_ms2.msalign\" output file from TopPic associated with the \"_ms2.OUTPUT_TABLE\".")
-      )
-      validate(
-        need(grepl("_ms2.OUTPUT_TABLE", InputFilesMS2TP()$IDfile$name, fixed = T) | grepl("_ms2_toppic", InputFilesMS2TP()$IDfile$name, fixed = T), 
-             "Error in file format for plotting ID data.\nYou have to upload the \"_ms2.OUTPUT_TABLE\", or \"_ms2_toppic\" output file from TopPic associated with the deconvoluted MS2 weights uploaded as \"input file for MS2\".")
-      )
+      TopFD_MS2_check(input = InputFilesMS2TP())
       
       # Parse TopPIC files using custom functions
       IDTP <- TopPicIDParsing(InputFilesMS2TP()$IDfile$datapath)

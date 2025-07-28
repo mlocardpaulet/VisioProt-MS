@@ -266,7 +266,7 @@ Th columns should be ordered as follows:
 
 <br />
 
-To plot MS/MS results from TopPIC, the user needs to upload a ms2.msalign file and the OUTPUT_TABLE file resulting from the same search.
+To plot MS/MS results from TopPIC, the user needs to upload a ms2.msalign file and the OUTPUT_TABLE file resulting from the same search. 
 
 </div>
 <br />
@@ -275,11 +275,22 @@ To plot MS/MS results from TopPIC, the user needs to upload a ms2.msalign file a
 
 [Download example](./files/test/TopPic2/OFJMX160905_30.raw_ms2.msalign).
 
+It should contain the following columns:
+
+  + "Scan"
+  + "Mass"
+  + "RT"
+
 <br />
 
 - The OUTPUT_TABLE file:
 
 [Download example](./files/test/TopPic2/OFJMX160905_30.raw_ms2.OUTPUT_TABLE).
+
+It should contain the following columns:
+
+  + "Spectrum ID"
+  + "Protein accession"
 
 <br />
 
