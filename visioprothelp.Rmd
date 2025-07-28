@@ -33,6 +33,8 @@ require(ggplot2)
 If you use VisioProt-MS for your research please cite:
 Marie Locard-Paulet, Julien Parra, Renaud Albigot, Emmanuelle Mouton-Barbosa, Laurent Bardi, Odile Burlet-Schiltz, Julien Marcoux; VisioProt-MS: interactive 2D maps from intact protein mass spectrometry, Bioinformatics, , bty680, https://doi.org/10.1093/bioinformatics/bty680
 
+If you have an issue with the application, and want to report a bug, please do it [here](https://github.com/mlocardpaulet/VisioProt-MS/issues/new). 
+
 # Step-by-step description of the options:
 
 ***
@@ -68,7 +70,9 @@ Here are downloadable examples of the head of supported format files for MS data
 **RoWinPro export:**
 *(tab-separated csv files)*
 
-[Download example](./files/Unique/OEJPA170302_93_Job_1_results.csv).
+[Download example](./files/Unique/Rowinpro_MS_OEJPA170302_93_Job_1_results.csv).
+
+The table must have 4 tab-delimited columns without headers.
 
 ![](Figures/RoWinPro.PNG) 
 <br />
@@ -78,7 +82,14 @@ Here are downloadable examples of the head of supported format files for MS data
 **Bruker Data Analysis export:** 
 *(coma-separated csv files with two rows of comments)*
 
-[Download example](./files/test/Std_Orexin_1-100_Slot2-46_01_1147_DeconvolutedPeaks.csv).
+[Download example](./files/test/Bruker_file_Std_Orexin_1-100_Slot2-46_01_1147_DeconvolutedPeaks.csv).
+
+This file must contain the following information:
+
+  + The first column (in line 2 of the file) should be "Compound Name"
+  + "RT / min"
+  + "MW"
+  + "Intensity"
 
 ![](Figures/BrukerMS2Example.PNG) 
 <br />
@@ -92,6 +103,14 @@ Here are downloadable examples of the head of supported format files for MS data
 
 [Download example](./files/test/TestBioPharma.txt).
 
+This file must contain the following information:
+
+  + "Mass"
+  + "Apex RT"
+  + "Sum Intensity"
+  + "Start Time (min)"
+  + "Stop Time (min)"
+
 ![](Figures/BioPharma.PNG) 
 <br />
 
@@ -102,6 +121,7 @@ Here are downloadable examples of the head of supported format files for MS data
 
 [Download example](./files/test/OFJMX180309_09.raw_ms1.msalign).
 
+The file must start with "#TopFD".
 
 ![](Figures/TopPICMSTrace.PNG) 
 <br />
@@ -109,9 +129,11 @@ Here are downloadable examples of the head of supported format files for MS data
 ***
 
 **ProMex export:**
-*(ms1ft files)*
+*(.ms1ft files)*
 
 [Download example](./files/test/OFJMX180309_09_ProMex.ms1ft).
+
+The table must contain a column with the header "MinElutionTime".
 
 ![](Figures/ProMex.PNG)
 
@@ -172,21 +194,31 @@ Here are downloadable examples of the supported format files for MS/MS data:
 
 <br />
 <br />
-To plot MS/MS results from Proteome Discoverer, the user needs to upload two .txt files resulting from the same search.
+To plot MS/MS results from Proteome Discoverer, the user needs to upload two .txt files resulting from the same search. With this output, the points for the MS/MS data will have the MH+ mass, so we expect + ~1 Da when compared to the MS trace. The PrSM IDs will be a concatenation of the protein description and the modification(s), unless the column "Modifications" is missing from the PrSM table.
 
 </div>
 <br />
 
 
-- The MS/MS file:
+- <u>The MS/MS file:</u>
 
 [Download example](./files/MS2/OFJMX160905_30-(1)_MSMSSpectrumInfo.txt).
 
+This file must contain the following information:
+
+  + Retention time in a column "RT.in.min" or "R..min.".
+  + "Precursor.MHplus.in.Da".
+  + "Spectrum.File"
+
 <br />
 
-- The corresponding PSM file:
+- <u>The corresponding PrSM file:</u>
 
 [Download example](./files/MS2/OFJMX160905_30-(1)_PSMs.txt).
+
+  + The protein or proteoform identifier in a column "Master.Protein.Descriptions" or "Protein.Accessions".
+  + Precursor MH+ ("mz.in.Da").
+  + "Spectrum.File"
 
 <br />
 
@@ -209,7 +241,20 @@ To plot MS/MS results from MSPathFinder, the user needs to upload the IcTarget.t
 
 Here is an example of a IcTarget.tsv file:
 
-[Download example](./files/test/OFJMX160905_30_IcTarget.tsv).
+[Download example](./files/test/MSPathFinder_OFJMX160905_30_IcTarget.tsv).
+
+
+In these tables, the Protein ID should be in column 8 and the MS1 feature ID in column 15. And each MS1 feature should be matched to only one protein ID.
+
+Th columns should be ordered as follows:
+
+2. mass
+3. intensity
+4. peak start RT
+5. peak stop RT
+8. protein ID
+15. MS1 feature ID
+
 
 <br />
 
@@ -225,7 +270,7 @@ Here is an example of a IcTarget.tsv file:
 
 <br />
 
-To plot MS/MS results from TopPIC, the user needs to upload a ms2.msalign file and the OUTPUT_TABLE file resulting from the same search.
+To plot MS/MS results from TopPIC, the user needs to upload a ms2.msalign file and the OUTPUT_TABLE file resulting from the same search. 
 
 </div>
 <br />
@@ -234,11 +279,22 @@ To plot MS/MS results from TopPIC, the user needs to upload a ms2.msalign file a
 
 [Download example](./files/test/TopPic2/OFJMX160905_30.raw_ms2.msalign).
 
+It should contain the following columns:
+
+  + "Scan"
+  + "Mass"
+  + "RT"
+
 <br />
 
 - The OUTPUT_TABLE file:
 
 [Download example](./files/test/TopPic2/OFJMX160905_30.raw_ms2.OUTPUT_TABLE).
+
+It should contain the following columns:
+
+  + "Spectrum ID"
+  + "Protein accession"
 
 <br />
 

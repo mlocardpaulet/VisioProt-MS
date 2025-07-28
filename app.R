@@ -1,260 +1,239 @@
 ############################################################################
+# VisioProt-MS: Interactive 2D maps from intact protein mass spectrometry
 # Copyright CNRS 2017
 # Contributor : Marie Locard-Paulet (21/11/2017) [marie.locard@ipbs.fr]
-# This software is a computer program whose purpose is to visualize and inspect deconvoluted MS 2D maps.
-# This software is governed by the CeCILL license under French law and abiding by the rules of distribution of free software. You can  use, modify and/or redistribute the software under the terms of the CeCILL license as circulated by CEA, CNRS and INRIA at the following URL "http://www.cecill.info". 
-# As a counterpart to the access to the source code and rights to copy, modify and redistribute granted by the license, users are provided only with a limited warranty and the software's author, the holder of the economic rights, and the successive licensors have only limited liability. In this respect, the user's attention is drawn to the risks associated with loading, using, modifying and/or developing or reproducing the software by the user in light of its specific status of free software,that may mean that it is complicated to manipulate, and that also therefore means that it is reserved for developers and experienced professionals having in-depth computer knowledge. Users are therefore encouraged to load and test the software's suitability as regards their requirements in conditions enabling the security of their systems and/or data to be ensured and, more generally, to use and operate it in the  same conditions as regards security. 
-# The fact that you are presently reading this means that you have had knowledge of the CeCILL license and that you accept its terms.
+# 
+# DESCRIPTION:
+# This software is a computer program whose purpose is to visualize and inspect 
+# deconvoluted MS 2D maps from intact protein mass spectrometry experiments.
+# It supports various deconvolution software outputs including:
+# - RoWinPro and Bruker DataAnalysis
+# - BioPharma Finder (Thermo Fisher Scientific)
+# - ProMex (Pacific Northwest National Laboratory)
+# - TopPIC (University of California, San Diego)
+#
+# The application can operate in two modes:
+# 1. MS mode: Visualization of deconvoluted MS1 data only
+# 2. MS/MS mode: Overlay of top-down MS/MS identification results on MS1 data
+#
+# LICENSE:
+# This software is governed by the CeCILL license under French law and abiding 
+# by the rules of distribution of free software. You can use, modify and/or 
+# redistribute the software under the terms of the CeCILL license as circulated 
+# by CEA, CNRS and INRIA at the following URL "http://www.cecill.info". 
+# As a counterpart to the access to the source code and rights to copy, modify 
+# and redistribute granted by the license, users are provided only with a limited 
+# warranty and the software's author, the holder of the economic rights, and the 
+# successive licensors have only limited liability. In this respect, the user's 
+# attention is drawn to the risks associated with loading, using, modifying and/or 
+# developing or reproducing the software by the user in light of its specific 
+# status of free software, that may mean that it is complicated to manipulate, 
+# and that also therefore means that it is reserved for developers and experienced 
+# professionals having in-depth computer knowledge. Users are therefore encouraged 
+# to load and test the software's suitability as regards their requirements in 
+# conditions enabling the security of their systems and/or data to be ensured and, 
+# more generally, to use and operate it in the same conditions as regards security. 
+# The fact that you are presently reading this means that you have had knowledge 
+# of the CeCILL license and that you accept its terms.
 ############################################################################
 
 
 
-# Packages:
+############################################################################
+# REQUIRED PACKAGES AND GLOBAL CONFIGURATION
 ############################################################################
 
+# Core Shiny framework for building interactive web applications
 library(shiny)
-# devtools::install_github('hadley/ggplot2')
-library(ggplot2)
-library(plotly)
-library(dplyr)
-library(RColorBrewer)
-library(shinyBS)
 
-library(data.table)
+# Advanced plotting libraries
+# devtools::install_github('hadley/ggplot2')  # Use development version if needed
+library(ggplot2)    # Grammar of graphics for static plots
+library(plotly)     # Interactive web-based data visualization
+library(dplyr)      # Data manipulation and transformation
 
+# Visualization and UI enhancement packages
+library(RColorBrewer)  # Color palettes for data visualization
+library(shinyBS)       # Bootstrap components for Shiny (tooltips, modals, etc.)
+library(data.table)    # High-performance data manipulation and reading
 
-options(shiny.maxRequestSize=90*1024^2) # Set max input size to 40M
-
-############################################################################
-# Functions:
-############################################################################
-
-RBindList <- function(l) {
-  # combine tables of a list l using rbind
-  if (length(l)==1) {tab <- l[[1]]} else {
-    if (class(l[[1]])!="matrix" | class(l[[1]])!="data.frame") {
-      tab <- rbind(l[[1]], l[[2]])
-      if (length(l)>2) {
-        for (i in 3:length(l)) {
-          tab <- rbind(tab, l[[i]])
-        }
-      } 
-    } else {
-      l <- l[2:length(l)]
-      RBindList(l)
-    }
-  }
-  return(tab)
-}
-
-RenameRoWinPro <- function(tab) {
-  # Filter and rename the tables RoWinPro style
-  names(tab)[3] <- "intensity"
-  names(tab)[2] <- "Mass"
-  names(tab)[1] <- "RT"
-  tab
-}
-
-RenameBioPharma <- function(tab) {
-  # Filter and rename the tables BioPharma style
-  vec <- names(tab)
-  vec[3] <- "intensity"
-  vec[2] <- "Mass"
-  vec[1] <- "RT"
-  vec[4] <- "PeakStart"
-  vec[5] <- "PeakStop" 
-  names(tab) <- vec
-  return(tab)
-}
-
-ThresholdCleaning <- function(l, threshold) {
-  # removes the points with lowest intensity according to the threshold chosen by the user:
-  threshold <- threshold/100
-  l1 <- list()
-  for (x in seq_along(l)) {
-    # Filter the intensities according to threshold:
-    temp <- cbind(l[[x]], "File" = rep(names(l)[x], nrow(l[[x]])))
-    temp <- temp[order(temp[,3], decreasing = T),]
-    temp <- temp[!is.na(temp[,3]),]
-    thresh <- floor(threshold * nrow(temp))
-    temp <- temp[c(1:thresh),]
-    l1[[x]] <- temp
-  }
-  names(l1) <- names(l)
-  return(l1)
-}
-
-TopPicMS1Parsing <- function(fname) {
-  cat("== Start parsing TopPIC data MS1 ==\n")
-  # Return a table in the style of RoWinPro tables for use in VisioProt.
-  # fname is the path to the file to parse.
-  allData <- readLines(fname)
-  numline <- which(grepl("^[^P]+Parameters ", allData, perl = T))[2]
-  allData <- allData[-(1:numline)]
-  rep_ions_entries = which(allData=="BEGIN IONS")
-  rep_ions_end = which(allData=="END IONS")
-  IDs <- gsub("ID=", "", allData[grepl("^ID", allData)])
-  SCANs <- gsub("SCANS=", "", allData[grepl("^SCANS", allData)])
-  RT <- gsub("RETENTION_TIME=", "", allData[grepl("^RETENTION_TIME", allData)])
-  # removeEntries <- c(rep_ions_entries,rep_ions_entries+1,rep_ions_entries+2,rep_ions_entries+3,rep_ions_entries[2:length(rep_ions_entries)]-1,rep_ions_entries[2:length(rep_ions_entries)]-2, length(allData)-1, length(allData))
-  removeEntries <- which(!(substr(allData, 1, 1) %in% c(0:9))) # Remove all lines not starting with a number
-  # Count the number of lines with comment per spectrum:
-  numComments <- sum(!(substr(allData[rep_ions_entries[1]:rep_ions_end[1]], 1, 1) %in% c(0:9)))
-  ions_per_scan <- sapply(seq_along(rep_ions_entries), function(x) {
-    rep_ions_end[x] - rep_ions_entries[x] - numComments + 1
-  })
-  dat <- fread(paste(allData[-removeEntries], collapse = "\n"), sep = "\t")
-  class(dat) <- "data.frame"
-  names(dat) <- c("Mass", "intensity", "charge")
-  dat$ID <- rep(IDs, ions_per_scan)
-  dat$SCANs <- rep(SCANs, ions_per_scan)
-  dat$RT <- rep(RT, ions_per_scan)
-  dat <- dat[,c(6,1,2,3,5)] 
-  c("Keep only the ions >= 5+\n")
-  dat <- dat[dat[,4]>=5,]
-  c("Change from seconds to minutes\n")
-  dat[,1] <- as.numeric(dat[,1])/60
-  c("Keep only the 100% highest intensities\n")
-  dat <- dat[order(dat[,3], decreasing = T),]
-  dat <- dat[!is.na(dat[,3]),]
-  thresh <- floor(1 * nrow(dat))
-  dat <- dat[c(1:thresh),]
-  # For the functions to come (thresholding, renaming):
-  dat[,4] <- rep(NA, nrow(dat))
-  dat[,5] <- rep(NA, nrow(dat))
-  cat("== End parsing TopPIC MS1 ==\n\n")
-  return(dat)
-  
-}
-
-TopPicMS2Parsing <- function(fname) {
-  cat("== Start parsing TopPIC data MS2 ==\n")
-  # Return a table in the style of RoWinPro tables for use in VisioProt.
-  # fname is the path to the file to parse.
-  allData <- readLines(fname)
-  numline <- which(grepl("^[^P]+Parameters ", allData, perl = T))[2]
-  allData <- allData[-(1:numline)]
-  rep_ions_entries = which(allData=="BEGIN IONS")
-  rep_ions_end = which(allData=="END IONS")
-  IDs <- gsub("ID=", "", allData[grepl("^ID", allData)])
-  SCANs <- gsub("SCANS=", "", allData[grepl("^SCANS", allData)])
-  RT <- gsub("RETENTION_TIME=", "", allData[grepl("^RETENTION_TIME", allData)])
-  Mass <- gsub("PRECURSOR_MASS=", "", allData[grepl("^PRECURSOR_MASS", allData)])
-  intensity <- gsub("PRECURSOR_INTENSITY=", "", allData[grepl("^PRECURSOR_INTENSITY", allData)])
-  charge <- gsub("PRECURSOR_CHARGE=", "", allData[grepl("^PRECURSOR_CHARGE", allData)])
-  
-  dat <- data.frame("RT"=RT, "Mass"=Mass, "intensity"=intensity, "Scan"=SCANs, stringsAsFactors = F)
-  c("Change from seconds to minutes\n")
-  dat[,1] <- as.numeric(dat[,1])/60
-  cat("== End parsing TopPIC MS2 ==\n\n")
-  return(dat)
-  
-}
-
-TopPicIDParsing <- function(fname) {
-  
-  cat("== Start parsing TopPIC data ID ==\n")
-  # Return a table in the style of RoWinPro tables for use in VisioProt.
-  # fname is the path to the file to parse.
-  allData <- readLines(fname)
-  numline <- which(grepl("^[^P]+Parameters ", allData, perl = T))[2]
-  allData <- allData[-(1:numline)]
-  allData[1] <- gsub("#", "", allData[1])
-  dat <- fread(paste(allData, collapse = "\n"), sep = "\t", header = T, stringsAsFactors = F)
-  class(dat) <- "data.frame"
-  cat("== End parsing TopPIC ID ==\n\n")
-  return(dat)
-  
-}
+# Global application settings
+options(shiny.maxRequestSize=90*1024^2) # Set maximum upload size to 90MB for large MS files
 
 ############################################################################
+# EXTERNAL HELPER FUNCTIONS
+############################################################################
+# Load custom R functions for data processing and format handling
+# These functions are stored in separate files for modularity and reusability
 
-# App:
+# Filter data to keep only the highest intensity features for each mass/RT pair
+source("files/Rfiles/Keep_highest_signal.R", local = TRUE)
+
+# Custom function to efficiently combine multiple data frames
+source("files/Rfiles/custom_rbindlist.R", local = TRUE)
+
+# Parse and process TopPIC software output files
+source("files/Rfiles/Parse_TopPIC_input.R", local = TRUE)
+
+# Standardize column names across different deconvolution software formats
+source("files/Rfiles/rename_input_coulumns.R", local = TRUE)
+
+# Check input files with adapted error messages
+source("files/Rfiles/check_input_tables.R", local = TRUE)
+
 ############################################################################
-## UI:
+# USER INTERFACE (UI) DEFINITION
 ############################################################################
+# Define the web application's user interface using Shiny's fluidPage layout
+# The UI consists of a header, mode selection, sidebar controls, and main plot panel
 
 ui <- fluidPage(
+  #--------------------------------------------------------------------------
+  # APPLICATION HEADER
+  #--------------------------------------------------------------------------
+  # Create header row with application title and help button
   fluidRow(
-    column(3, titlePanel("VisioProt-MS")
-           ),
+    # Application title in a responsive column
+    column(3, titlePanel("VisioProt-MS")),
+    
+    # Help button that opens documentation in a new browser tab
     column(1, actionButton(inputId='ab1', label="?", 
                            onclick ="window.open('https://masstools.ipbs.fr/visioprothelp.html', '_blank')",
                            style="color: #fff; background-color: #673a49; border-color: #000000")
-           )
+    )
   ),
+  
+  # Custom CSS styling for the help button
   tags$style(type='text/css', "#ab1 { width:80%; margin-top: 25px; font-family : Cursive; font-weight: 900; font-size: 160%;}"),
-  #checkboxInput("MSModeCheck", "MS data only", TRUE), # to switch from MS data to MS2 mode
+  
+  #--------------------------------------------------------------------------
+  # MODE SELECTION
+  #--------------------------------------------------------------------------
+  # Allow users to choose between MS-only visualization or MS/MS overlay mode
+  #checkboxInput("MSModeCheck", "MS data only", TRUE), # Legacy checkbox implementation
+  
+  # Radio buttons for mode selection (replaces checkbox for better UX)
   radioButtons("MSModeCheck", "MS mode:",
-               c("MS" = 'MS',
-                 "MS/MS" = 'MS2'),
-               selected = 'MS',
-               inline = TRUE
-  ), # to switch from MS data to MS2 mode
+               c("MS" = 'MS',        # MS data visualization only
+                 "MS/MS" = 'MS2'),   # MS data with MS/MS identification overlay
+               selected = 'MS',      # Default to MS mode
+               inline = TRUE         # Display options horizontally
+  ),
+  
+  # Tooltip explaining the mode selection options
   bsTooltip("MSModeCheck", 
             "Choose between plotting MS data only or overlaying results of Top-Down searches",
             "right"),
-  # Control side bar:
+  
+  #--------------------------------------------------------------------------
+  # MAIN LAYOUT: SIDEBAR AND PLOT PANEL
+  #--------------------------------------------------------------------------
+  # Create two-panel layout with sidebar controls and main plotting area
   sidebarLayout( 
+    #------------------------------------------------------------------------
+    # SIDEBAR PANEL: USER CONTROLS AND FILE INPUTS
+    #------------------------------------------------------------------------
     sidebarPanel(width = 4,
-                 # Conditional panels:
-                 # Part 1:
+                 
+                 #====================================================================
+                 # CONDITIONAL PANELS: DIFFERENT CONTROLS FOR EACH MODE
+                 #====================================================================
+                 
+                 #--------------------------------------------------------------------
+                 # MS MODE PANEL: For MS data visualization only
+                 #--------------------------------------------------------------------
                  conditionalPanel(condition="input.MSModeCheck== 'MS'",
-                                  # File selection:
+                                  
+                                  #--------------------------------------------------------
+                                  # File Input Section for MS Mode
+                                  #--------------------------------------------------------
+                                  # Allow users to upload deconvoluted MS data files
                                   fileInput("fileMS", "Select input file(s):",  
                                             accept = c(
-                                              "text/csv",
-                                              "text/comma-separated-values,text/plain",
-                                              ".txt",
-                                              ".ms1ft",
-                                              ".csv",
-                                              ".msalign"),
-                                            multiple = T,
+                                              "text/csv",                              # CSV files
+                                              "text/comma-separated-values,text/plain", # Text files  
+                                              ".txt",                                  # Text files
+                                              ".ms1ft",                               # ProMex format
+                                              ".csv",                                 # CSV files
+                                              ".msalign"),                            # TopPIC format
+                                            multiple = T,      # Allow multiple files for comparison
                                             width = "100%"
                                   ),
+                                  
+                                  #--------------------------------------------------------
+                                  # Test Mode Controls for MS Mode
+                                  #--------------------------------------------------------
+                                  # Enable test mode to try the application with sample data
                                   checkboxInput("TestModeCheck", "Using test mode", FALSE),
                                   bsTooltip("TestModeCheck", 
                                             "Check to test the application without uploading any file. Then click on a button to upload a single test file or several for overlay",
-                                            "right"), # to switch from user data to test mode
-                                  # Modifying output when passing in test mode:
+                                            "right"),
+                                  
+                                  # Show test file buttons only when test mode is enabled
                                   conditionalPanel(condition="input.TestModeCheck==true",
-                                                   actionButton("TestFile1", "Single test file"),
-                                                   actionButton("TestFile2", "Multiple test files")
+                                                   actionButton("TestFile1", "Single test file"),    # Load one sample file
+                                                   actionButton("TestFile2", "Multiple test files")  # Load multiple files for comparison
                                   )
                  ),
-                 # Part 2:
+                 
+                 #--------------------------------------------------------------------
+                 # MS/MS MODE PANEL: For MS data with identification overlay
+                 #--------------------------------------------------------------------
                  conditionalPanel(condition="input.MSModeCheck== 'MS2'", 
+                                  
+                                  #--------------------------------------------------------
+                                  # Test Mode Controls for MS/MS Mode
+                                  #--------------------------------------------------------
                                   checkboxInput("MS2TestModeCheck", "Using test mode", FALSE),
                                   bsTooltip("MS2TestModeCheck", 
                                             "Check to test the application without uploading any file",
-                                            "right"), # to switch from user data to test mode
-                                  # Modifying output when passing in test mode:
+                                            "right"),
+                                  
+                                  # Display warning message when in test mode
                                   conditionalPanel(condition = "input.MS2TestModeCheck==true",
                                                    tags$span(style="color:red", "You are in test mode. Click on a button to select a single test file or multiple test files.\nUncheck to exit and upload your own data."),
                                                    br()
                                   ),
+                                  
+                                  #--------------------------------------------------------
+                                  # File Input Section for MS/MS Mode (User Data)
+                                  #--------------------------------------------------------
                                   conditionalPanel(condition = "input.MS2TestModeCheck==false",
+                                                   
+                                                   # MS data file input (background for MS/MS overlay)
                                                    fileInput("fileMS2", "Select input file for MS:",  
                                                              accept = c(
                                                                "text/csv",
                                                                "text/comma-separated-values,text/plain",
                                                                ".csv",
                                                                ".txt",
-                                                               ".ms1ft",
-                                                               ".msalign"),
-                                                             multiple = F,
+                                                               ".ms1ft",    # ProMex format
+                                                               ".msalign"), # TopPIC format
+                                                             multiple = F,  # Single file only for background MS
                                                              width = "100%"
                                                    ),
+                                                   
+                                                   #------------------------------------------------
+                                                   # Software Selection for MS/MS Analysis
+                                                   #------------------------------------------------
+                                                   # Choose which top-down software was used for analysis
                                                    radioButtons("PDPFModeCheck", "Origin of the MS/MS files:",
-                                                                c("Proteome Discoverer" = 'PD',
-                                                                  "MSPathFinder" = 'PF',
-                                                                  "TopPIC" = 'TP'),
+                                                                c("Proteome Discoverer" = 'PD',  # Thermo Fisher
+                                                                  "MSPathFinder" = 'PF',         # PNNL
+                                                                  "TopPIC" = 'TP'),             # UCSD
                                                                 selected = 'PD',
                                                                 inline = TRUE
                                                    ),
                                                    bsTooltip("PDPFModeCheck", 
                                                              "Choose the software utilized for analysing of the top-down data",
                                                              "right"),
+                                                   
+                                                   #============================================
+                                                   # PROTEOME DISCOVERER FILE INPUTS
+                                                   #============================================
+                                                   # Proteome Discoverer requires two files:
+                                                   # 1. MSMSSpectrumInfo: MS/MS spectrum metadata
+                                                   # 2. PSM: Peptide spectrum matches with protein IDs
                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'PD'", 
                                                                     fileInput("MS2file", "Choose MSMSSpectrumInfo File:", 
                                                                               accept = c(
@@ -268,55 +247,88 @@ ui <- fluidPage(
                                                                                 "text/comma-separated-values,text/plain",
                                                                                 ".txt")
                                                                     )),
+                                                   
+                                                   #============================================
+                                                   # MSPATHFINDER FILE INPUTS
+                                                   #============================================
+                                                   # MSPathFinder requires IcTarget or IcTda results file
                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'PF'", 
                                                                     fileInput("MS2filePF", "Choose IcTarget or IcTda File from MSPathFinder:", 
                                                                               accept = c(
                                                                                 "text/csv",
                                                                                 "text/comma-separated-values,text/plain",
-                                                                                ".tsv")
+                                                                                ".tsv")  # Tab-separated values
                                                                     )
                                                    ),
+                                                   
+                                                   #============================================
+                                                   # TOPPIC FILE INPUTS
+                                                   #============================================
+                                                   # TopPIC requires two files:
+                                                   # 1. MS/MS data file (.msalign format)
+                                                   # 2. Identification results (OUTPUT_TABLE)
                                                    conditionalPanel(condition = "input.PDPFModeCheck== 'TP'", 
                                                                     fileInput("MS2fileTP", "Choose MS/MS File:", 
                                                                               accept = c(
                                                                                 "text",
                                                                                 "text/comma-separated-values,text/plain",
-                                                                                ".msalign")
+                                                                                ".msalign")  # TopPIC MS/MS format
                                                                     ),
                                                                     fileInput("IDfileTP", "Choose the OUTPUT_TABLE/_ms2_toppic (saved at tab-delimited .txt) from TopPIC:", 
                                                                               accept = c(
                                                                                 "text",
                                                                                 "text/comma-separated-values,text/plain",
-                                                                                ".OUTPUT_TABLE")
+                                                                                ".OUTPUT_TABLE")  # TopPIC results format
                                                                     )
                                                    )
                                   ),
+                                  
+                                  #--------------------------------------------------------
+                                  # Protein Selection and Display Options for MS/MS Mode
+                                  #--------------------------------------------------------
+                                  # Dropdown to select which identified proteins to highlight in the plot
                                   selectInput("SelectProt", "Select the ID to highlight:", 
-                                              NULL,
-                                              multiple = TRUE),
+                                              NULL,          # Options will be populated dynamically based on loaded data
+                                              multiple = TRUE), # Allow multiple protein selection
                                   bsTooltip("SelectProt", 
                                             "Select among the identified proteins which one(s) to highlight on the plot",
                                             "right"),
+                                  
+                                  # Option to hide MS/MS spectra without protein identification
                                   checkboxInput("HideMSMS", "Hide MS/MS withouth ID", FALSE),
                                   bsTooltip("HideMSMS", 
                                             "Removes the MS/MS spectra from the top-down analysis that were not matched to a protein.",
                                             "right"),
+                                  
+                                  # Option to show/hide the underlying MS1 trace
                                   checkboxInput("MSTrace", "Display the MS trace", TRUE),
                                   bsTooltip("MSTrace", 
                                             "Adds the MS trace to the plot.",
                                             "right")
                  ),
-                 checkboxInput("DataPoints", "Show data labels (slower)", FALSE), # To switch between ggplot and plotly.
+                 
+                 #====================================================================
+                 # COMMON CONTROLS: Available in both MS and MS/MS modes
+                 #====================================================================
+                 
+                 # Toggle between static ggplot2 and interactive plotly visualization
+                 checkboxInput("DataPoints", "Show data labels (slower)", FALSE),
                  bsTooltip("DataPoints", 
                            "Switch to \"data\" mode: data appears on hovering",
                            "right"),
-                 # Parameters for the plot:
+                 
+                 #--------------------------------------------------------------------
+                 # PLOT CUSTOMIZATION PARAMETERS
+                 #--------------------------------------------------------------------
+                 # Arrange plot parameters in a responsive row layout
                  fluidRow(
+                   #------------------------------------------------------------------
+                   # Color Scale Selection (Column 1)
+                   #------------------------------------------------------------------
                    column(5,
-                          # Selection of the colour scales. This depends on the number of input files:
-                          # With updateSelectInput:
-                          selectInput("colourscale", "Colour scale:", # for continuous scales
-                                      c("Spectral" = "Spectral",
+                          # Color palette selection - options change based on number of files loaded
+                          selectInput("colourscale", "Colour scale:",
+                                      c("Spectral" = "Spectral",           # For single files: continuous scales
                                         "Red/yellow/blue" = "RdYlBu", 
                                         "Red/yellow/green" = "RdYlGn",
                                         "yellow to red" = "YlOrRd"
@@ -324,20 +336,34 @@ ui <- fluidPage(
                           bsTooltip("colourscale", 
                                     "Select the colour scale for the MS data.",
                                     "right")),
+                   
+                   #------------------------------------------------------------------
+                   # Point Size Control (Column 2)
+                   #------------------------------------------------------------------
                    column(3,
                           numericInput("pch", label = "Point size:", value = 1, min = 0.1, step = 0.1, max = 10),
                           bsTooltip("pch", 
                                     "Define the size of the point (from 0.1 to 10).",
                                     "right")),
+                   
+                   #------------------------------------------------------------------
+                   # Intensity Threshold Control (Column 3)
+                   #------------------------------------------------------------------
                    column(4,
                           numericInput("IntensityThresh", label = "Threshold:", value = 20, min = 0, max = 100, step = 1),
                           bsTooltip("IntensityThresh", 
                                     "Define the percentage of highest intensity features of the MS data to display.",
                                     "right"))
                  ),
-                 # Information regarding how to zoom (depends on the plotting type):
+                 
+                 #--------------------------------------------------------------------
+                 # ZOOM AND NAVIGATION CONTROLS
+                 #--------------------------------------------------------------------
+                 # Dynamic instructions that change based on plot type (static vs interactive)
                  htmlOutput("ZoomParam"),
                  br(),
+                 
+                 # Zoom control buttons
                  actionButton("DeZoom", "Unzoom one step", style='padding:8px; font-size:150%'),
                  bsTooltip("DeZoom", 
                            "Unzoom to previous window (only once).",
@@ -348,54 +374,82 @@ ui <- fluidPage(
                            "right"),
                  br(),
                  br(),
-                 # Buttons for download:
-                 downloadButton("Download", "Download .pdf"),
-                 downloadButton("Download1", "Download .png"),
-                 downloadButton("Download2", "Download .svg"),
+                 
+                 #--------------------------------------------------------------------
+                 # EXPORT CONTROLS: Download plot in different formats
+                 #--------------------------------------------------------------------
+                 downloadButton("Download", "Download .pdf"),   # PDF format for publications
+                 downloadButton("Download1", "Download .png"),  # PNG format for presentations  
+                 downloadButton("Download2", "Download .svg"),  # SVG format for vector graphics
+                 
+                 #--------------------------------------------------------------------
+                 # CITATION INFORMATION
+                 #--------------------------------------------------------------------
                  HTML(paste("<br/><br/>",
                    h4("If you use VisioProt-MS for your research please cite:"),
                    "<br/>Marie Locard-Paulet, Julien Parra, Renaud Albigot, Emmanuelle Mouton-Barbosa, Laurent Bardi, Odile Burlet-Schiltz, Julien Marcoux; VisioProt-MS: interactive 2D maps from intact protein mass spectrometry, Bioinformatics, bty680, https://doi.org/10.1093/bioinformatics/bty680")
                  )
     ),
-    # Main panel for plotting (output different in function of the checkbox DataPoints):
+    
+    #--------------------------------------------------------------------------
+    # MAIN PANEL: Plot display area
+    #--------------------------------------------------------------------------
+    # Main plotting area that adapts based on user's visualization choice
+    # (static ggplot2 vs interactive plotly)
     mainPanel(width = 8,
-              uiOutput("plotUI")
+              uiOutput("plotUI")  # Dynamic UI element for plot output
     )
   ),
-  # Footer
+  
+  #----------------------------------------------------------------------------
+  # FOOTER
+  #----------------------------------------------------------------------------
+  # Application footer with copyright information
   tabsetPanel(
     tabPanel(
-
       HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V2.2</font></footer>')
-
     )
   )
 )
 ############################################################################
-## Server:
+# SERVER LOGIC
 ############################################################################
+# Define the server-side logic that handles user inputs, processes data,
+# and generates reactive outputs for the user interface
 
 server <- function(input, output, clientData, session) {
   
-  # UI modifications:
-  ###################
-  # Text output to describe how to zoom (dependent on the checkbox DataPoints):
+  #--------------------------------------------------------------------------
+  # SECTION 1: DYNAMIC UI MODIFICATIONS
+  #--------------------------------------------------------------------------
+  
+  #--------------------------------------------------------------------------
+  # 1.1: Update zoom instructions based on plot type
+  #--------------------------------------------------------------------------
+  # Provide different zoom instructions for static vs interactive plots
   output$ZoomParam <- renderUI({
     if (input$DataPoints) {
+      # Instructions for interactive plotly plots
       HTML("<h4>Zoom in: select the ranges of interest.<br/>Zoom out: Click on the unzoom button.</h4>")
     } else {
+      # Instructions for static ggplot2 plots
       HTML("<h4>Zoom in: select the ranges of interest and double click.<br/>Zoom out: double click.</h4>")
     }
   })
   
-  # Change colour scale in function of the number of scales:
+  #--------------------------------------------------------------------------
+  # 1.2: Dynamic color scale updates based on number of files
+  #--------------------------------------------------------------------------
+  # Automatically switch between continuous and qualitative color palettes
+  # based on whether single or multiple files are loaded
   observe({
     if (!is.null(linput())) {
-      x <- linput()
+      x <- linput()  # Get number of input files
       if (x > 1) {
+        # Multiple files: use qualitative color schemes for file comparison
         updateSelectInput(session, "colourscale",
                           "Colour scale:",
-                          c("Paired" = "Paired",
+                          c("Paired" = "Paired",     # Qualitative palettes for distinguishing files
                             "Set1" = "Set1",
                             "Set2" = "Set2",
                             "Set3" = "Set3",
@@ -403,9 +457,10 @@ server <- function(input, output, clientData, session) {
                             "Set5" = "Accent"
                           ))
       } else {
+        # Single file: use continuous color schemes for intensity visualization
         updateSelectInput(session, "colourscale",
                           "Colour scale:",
-                          c("Spectral" = "Spectral",
+                          c("Spectral" = "Spectral",        # Continuous palettes for intensity
                             "Red/yellow/blue" = "RdYlBu", 
                             "Red/yellow/green" = "RdYlGn",
                             "yellow to red" = "YlOrRd"
@@ -413,14 +468,20 @@ server <- function(input, output, clientData, session) {
       }
     }
   })
+  
+  # Store the selected color value in a reactive variable
   colval <- reactiveVal()
   observe({
     x <- input$colourscale
     colval(x)
   })
   
-  # Add the protein IDs to select to highlight them in the plot:
+  #--------------------------------------------------------------------------
+  # 1.3: Dynamic protein ID selection for MS/MS mode
+  #--------------------------------------------------------------------------
+  # Populate protein selection dropdown based on loaded identification data
   observe({
+    # For Proteome Discoverer data: extract protein descriptions from PSM file
     if (!is.null(filedataMS2())) {
       if (length(filedataMS2()$PSMfile$Master.Protein.Descriptions[!is.na(filedataMS2()$PSMfile$Master.Protein.Descriptions)]) > 0) {
         updateSelectInput(session, "SelectProt",
@@ -429,7 +490,9 @@ server <- function(input, output, clientData, session) {
         )
       }
     }
-    if (!is.null(filedataMS2PF())) { # PathFinder
+    
+    # For MSPathFinder data: extract protein descriptions
+    if (!is.null(filedataMS2PF())) {
       if (length(filedataMS2PF()$Protein.Descriptions[!is.na(filedataMS2PF()$Protein.Descriptions)]) > 0) {
         updateSelectInput(session, "SelectProt",
                           "Select the ID to highlight:",
@@ -437,7 +500,9 @@ server <- function(input, output, clientData, session) {
         )
       }
     }
-    if (!is.null(filedataMS2TP())) { # TopPic
+    
+    # For TopPIC data: extract protein descriptions
+    if (!is.null(filedataMS2TP())) {
       if (length(filedataMS2TP()$Protein.Descriptions[!is.na(filedataMS2TP()$Protein.Descriptions)]) > 0) {
         updateSelectInput(session, "SelectProt",
                           "Select the ID to highlight:",
@@ -447,20 +512,28 @@ server <- function(input, output, clientData, session) {
     }
   })
   
-  # Number of selected proteins for dimentions of exported plot:
+  #--------------------------------------------------------------------------
+  # 1.4: Track number of selected proteins for plot layout
+  #--------------------------------------------------------------------------
+  # Count selected proteins to adjust plot dimensions for export
   nProtSelection <- reactiveVal(0)
-  #observeEvent(c(input$SelectProt, plotInput1), {
   observeEvent(c(plotInput1, input$SelectProt), {
     nProtSelection(length(input$SelectProt))
   })
   
-  ###################
-  # When input MS file:
-  #####################
+  #--------------------------------------------------------------------------
+  # SECTION 2: FILE INPUT HANDLING
+  #--------------------------------------------------------------------------
+  
+  #--------------------------------------------------------------------------
+  # 2.1: MS file input processing
+  #--------------------------------------------------------------------------
+  # Reactive variable to store MS file inputs
   InputFileMS <- reactiveVal(NULL)
   
+  # Handle MS file uploads in MS mode
   observeEvent(input$fileMS, {
-    ranges$x <- NULL
+    ranges$x <- NULL  # Reset zoom ranges when new file uploaded
     ranges$y <- NULL
     if (input$MSModeCheck == "MS" & !is.null(input$fileMS) & input$TestModeCheck == FALSE & input$MS2TestModeCheck == FALSE) {
       InputFileMS(input$fileMS)
@@ -469,6 +542,7 @@ server <- function(input, output, clientData, session) {
     }
   })
   
+  # Handle MS file uploads in MS/MS mode (background MS data)
   observeEvent(input$fileMS2, {
     if (input$MSModeCheck == "MS2" & !is.null(input$fileMS2)) {
       InputFileMS(input$fileMS2)
@@ -477,10 +551,12 @@ server <- function(input, output, clientData, session) {
     }
   })
   
-  #####################
-  # When input MS2 file:
-  #####################
-  InputFilesMS2 <- reactiveVal(NULL) # For BioPharma input
+  #--------------------------------------------------------------------------
+  # 2.2: MS/MS file input processing for different software platforms
+  #--------------------------------------------------------------------------
+  
+  # Proteome Discoverer files (MSMSSpectrumInfo + PSM files)
+  InputFilesMS2 <- reactiveVal(NULL)
   observeEvent(c(input$MS2file, input$PSMfile), {
     if (input$MSModeCheck == "MS2" & !is.null(input$MS2file) & !is.null(input$PSMfile)) {
       InputFilesMS2(list("MS2file" = input$MS2file, "PSMfile" = input$PSMfile))
@@ -488,7 +564,9 @@ server <- function(input, output, clientData, session) {
       InputFilesMS2(NULL)
     }
   })
-  InputFilesMS2PF <- reactiveVal(NULL) # For PathFinder input
+  
+  # MSPathFinder files
+  InputFilesMS2PF <- reactiveVal(NULL)
   observeEvent(input$MS2filePF, {
     if (input$MSModeCheck == "MS2" & !is.null(input$MS2filePF)) {
       InputFilesMS2PF(input$MS2filePF)
@@ -496,7 +574,9 @@ server <- function(input, output, clientData, session) {
       InputFilesMS2PF(NULL)
     }
   })
-  InputFilesMS2TP <- reactiveVal(NULL) # For TopPic input
+  
+  # TopPIC files (MS/MS + identification files)
+  InputFilesMS2TP <- reactiveVal(NULL)
   observeEvent(c(input$MS2fileTP, input$IDfileTP), {
     if (input$MSModeCheck == "MS2" & !is.null(input$MS2fileTP) & !is.null(input$IDfileTP)) {
       InputFilesMS2TP(list("MS2file" = input$MS2fileTP, "IDfile" = input$IDfileTP))
@@ -505,49 +585,63 @@ server <- function(input, output, clientData, session) {
     }
   })
   
-  #####################
-  # Plotting MS trace:
-  #####################
+  #--------------------------------------------------------------------------
+  # SECTION 3: TEST MODE AND FILE TYPE DETECTION
+  #--------------------------------------------------------------------------
   
-  # Number of input file(s) from the same type:
+  #--------------------------------------------------------------------------
+  # 3.1: Test mode variables and file type tracking
+  #--------------------------------------------------------------------------
+  # Track number of input files
   linput <- reactiveVal()
   
-  # Test files input:
-  testfileinput <- reactiveVal(0) # 0: no test file; 1: single file; 2: multiple file; 3: MS2 mode test.
+  # Test mode states: 0=no test, 1=single file, 2=multiple files, 3=MS2 test
+  testfileinput <- reactiveVal(0)
   
-  filetype <- reactiveValues(RoWinPro = 0, BioPharma = 0, ProMex = 0) # Number of files of each type. Bruker and TopPic files fall into the "RoWinPro" category once recognised and opened/parsed properly.
+  # Count files by deconvolution software type
+  filetype <- reactiveValues(
+    RoWinPro = 0,     # RoWinPro, Bruker, TopPIC files (point-based data)
+    BioPharma = 0,    # BioPharma Finder files (peak range data)
+    ProMex = 0        # ProMex files (peak range data)
+  )
   
-  # test mode / test files:
+  #--------------------------------------------------------------------------
+  # 3.2: Test mode file loading
+  #--------------------------------------------------------------------------
+  
+  # Load single test file
   observeEvent(input$TestFile1, {
-    ranges$x <- NULL
+    ranges$x <- NULL  # Reset zoom
     ranges$y <- NULL
     linput(1)
     testfileinput(1)
     filetype$RoWinPro <- 1
     filetype$BioPharma <- 0
     filetype$ProMex <- 0
-    colval("Spectral")
+    colval("Spectral")  # Use spectral color scheme for single file
     InputFileMS(NULL)
     InputFilesMS2(NULL)
     InputFilesMS2PF(NULL)
   })
   
+  # Load multiple test files for comparison
   observeEvent(input$TestFile2, {
-    ranges$x <- NULL
+    ranges$x <- NULL  # Reset zoom
     ranges$y <- NULL
     linput(4)
     testfileinput(2)
     filetype$RoWinPro <- 4
     filetype$BioPharma <- 0
     filetype$ProMex <- 0
-    colval("Paired")
+    colval("Paired")  # Use qualitative color scheme for multiple files
     InputFileMS(NULL)
     InputFilesMS2(NULL)
     InputFilesMS2PF(NULL)
   })
   
+  # Enable MS/MS test mode
   observeEvent(input$MS2TestModeCheck, {
-    ranges$x <- NULL
+    ranges$x <- NULL  # Reset zoom
     ranges$y <- NULL
     if (input$MS2TestModeCheck == TRUE) {
       linput(1)
@@ -562,159 +656,194 @@ server <- function(input, output, clientData, session) {
     InputFilesMS2PF(NULL)
   })
   
-  # When uploading an MS file in MS mode:
+  #--------------------------------------------------------------------------
+  # 3.3: Automatic file type detection and counting
+  #--------------------------------------------------------------------------
+  # Detect file formats when MS files are uploaded
   observeEvent(c(input$fileMS, input$fileMS2), { 
     InputFileMS <- InputFileMS()
-    testfileinput(0)
+    testfileinput(0)  # Exit test mode
+    
     if (!is.null(InputFileMS)) {
-      l <- list()
-      l2 <- list()
-      l3 <- list()
-      l4 <- list()
+      # Initialize detection arrays
+      l <- list()   # BioPharma format detection
+      l2 <- list()  # Bruker format detection  
+      l3 <- list()  # ProMex format detection
+      l4 <- list()  # TopPIC format detection
+      
+      # Check each uploaded file for format markers
       for(i in 1:nrow(InputFileMS)){
-        l[[i]] <- grepl("Mass", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T)  # TRUE if Biopharma
-        l2[[i]] <- substr(readLines(InputFileMS[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
-        l3[[i]] <- grepl(".ms1ft", InputFileMS$name[i], fixed = T) # TRUE if ProMex
-        l4[[i]] <- grepl("ms1.msalign", InputFileMS$name[i], fixed = T) # TRUE if TopPic
+        # BioPharma detection: check for specific column headers
+        l[[i]] <- is_biopharama_MS_input(input = InputFileMS[i, 'datapath'])
+        
+        # Bruker detection: check for specific header pattern
+        l2[[i]] <- is_Bruker_MS_input(input = InputFileMS[i, 'datapath'])
+        
+        # ProMex detection: check file extension
+        l3[[i]] <- is_ProMex_MS_input(input = InputFileMS$name[i])
+        
+        # TopPIC detection: check file extension  
+        l4[[i]] <- is_TopFD_input(input = InputFileMS$name[i])
       }
+      
+      # Convert to logical vectors
       l <- unlist(l)
       l2 <- unlist(l2)
       l3 <- unlist(l3)
       l4 <- unlist(l4)
-      filetype$RoWinPro <- sum(l==F & l3==F) # Bruker and TopPic files too
-      filetype$BioPharma <- sum(l==T & l2==F & l3==F)
-      filetype$ProMex <- sum(l==F & l2==F & l3==T)
-      linput(max(as.numeric(c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex, filetype$TopPic))))
-      if (linput() == 1 & length(c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex, filetype$TopPic)[c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex, filetype$TopPic)!=0])>1) {
-        linput(sum(as.numeric((c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex, filetype$TopPic)))))
+      
+      # Count files by type
+      filetype$RoWinPro <- sum(l==F & l3==F)      # RoWinPro + Bruker + TopPIC files
+      filetype$BioPharma <- sum(l==T & l2==F & l3==F)  # BioPharma files only
+      filetype$ProMex <- sum(l==F & l2==F & l3==T)     # ProMex files only
+      
+      # Determine appropriate number of files for color scaling
+      linput(max(as.numeric(c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex))))
+      
+      # Handle mixed file types
+      if (linput() == 1 & length(c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex)[c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex)!=0])>1) {
+        linput(sum(as.numeric((c(filetype$RoWinPro, filetype$BioPharma, filetype$ProMex)))))
       }
+      
+      # Set appropriate color scheme based on file count
       if (linput() > 1) {
-        colval("Paired")
+        colval("Paired")    # Multiple files: qualitative colors
       } else {
-        colval("Spectral")
+        colval("Spectral")  # Single file: continuous colors
       }
     } else {
+      # Reset file type counts when no files are loaded
       filetype$RoWinPro <- 0
       filetype$BioPharma <- 0
       filetype$ProMex <- 0
     }
   })
-  #####################
-  # Prevent plotting when modifying modes:
-  ########################################
-  # Remove plot when getting out of test mode.
+  
+  #--------------------------------------------------------------------------
+  # SECTION 4: STATE MANAGEMENT AND RESET FUNCTIONS
+  #--------------------------------------------------------------------------
+  
+  #--------------------------------------------------------------------------
+  # 4.1: Reset plot when switching modes or test settings
+  #--------------------------------------------------------------------------
+  
+  # Reset when exiting test mode in MS mode
   observeEvent(input$TestModeCheck, {
     InputFileMS(NULL)
     testfileinput(0)
-    ranges$x <- NULL
+    ranges$x <- NULL  # Clear zoom settings
     ranges$y <- NULL
     filetype$RoWinPro <- 0
     filetype$BioPharma <- 0
     filetype$ProMex <- 0
   })
   
-  # Remove plot when getting out of MS2 test mode.
+  # Reset when exiting test mode in MS/MS mode
   observeEvent(input$MS2TestModeCheck, {
     if (input$MS2TestModeCheck==FALSE) {
       InputFileMS(NULL)
       InputFilesMS2(NULL)
       InputFilesMS2PF(NULL)
       testfileinput(0)
+      # Clear protein selection dropdown
       updateSelectInput(session, "SelectProt",
                         "Select the ID to highlight:",
                         c(""))
+      # Reset to default software selection
       updateRadioButtons(session, "PDPFModeCheck",
                         selected = 'PD')
-      ranges$x <- NULL
+      ranges$x <- NULL  # Clear zoom settings
       ranges$y <- NULL
     }
   })
   
-  # Remove plot when getting out of MS or MS2 mode.
+  # Reset when switching between MS and MS/MS modes
   observeEvent(input$MSModeCheck, {
     InputFileMS(NULL)
     testfileinput(0)
-    ranges$x <- NULL
+    ranges$x <- NULL  # Clear zoom settings
     ranges$y <- NULL
   })
   
-  # Remove plot when getting out of PD or PF mode.
+  # Reset when switching between different MS/MS software types
+  # Reset when switching between different MS/MS software types
   observeEvent(input$PDPFModeCheck, {
     InputFilesMS2(NULL)
     InputFilesMS2PF(NULL)
     testfileinput(0)
-    ranges$x <- NULL
+    ranges$x <- NULL  # Clear zoom settings
     ranges$y <- NULL
+    # Clear protein selection dropdown
     updateSelectInput(session, "SelectProt",
                       "Select the ID to highlight:",
                       c(""))
   })
   
-  # Unstore axis limits when uploading new MS file.
+  # Reset zoom when uploading new files
   observeEvent(c(input$fileMS, input$fileMS2), {
     ranges$x <- NULL
     ranges$y <- NULL
   })
-  ########################################
   
+  #--------------------------------------------------------------------------
+  # SECTION 5: FILE TYPE VALIDATION AND FORMAT DETECTION
+  #--------------------------------------------------------------------------
+  
+  #--------------------------------------------------------------------------
+  # 5.1: Comprehensive file format validation
+  #--------------------------------------------------------------------------
+  # Reactive function to validate and classify input file formats
   ftype <- reactive({
     if (is.null(InputFileMS()) & testfileinput() == 0) {
       return(NULL)
     } else {
       InputFileMS <- InputFileMS()
       l <- list()
+      
+      # Check each uploaded file
       for(i in 1:nrow(InputFileMS)){
-        validationText <- "Incorrect input format.\nVisioProt-MS accepts the following input files:\n- outputs from RoWinPro (Gersch et al. 2015).\n- outputs from DataAnalysis 4.2 (Bruker).\n- BioPharma Finder 3.0 (Thermo Fisher Scientific) tables that have been exported at \"Component Level Only\" before being converted in tab-separated files.\n- ProMex exports in \".ms1ft\".\n- TopPic export of the deconvoluted MS data: \"_ms1.msalign\" files."
         
-        val <- grepl("Mass", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Sum Intensity", readLines(InputFileMS[i, 'datapath'])[1]) & grepl("Start Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) & grepl("Stop Time (min)", readLines(InputFileMS[i, 'datapath'])[1], fixed = T) # T for BioPharma, F for RoWinPro
-        val2 <- substr(readLines(InputFileMS[i, 'datapath'])[2], 0, 13) == "Compound Name" # TRUE if Bruker
-        val3 <- grepl(".ms1ft", InputFileMS$name[i]) # TRUE if ProMex
-        val4 <- grepl("ms1.msalign", InputFileMS$name[i]) # TRUE if TopPic
+        # Initial format detection
+        val <- is_biopharama_MS_input(input = InputFileMS[i, 'datapath'])
+        val2 <- is_Bruker_MS_input(input = InputFileMS[i, 'datapath'])  # Bruker format
+        val3 <- is_ProMex_MS_input(input = InputFileMS$name[i]) # ProMex format
+        val4 <- is_TopFD_input(InputFileMS$name[i]) # TopPIC format
+        
+        # Classify file type based on detection results
         val <- ifelse(val,  "BioPharma", "RoWinPro")
         val[val2] <- "Bruker"
         val[val3] <- "ProMex"
         val[val4] <- "TopPic"
-        # Check it is the correct input format:
-        if (val == "BioPharma") { # Find "Apex RT" in BioPharma files
-          if (!grepl("Apex RT", readLines(InputFileMS[i, 'datapath'])[1])) {
-            val <- "DoNotApply"
-            validate(
-              need(val!="DoNotApply", validationText)
-            )
-          }
+        
+        #=======================================================================
+        # Format-specific validation checks
+        #=======================================================================
+        
+        # # BioPharma format validation 
+        # if (val == "BioPharma") { 
+        #
+        # }
+        
+        # RoWinPro format validation (should have exactly 4 columns)
+        if (val == "RoWinPro") {
+          RoWinPro_MS_check(input = InputFileMS[i, 'datapath'])
         }
-        if (val == "RoWinPro") { # Four columns in RoWinPro files
-          if (length(as.numeric(gregexpr("\t", readLines(InputFileMS[i, 'datapath'])[1])[[1]]))!=3) {
-            val <- "DoNotApply"
-            validate(
-              need(val!="DoNotApply", validationText)
-            )
-          }
+        
+        # Bruker format validation
+        if (val == "Bruker") {
+          Bruker_MS_check(input = InputFileMS[i, 'datapath'])
         }
-        if (val == "Bruker") { # First line has no "," and second line contains the column header " RT / min"
-          if (!(!grepl(",", readLines(InputFileMS[i, 'datapath'])[1]) & grepl(" RT", readLines(InputFileMS[i, 'datapath'])[2]))) {
-            val <- "DoNotApply"
-            validate(
-              need(val!="DoNotApply", validationText)
-            )
-          }
+        
+        # ProMex format validation
+        if (val == "ProMex") {
+          ProMex_MS_check(input = InputFileMS[i, 'datapath'])
         }
-        if (val == "ProMex") { # Contains the columns MonoMass, ApexIntensity and Min/MaxElutionTime
-          if (!grepl("MinElutionTime", readLines(InputFileMS[i, 'datapath'])[1])) {
-            val <- "DoNotApply"
-            validate(
-              need(val!="DoNotApply", validationText)
-            )
-          }
+        
+        # TopPIC format validation
+        if (val == "TopPic") {
+          TopFD_MS_check(input = InputFileMS[i, 'datapath'])
         }
-        if (val == "TopPic") { # Four columns in RoWinPro files
-          if (!grepl("#TopFD", readLines(InputFileMS[i, 'datapath'])[1], fixed = T)) {
-            val <- "DoNotApply"
-            validate(
-              need(val!="DoNotApply", validationText)
-            )
-          }
-        }
+        
         l[[i]] <- val
       }
       vec <- unlist(l)
@@ -722,32 +851,53 @@ server <- function(input, output, clientData, session) {
     }
   })
   
-  # Input the data table:
+  #--------------------------------------------------------------------------
+  # SECTION 6: DATA LOADING AND PROCESSING FUNCTIONS
+  #--------------------------------------------------------------------------
+  
+  #--------------------------------------------------------------------------
+  # 6.1: Main MS data loading function
+  #--------------------------------------------------------------------------
+  # Load and process MS data files based on format type and test mode
   filedata0 <- reactive({
-    #This function is repsonsible for loading in the selected file
-    if (testfileinput() == 0) { # no input test file
+    if (testfileinput() == 0) { 
+      # Regular file upload mode (not test mode)
       validate(
-        need((input$TestModeCheck==FALSE & input$MSModeCheck == "MS") | (input$MS2TestModeCheck == FALSE & input$MSModeCheck == "MS2"), "You are in test mode. Click on a button to select a single test file or multiple test files.\nUncheck to exit and upload your own data.")
+        need((input$TestModeCheck==FALSE & input$MSModeCheck == "MS") | (input$MS2TestModeCheck == FALSE & input$MSModeCheck == "MS2"), 
+             "You are in test mode. Click on a button to select a single test file or multiple test files.\nUncheck to exit and upload your own data."
+             )
       )
       if (is.null(InputFileMS())) {
         # User has not uploaded a file yet
         return(NULL)
       } else {
-        # Warning if trying to plot several types of data AND several files:
+        # Validation: prevent mixing different file types with multiple files
         validate(
-          need(!(max(table(ftype())) > 1 & length(unique(ftype())) > 1), "Visioprot-MS can compare several files from the same deconvolution tool (RoWinPro, BioPharma Finder, MSPathFinder or Bruker). If you want to compare files from different input types, please only input one file per tool.")
+          need(!(max(table(ftype())) > 1 & length(unique(ftype())) > 1), 
+               "With multiple files, all files need to be from the same deconvolution software."
+               )
         )
         InputFileMS <- InputFileMS()
         lfiles <- list()
+        
+        # Process each uploaded file according to its detected format
         for(i in 1:nrow(InputFileMS)){
-          if (ftype()[i] == "BioPharma") { # If the file is from Thermo BioPharma
+          if (ftype()[i] == "BioPharma") {
+            # BioPharma Finder format: read tab-delimited with headers
             lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = "\t", header = T)
+            # Standardize mass column name (could be Monoisotopic.Mass or Average.Mass)
             names(lfiles[[i]])[names(lfiles[[i]])=="Monoisotopic.Mass"|names(lfiles[[i]])=="Average.Mass"] <- "Mass"
-            lfiles[[i]] <- lfiles[[i]][,c("Apex.RT", "Mass", "Sum.Intensity", "Start.Time..min.", "Stop.Time..min.")] # Map the columns as in RoWinPro format, but with apex RT, start and stop instead of all the points of the peak.
-          } else if (ftype()[i] == "RoWinPro")  { # RoWinPro output
+            # Map to standard column format: RT, Mass, Intensity, Start Time, Stop Time
+            lfiles[[i]] <- lfiles[[i]][,c("Apex.RT", "Mass", "Sum.Intensity", "Start.Time..min.", "Stop.Time..min.")]
+            
+          } else if (ftype()[i] == "RoWinPro")  {
+            # RoWinPro format: simple tab-delimited without headers
             lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = "\t", header = F)
-            lfiles[[i]] <- cbind(lfiles[[i]][,1:3], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
-          } else if (ftype()[i] == "Bruker")  { # Bruker output
+            # Add placeholder columns for consistency with BioPharma format
+            lfiles[[i]] <- cbind(lfiles[[i]][,1:3], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]])))
+            
+          } else if (ftype()[i] == "Bruker")  {
+            # Bruker DataAnalysis format: comma-separated, skip header lines
             lfiles[[i]] <- read.table(InputFileMS[i, 'datapath'], sep = ",", header = F, skip = 2)
             lfiles[[i]] <- cbind(lfiles[[i]][,2:4], " Temp1" = rep(NA, nrow(lfiles[[i]])), "Temp2" = rep(NA, nrow(lfiles[[i]]))) # add one more column to allow row binding later on 
           } else if (ftype()[i] == "ProMex")  { # ProMex output
@@ -790,68 +940,67 @@ server <- function(input, output, clientData, session) {
     }
   })
   
+  #--------------------------------------------------------------------------
+  # 6.2: MS/MS data loading for Proteome Discoverer
+  #--------------------------------------------------------------------------
+  # Load and process Proteome Discoverer MS/MS identification data
   filedataMS2 <- reactive({
     if (is.null(InputFilesMS2()) & testfileinput() != 3) {
-      # User has not uploaded a file yet
-      return(NULL)
+      return(NULL)  # No MS/MS files uploaded
     } else {
       if (testfileinput() == 3) {
+        # Test mode: load sample MS/MS files
         infileMS2 <- list.files("files/MS2/", pattern = "MSMS", full.names = T)[[1]]
         infilePSM <- list.files("files/MS2/", pattern = "SMs.txt", full.names = T)[[1]]
         PSM <- read.table(infilePSM, sep = "\t", header = T, comment.char = "#")
         MS2 <- read.table(infileMS2, sep = "\t", header = T)
       } else {
+        # User uploaded files: read PSM and MS/MS spectrum files
         PSM <- read.table(InputFilesMS2()$PSMfile$datapath, sep = "\t", header = T)
         MS2 <- read.table(InputFilesMS2()$MS2file$datapath, sep = "\t", header = T, comment.char = "#")
-        validate(
-          need((sum(grepl("Master.Protein.Descriptions", names(PSM))) == 1 & sum(grepl("RT.in.min", names(MS2))) == 1) | (sum(grepl("Protein.Accessions", names(PSM))) == 1 & sum(grepl("RT..min.", names(MS2))) == 1), 
-               "Error in file format for plotting MS2 data.\nYou have to upload the following files:\n- A MSMSSpectrumInfo.txt file from BioPharma Finder (in the \"MS/MS File\" field).\n- The corresponding PSMs.txt or PrSMs.txt file (in the \"PSM File\" field).")
-        )
-        # Change field names for compatibility between PSMs and PrSMs tables:
-        if (sum(grepl("Master.Protein.Description", names(PSM))) == 0) {
-          names(PSM)[names(PSM) == "Protein.Accessions"] <- "Master.Protein.Descriptions"
-        }
-        names(PSM)[names(PSM) == "RT..min."] <- "RT.in.min"
-        names(MS2)[names(MS2) == "RT..min."] <- "RT.in.min"
-        names(MS2)[names(MS2) == "Precursor.MH...Da."] <- "Precursor.MHplus.in.Da"
+        
+        # Validate file formats for Proteome Discoverer compatibility
+        PD_MS2_check(PSM_tab = PSM, MSMS_tab = MS2)
+        
+        PSM <- RenamePDPrSM(PSM)
+        MS2 <- RenamePDMSMS(MS2)
       }
     }
     return(list("MS2file" = MS2, "PSMfile" = PSM))
   })
   
+  #--------------------------------------------------------------------------
+  # 6.3: MS/MS data loading for MSPathFinder
+  #--------------------------------------------------------------------------
+  # Load and process MSPathFinder identification data
   filedataMS2PF <- reactive({
     if (is.null(input$MS2filePF) | is.null(input$fileMS2)) {
       return(NULL)
     } else if (input$MSModeCheck == "MS2" & input$PDPFModeCheck == "PF")  {
+      # Validate that both MS and MS/MS files are uploaded
       validate(
-        need(!is.null(InputFileMS()), "You need to upload the MS2 with the associated MS file to plot MS2 results from MSPathFinder."
-        )
+        need(!is.null(InputFileMS()), 
+             "You need to upload the MS2 with the associated MS file to plot MS2 results from MSPathFinder.")
       )
+      
+      # File format validation
+      MSPathFinder_MS2_check(inputMSMS = InputFilesMS2PF(), inputMS = InputFileMS())
+      
+      # Load MSPathFinder results
       MS2PF <- read.table(InputFilesMS2PF()$datapath, sep = "\t", header = F, skip = 1)
-      vec <- lapply(unique(MS2PF[,15]), function(x) {
-        MS2PF[MS2PF[,15]==x,8]
-      })
-      vec <- lapply(vec, function(x) {
-        length(unique(x))
-      })
-      vec <- unlist(vec)
-      val <- max(vec)
-      validate(
-        need(grepl("IcT", InputFilesMS2PF()$name, fixed = T), "Error in file format for plotting MS2 data.\nYou have to upload the \"IcTarget\" or \"IcTda\" output file from MSPathFinder associated with the deconvoluted MS weights uploaded as \"input file for MS\".")
-      )
-      validate(
-        need(grepl(".ms1ft", InputFileMS()$name, fixed = T), "Error in file format for plotting MS data.\nYou have to upload the \"IcTarget\" or \"IcTda\" output file from MSPathFinder associated with the deconvoluted MS weights uploaded as \"input file for MS\".")
-      )
-      validate(
-        need(val==1, "Several IDs have been attributed to the same MS feature.")
-      )
-      #names(MS2PF)[8] <- "Master.Protein.Descriptions"
+      
+      # Standardize column names
       names(MS2PF)[8] <- "Protein.Descriptions"
       names(MS2PF)[15] <- "FeatureID"
+      
+      # Merge with MS data and process
       MS <- read.table(InputFileMS()$datapath, sep = "\t", header = T)
       MS2PF <- merge(MS, MS2PF, by = "FeatureID", all = T)
-      MS2PF <- MS2PF[!is.na(MS2PF[,3]),]
-      MS2PF <- cbind("RT" = (MS2PF$MinElutionTime + ((MS2PF$MaxElutionTime - MS2PF$MinElutionTime)/2)), MS2PF[,c("MonoMass", "ApexIntensity", "MinElutionTime", "MaxElutionTime", "Protein.Descriptions")]) 
+      MS2PF <- MS2PF[!is.na(MS2PF[,3]),]  # Remove entries without identification
+      
+      # Calculate retention time and standardize column names
+      MS2PF <- cbind("RT" = (MS2PF$MinElutionTime + ((MS2PF$MaxElutionTime - MS2PF$MinElutionTime)/2)), 
+                     MS2PF[,c("MonoMass", "ApexIntensity", "MinElutionTime", "MaxElutionTime", "Protein.Descriptions")]) 
       names(MS2PF)[2] <- "Mass"
       names(MS2PF)[3] <- "intensity"
       names(MS2PF)[4] <- "PeakStart"
@@ -860,18 +1009,22 @@ server <- function(input, output, clientData, session) {
     }
   })
   
+  #--------------------------------------------------------------------------
+  # 6.4: MS/MS data loading for TopPIC
+  #--------------------------------------------------------------------------
+  # Load and process TopPIC identification data
   filedataMS2TP <- reactive({
     if (is.null(InputFilesMS2TP())) {
       return(NULL)
     } else if (input$MSModeCheck == "MS2" & input$PDPFModeCheck == "TP")  {
-      validate(
-        need(grepl("_ms2.msalign", InputFilesMS2TP()$MS2file$name, fixed = T), "Error in file format for plotting MS2 data.\nYou have to upload the \"_ms2.msalign\" output file from TopPic associated with the \"_ms2.OUTPUT_TABLE\".")
-      )
-      validate(
-        need(grepl("_ms2.OUTPUT_TABLE", InputFilesMS2TP()$IDfile$name, fixed = T) | grepl("_ms2_toppic", InputFilesMS2TP()$IDfile$name, fixed = T), "Error in file format for plotting ID data.\nYou have to upload the \"_ms2.OUTPUT_TABLE\", or \"_ms2_toppic\" output file from TopPic associated with the deconvoluted MS2 weights uploaded as \"input file for MS2\".")
-      )
+      # Validate TopPIC file formats
+      TopFD_MS2_check(input = InputFilesMS2TP())
+      
+      # Parse TopPIC files using custom functions
       IDTP <- TopPicIDParsing(InputFilesMS2TP()$IDfile$datapath)
       MS2TP <- TopPicMS2Parsing(InputFilesMS2TP()$MS2file$datapath)
+      
+      # Standardize column names and merge data
       names(IDTP)[names(IDTP) == "Spectrum ID"] <- "Scan"
       dat <- merge(MS2TP, IDTP, by = "Scan", all = T)
       names(dat)[names(dat)=="Protein accession"] <- "Protein.Descriptions"
@@ -881,17 +1034,28 @@ server <- function(input, output, clientData, session) {
     }
   })
   
-  # Create table for plotting:
+  #--------------------------------------------------------------------------
+  # SECTION 7: DATA PROCESSING AND PREPARATION FOR PLOTTING
+  #--------------------------------------------------------------------------
+  
+  #--------------------------------------------------------------------------
+  # 7.1: Final data processing and formatting for visualization
+  #--------------------------------------------------------------------------
+  # Process loaded data for plotting, including intensity filtering and column standardization
   filedata <- function() {
+    # Validate intensity threshold parameter
     validate(
       need(input$IntensityThresh <= 100, "Threshold value too high")
     )
+    
     if (is.null(filedata0())) {
       return(NULL)
     } else {
       lfiles <- filedata0()
       lfiles <- ThresholdCleaning(lfiles, input$IntensityThresh)
-      if (filetype$BioPharma == 0 & filetype$ProMex == 0) { # Only RoWinPro files
+      
+      if (filetype$BioPharma == 0 & filetype$ProMex == 0) {
+        # Only RoWinPro/Bruker/TopPIC files: rename columns and combine
         l <- list()
         for (i in seq_along(lfiles)) {
           l[[i]] <- RenameBioPharma(lfiles[[i]])
@@ -899,39 +1063,51 @@ server <- function(input, output, clientData, session) {
         names(l) <- names(lfiles)
         lfiles <- l
         return(RBindList(lfiles))
-      } else if (filetype$RoWinPro == 0) { # No RoWinPro, so BioPharma or ProMex
+        
+      } else if (filetype$RoWinPro == 0) {
+        # Only BioPharma or ProMex files: standardize and combine
         lfiles <- lapply(lfiles, function(x) {
           RenameBioPharma(x)
         })
         return(RBindList(lfiles))
-      } else { # More than one type of files
+        
+      } else {
+        # Mixed file types: standardize but keep separate
         lfiles <- lapply(lfiles, function(x) {
-          RenameBioPharma(x) # The files from ProMex will have an empty column named "RT".
+          RenameBioPharma(x) # ProMex files will have an empty RT column
         })
         return(lfiles)
       }
     }
   }
   
-  #####################
-  # For zoomable plot:
-  #####################
+  # ====================
+  # PLOT RANGE MANAGEMENT
+  # ====================
+  # Reactive values to store the current plot ranges for zooming functionality
   ranges <- reactiveValues(x = NULL, y = NULL)
+  
+  # Observer for the "De-Zoom" button - restores previous zoom level
   observeEvent(input$DeZoom, {
     ranges$x <- oldranges$x
     ranges$y <- oldranges$y
   })
+  
+  # Observer for the "Total De-Zoom" button - resets to full data range
   observeEvent(input$TotalDeZoom, {
-    if (is.null(filedataMS2())) { # Only MS trace, no MS2
-      if (class(filedata()) != "list") { # one table
+    # Scenario 1: Only MS data loaded (no MS/MS identification data)
+    if (is.null(filedataMS2())) {
+      if (class(filedata()) != "list") { # Single data table
+        # For ProMex and BioPharma formats, use column 5 for RT, column 2 for mass
         if (filetype$ProMex > 0 | filetype$BioPharma > 0) {
-          ranges$x <- c(0, range(filedata()[,5])[2])
-          ranges$y <- range(filedata()[,2])
-        } else {
-          ranges$x <- c(0, range(filedata()[,1])[2])
-          ranges$y <- range(filedata()[,2])
+          ranges$x <- c(0, range(filedata()[,5])[2])  # RT range starting from 0
+          ranges$y <- range(filedata()[,2])           # Mass range
+        } else { # For other formats, use column 1 for RT
+          ranges$x <- c(0, range(filedata()[,1])[2])  # RT range starting from 0
+          ranges$y <- range(filedata()[,2])           # Mass range
         }
-      } else { # two tables because two types of files
+      } else { # Multiple data tables (mixed file types)
+        # Extract retention time values from all possible sources
         x1 <- sapply(filedata(), function(z) {
           z$RT
         })
@@ -941,64 +1117,90 @@ server <- function(input, output, clientData, session) {
         x3 <- sapply(filedata(), function(z) {
           z$PeakStop
         })
+        # Combine all time values and remove NAs
         x <- c(unlist(x1), unlist(x2), unlist(x3))
         x <- x[!is.na(x)]
+        # Extract mass values
         y <- sapply(filedata(), function(z) {
           z$Mass
         })
-        ranges$x <- c(0, range(x)[2])
-        ranges$y <- range(y)
+        ranges$x <- c(0, range(x)[2])  # Combined RT range
+        ranges$y <- range(y)           # Combined mass range
       }
-    } else if (is.null(filedata())) { # Only MS2 data, no MS trace
-      if (input$PDPFModeCheck == "PD") {
+    } else if (is.null(filedata())) { # Scenario 2: Only MS/MS data loaded (no MS trace)
+      if (input$PDPFModeCheck == "PD") { # Proteome Discoverer format
         ranges$x <- c(0, range(filedataMS2()$MS2file$RT.in.min)[2])
         ranges$y <- range(filedataMS2()$MS2file$Precursor.MHplus.in.Da)
-      } else { # TopPic
+      } else { # TopPIC format
         ranges$x <- c(0, range(filedataMS2TP()$MS2file$RT)[2])
         ranges$y <- range(filedataMS2TP()$MS2file$Mass)
       }
-    } else { # Overlay of MS2 and Ms data
+    } else { # Scenario 3: Both MS and MS/MS data loaded (overlay mode)
+      # Calculate combined ranges from both data sources
       if (filetype$ProMex > 0 | filetype$BioPharma > 0) {
+        # Combine RT and mass ranges from both MS and MS/MS data
         ranges$x <- c(0, range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,5]))[2])
         ranges$y <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()[,2]))
-      } else if (input$PDPFModeCheck == "PD") {
+      } else if (input$PDPFModeCheck == "PD") { # Proteome Discoverer overlay
         ranges$x <- c(0, range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,1]))[2])
         ranges$y <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()[,2]))
-      } else if (input$PDPFModeCheck == "TP") {
+      } else if (input$PDPFModeCheck == "TP") { # TopPIC overlay
         ranges$x <- c(0, range(c(filedataMS2TP()$MS2file$RT, filedata()[,1]))[2])
         ranges$y <- range(c(filedataMS2()$MS2file$Mass, filedata()[,2]))
       }
     }
   })
   
+  # Reactive values to store previous zoom ranges for "De-Zoom" functionality
   oldranges <- reactiveValues(x = NULL, y = NULL)
+  
+  # Observer for interactive plot selection events (brush/lasso selection for zooming)
   observeEvent(event_data("plotly_selected"), {
+    # Store current ranges before updating (for De-Zoom functionality)
     oldranges$x <- ranges$x
     oldranges$y <- ranges$y
+    
+    # Only process selection if DataPoints mode is enabled
     if (input$DataPoints) {
       newdata <- event_data("plotly_selected")
+      
+      # Process valid selection data
       if (!is.null(newdata) & class(newdata)=="data.frame") {
+        
+        # Case 1: Single table with ProMex/BioPharma format
         if (class(filedata()) != "list" & (filetype$ProMex > 0 | filetype$BioPharma > 0)) {
-          ranges$x <- c(min(filedata()[filedata()[,5] >= min(newdata$x),4]), max(filedata()[filedata()[,4] <= max(newdata$x),5]))
+          # For ProMex/BioPharma: use peak start/stop boundaries for X range
+          ranges$x <- c(min(filedata()[filedata()[,5] >= min(newdata$x),4]), 
+                       max(filedata()[filedata()[,4] <= max(newdata$x),5]))
           ranges$y <- range(newdata$y)  
-        } else if (class(filedata()) == "list") { # multiple file types
+          
+        # Case 2: Multiple file types (mixed ProMex/BioPharma with others)
+        } else if (class(filedata()) == "list") {
           tab <- filedata()
+          
+          # Extract ProMex/BioPharma data
           if (sum(ftype()=="ProMex" | ftype()=="BioPharma") > 1) {
             tab2 <- RBindList(tab[ftype()=="ProMex" | ftype()=="BioPharma"])
           } else {
             tab2 <- tab[ftype()=="ProMex" | ftype()=="BioPharma"][[1]]
           }
+          
+          # Extract other format data
           if (sum(!(ftype()=="ProMex" | ftype()=="BioPharma")) > 1) {
             tab <- RBindList(tab[!(ftype()=="ProMex" | ftype()=="BioPharma")])
           } else {
             tab <- tab[!(ftype()=="ProMex" | ftype()=="BioPharma")][[1]]
           }
+          
+          # Calculate combined X range from both data types
           minx <- min(tab2[tab2[,5] >= min(newdata$x),4])
           minx <- min(minx, min(tab$RT))
           maxx <- max(tab2[tab2[,4] <= max(newdata$x),5])
           maxx <- max(maxx, max(tab$RT))
           ranges$x <- c(minx, maxx)
           ranges$y <- range(newdata$y)  
+          
+        # Case 3: Standard single table format
         } else {
           ranges$x <- range(newdata$x)
           ranges$y <- range(newdata$y)      
@@ -1008,21 +1210,25 @@ server <- function(input, output, clientData, session) {
       }
     }
   })
-  #####################
   
-  #####################
-  # Plot:
-  #####################
+  # ====================
+  # PLOT GENERATION
+  # ====================
   
+  # Function to determine appropriate plot ranges based on current zoom state and data
   defineranges <- function() {
+    # Use current zoom ranges if they exist
     if (!is.null(ranges$x) & !is.null(ranges$y)) {
       rangesx <- ranges$x
       rangesy <- ranges$y
-    } else if (is.null(filedataMS2())) { # Only MS trace, no MS2
-      if (class(filedata()) != "list") { # one table
-        rangesx <- range(filedata()[,1])
-        rangesy <- range(filedata()[,2])
-      } else { # two tables because two types of files
+      
+    # Scenario 1: Only MS data loaded (no MS/MS identification data)
+    } else if (is.null(filedataMS2())) {
+      if (class(filedata()) != "list") { # Single data table
+        rangesx <- range(filedata()[,1])  # RT range
+        rangesy <- range(filedata()[,2])  # Mass range
+      } else { # Multiple data tables (mixed file types)
+        # Extract retention time values from all possible sources
         x1 <- sapply(filedata(), function(z) {
           as.numeric(z$RT)
         })
@@ -1032,25 +1238,32 @@ server <- function(input, output, clientData, session) {
         x3 <- sapply(filedata(), function(z) {
           as.numeric(z$PeakStop)
         })
+        # Combine all time values and remove NAs
         x <- c(unlist(x1), unlist(x2), unlist(x3))
         x <- x[!is.na(x)]
+        # Extract mass values
         y <- sapply(filedata(), function(z) {
           as.numeric(z$Mass)
         })
-        rangesx <- range(x)
-        rangesy <- range(y)
+        rangesx <- range(x)  # Combined RT range
+        rangesy <- range(y)  # Combined mass range
       }
-    } else if (is.null(filedata()) | input$MSTrace == FALSE) { # Only MS2 data, no MS trace
+      
+    # Scenario 2: Only MS/MS data loaded (no MS trace) OR MS trace disabled
+    } else if (is.null(filedata()) | input$MSTrace == FALSE) {
         rangesx <- range(filedataMS2()$MS2file$RT.in.min)
         rangesy <- range(filedataMS2()$MS2file$Precursor.MHplus.in.Da)
-    } else { # Overlay of MS2 and MS data
+        
+    # Scenario 3: Both MS and MS/MS data loaded (overlay mode)
+    } else {
       if (filetype$ProMex > 0 | filetype$BioPharma > 0) {
+        # Combine RT and mass ranges from both MS and MS/MS data
         rangesx <- range(c(filedataMS2()$MS2file$RT.in.min, filedata()[,5]))
         rangesy <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()[,2]))
-      }  else if (input$PDPFModeCheck == "PD") {
+      }  else if (input$PDPFModeCheck == "PD") { # Proteome Discoverer overlay
         ranges$x <- range(c(filedataMS2()$MS2file$RT.in.min, filedata()$RT))
         ranges$y <- range(c(filedataMS2()$MS2file$Precursor.MHplus.in.Da, filedata()$Mass))
-      } else if (input$PDPFModeCheck == "TP") {
+      } else if (input$PDPFModeCheck == "TP") { # TopPIC overlay
         ranges$x <- range(c(filedataMS2TP()$RT, filedata()[,1]))[2]
         ranges$y <- range(c(filedataMS2TP()$Mass, filedata()[,2]))
       }
@@ -1058,22 +1271,32 @@ server <- function(input, output, clientData, session) {
     return(list(rangesx, rangesy))
   }
   
+  # Main plotting function - generates the 2D mass spectrometry visualization
   plotInput1 <- function(){
+    # Validate user inputs for point size and intensity threshold
     validate(
       need(input$pch <= 10 & input$pch >= 0.1, "Please define a size of points between 0.1 and 10.")
     )
     validate(
       need(input$IntensityThresh <= 100 & input$IntensityThresh >= 0.1, "Please define a threshold between 0.1 and 100. This value corresponds to the proportion of the points in the data set that you want to upload (highest intensities).")
     )
+    
+    # Return NULL if no data is loaded
     if (is.null(filedata()) & is.null(filedataMS2()) & is.null(filedataMS2PF()) & is.null(filedataMS2TP())) {
       return(NULL)
     } else {
+      # Generate plot if data is available
       if (!is.null(linput())) {
+        # Get current plot ranges
         rangesx <- defineranges()[[1]]
         rangesy <- defineranges()[[2]]
-        if (filetype$BioPharma == 0 & filetype$ProMex == 0) { # Only RoWinPro
+        
+        # Plot generation for RoWinPro/Bruker/TopPIC formats only
+        if (filetype$BioPharma == 0 & filetype$ProMex == 0) {
           gtab <- filedata()
-          if (linput() >= 2) { # if comparing several plots
+          
+          # Multi-file comparison mode
+          if (linput() >= 2) {
             g <- ggplot() + 
               geom_point(data = gtab, aes(x = RT, y = Mass, col = File, text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity, "\n", File)), alpha = 0.7, size = input$pch) +
               geom_text(parse = TRUE) +
@@ -1082,7 +1305,9 @@ server <- function(input, output, clientData, session) {
               scale_colour_brewer(palette = colval()) + 
               ylab("Molecular Weight (Da)") + 
               xlab("Retention time (min)")
-          } else { # only one plot, no overlay
+              
+          # Single file mode with intensity coloring
+          } else {
             g <- ggplot() + 
               geom_point(data = gtab, aes(x = RT, y = Mass, col = log10(intensity), text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity)), alpha = 0.7, size = input$pch) +
               coord_cartesian(xlim = rangesx, ylim = rangesy, expand = TRUE) +
@@ -1142,22 +1367,20 @@ server <- function(input, output, clientData, session) {
           if (input$PDPFModeCheck == "PD" | testfileinput() == 3) {
             PSM <- filedataMS2()$PSM
             MS2 <- filedataMS2()$MS2
-            if (sum(grepl("First.Scan", names(PSM))) == 1 & sum(grepl("First.Scan", names(MS2))) == 1) {
-              PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$First.Scan)
-              MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$First.Scan)
-            } else {
-              PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$m.z..Da.)
-              MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$Precursor.m.z..Da.)
-              MS2$Master.Protein.Descriptions <- PSM$Master.Protein.Descriptions[match(MS2$ID, PSM$ID)]
-            }
+            PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$RT, "|", PSM$Precursor.MHplus.in.Da)
+            MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$RT, "|", MS2$Precursor.MHplus.in.Da)
+            print(MS2[MS2$ID %in% PSM$ID,])
+        
             # Retrieve protein IDs in the MS2 table:
             MS2$Master.Protein.Descriptions <- PSM$Master.Protein.Descriptions[match(MS2$ID, PSM$ID)]
-            # Plot:
-            # gtabMS2 <- MS2[,c("RT.in.min", "Precursor.MHplus.in.Da", "Precursor.Intensity", "Master.Protein.Descriptions")]
-            # print(head(MS2))
+            print(head(MS2))
+            print(MS2$Master.Protein.Descriptions[!is.na(MS2$Master.Protein.Descriptions)])
+            
+            # Make table for plot:
             gtabMS2 <- MS2[,c("RT.in.min", "Precursor.MHplus.in.Da", "Master.Protein.Descriptions")]
             gtabMS2$Identification <- ifelse(!is.na(gtabMS2$Master.Protein.Descriptions), "IDed", "Not IDed")
             # print(head(gtabMS2))
+            # print(gtabMS2$Master.Protein.Descriptions)
             
             # Action button:
             if (input$HideMSMS == TRUE) {
@@ -1385,9 +1608,13 @@ server <- function(input, output, clientData, session) {
   })
   
   # For export:
-  ############
-  # pdf output:
+  # ====================
+  # PLOT DOWNLOAD HANDLERS
+  # ====================
+  
+  # PDF download handler - exports the current plot as a PDF file
   output$Download <- downloadHandler(
+    # Dynamic filename generation based on loaded files and current date
     filename = function(){
       if (is.null(InputFilesMS2())) {
         paste0("VisioProt-MS_", substring(InputFileMS()$name, first = 1, last = (nchar(InputFileMS()$name)-4)), "_", Sys.Date(), ".pdf")
@@ -1396,20 +1623,20 @@ server <- function(input, output, clientData, session) {
       }
     },
     content = function(file) {
-      h <- 8
-      if (nProtSelection() > 0) {
+      # Dynamic height calculation based on legend requirements
+      h <- 8  # Base height
+      if (nProtSelection() > 0) {  # Protein selection mode
         if (!is.null(filedata0()) & input$MSTrace) {
-          h <- h + 1.6
+          h <- h + 1.6  # Extra height for MS trace overlay
         }
         if (nProtSelection() > 5) {
-          h <- h+(nProtSelection()*0.152)
+          h <- h+(nProtSelection()*0.152)  # Additional height per protein
         }
-      } else if (linput() > 1) {
-        h <- h+(linput()*0.152)
+      } else if (linput() > 1) {  # Multiple file comparison mode
+        h <- h+(linput()*0.152)  # Additional height per file
       }
-      # device <- function(..., width, height) {
-      #   grDevices::pdf(..., width = 10, height = h)
-      # }
+      
+      # Adjust legend position based on plot type
       if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
         g <- plotInput1() + 
           theme(legend.direction ="vertical", legend.position="bottom")
@@ -1419,8 +1646,10 @@ server <- function(input, output, clientData, session) {
       }
       ggsave(file, plot = g, device = "pdf", width = 10, height = h)
     })
-  # png output:
+    
+  # PNG download handler - exports the current plot as a PNG file
   output$Download1 <- downloadHandler(
+    # Dynamic filename generation for PNG export
     filename = function(){
       if (is.null(InputFilesMS2())) {
         paste0("VisioProt-MS_", substring(InputFileMS()$name, first = 1, last = (nchar(InputFileMS()$name)-4)), "_", Sys.Date(), ".png")
@@ -1429,20 +1658,25 @@ server <- function(input, output, clientData, session) {
       }
     },
     content = function(file) {
-      h <- 800
-      if (nProtSelection() > 0) {
+      # Dynamic height calculation for PNG (in pixels)
+      h <- 800  # Base height in pixels
+      if (nProtSelection() > 0) {  # Protein selection mode
         if (!is.null(filedata0()) & input$MSTrace) {
-          h <- h + 160
+          h <- h + 160  # Extra height for MS trace overlay
         }
         if (nProtSelection() > 5) {
-          h <- h+(nProtSelection()*15.2)
+          h <- h+(nProtSelection()*15.2)  # Additional height per protein
         }
-      } else if (linput() > 1) {
-        h <- h+(linput()*15.2)
+      } else if (linput() > 1) {  # Multiple file comparison mode
+        h <- h+(linput()*15.2)  # Additional height per file
       }
+      
+      # PNG device configuration with resolution settings
       device <- function(..., width, height) {
         grDevices::png(..., width = 1000, height = h, res = 120)
       }
+      
+      # Generate plot with appropriate legend positioning
       if ((linput() > 1 & input$MSModeCheck == "MS")|(nProtSelection() > 0 & input$MSModeCheck == "MS2")) {
         g <- plotInput1() + 
           theme(legend.direction ="vertical", legend.position="bottom")
@@ -1452,7 +1686,8 @@ server <- function(input, output, clientData, session) {
       }
       ggsave(file, plot = g, device = device)
     })
-  # svg output:
+    
+  # SVG download handler - exports the current plot as a vector SVG file
   output$Download2 <- downloadHandler(
     filename = function(){
       if (is.null(InputFilesMS2())) {
@@ -1492,17 +1727,17 @@ server <- function(input, output, clientData, session) {
       }
       ggsave(file, plot = g, device = device)
     })
-  ############
-  
-  ############
-  
-}
+} # End of server function
 
-############################################################################
-
+# ====================
+# APPLICATION LAUNCH
+# ====================
+# Launch the Shiny application with the defined UI and server components
 shinyApp(ui = ui, server = server)
 
-############################################################################
-
+# ====================
+# DEPLOYMENT CONFIGURATION
+# ====================
+# Deployment command for shinyapps.io or RStudio Connect (commented out)
 # rsconnect::deployApp("T:/RRelatedWork/VisioProt-MS")
 
