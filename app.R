@@ -381,13 +381,14 @@ ui <- fluidPage(
                  downloadButton("Download", "Download .pdf"),   # PDF format for publications
                  downloadButton("Download1", "Download .png"),  # PNG format for presentations  
                  downloadButton("Download2", "Download .svg"),  # SVG format for vector graphics
+                 downloadButton("Download3", "Download table"),  # tab-delimited file with values
                  
                  #--------------------------------------------------------------------
                  # CITATION INFORMATION
                  #--------------------------------------------------------------------
                  HTML(paste("<br/><br/>",
-                   h4("If you use VisioProt-MS for your research please cite:"),
-                   "<br/>Marie Locard-Paulet, Julien Parra, Renaud Albigot, Emmanuelle Mouton-Barbosa, Laurent Bardi, Odile Burlet-Schiltz, Julien Marcoux; VisioProt-MS: interactive 2D maps from intact protein mass spectrometry, Bioinformatics, bty680, https://doi.org/10.1093/bioinformatics/bty680")
+                            h4("If you use VisioProt-MS for your research please cite:"),
+                            "<br/>Marie Locard-Paulet, Julien Parra, Renaud Albigot, Emmanuelle Mouton-Barbosa, Laurent Bardi, Odile Burlet-Schiltz, Julien Marcoux; VisioProt-MS: interactive 2D maps from intact protein mass spectrometry, Bioinformatics, bty680, https://doi.org/10.1093/bioinformatics/bty680")
                  )
     ),
     
@@ -751,7 +752,7 @@ server <- function(input, output, clientData, session) {
                         c(""))
       # Reset to default software selection
       updateRadioButtons(session, "PDPFModeCheck",
-                        selected = 'PD')
+                         selected = 'PD')
       ranges$x <- NULL  # Clear zoom settings
       ranges$y <- NULL
     }
@@ -865,7 +866,7 @@ server <- function(input, output, clientData, session) {
       validate(
         need((input$TestModeCheck==FALSE & input$MSModeCheck == "MS") | (input$MS2TestModeCheck == FALSE & input$MSModeCheck == "MS2"), 
              "You are in test mode. Click on a button to select a single test file or multiple test files.\nUncheck to exit and upload your own data."
-             )
+        )
       )
       if (is.null(InputFileMS())) {
         # User has not uploaded a file yet
@@ -875,7 +876,7 @@ server <- function(input, output, clientData, session) {
         validate(
           need(!(max(table(ftype())) > 1 & length(unique(ftype())) > 1), 
                "With multiple files, all files need to be from the same deconvolution software."
-               )
+          )
         )
         InputFileMS <- InputFileMS()
         lfiles <- list()
@@ -1171,10 +1172,10 @@ server <- function(input, output, clientData, session) {
         if (class(filedata()) != "list" & (filetype$ProMex > 0 | filetype$BioPharma > 0)) {
           # For ProMex/BioPharma: use peak start/stop boundaries for X range
           ranges$x <- c(min(filedata()[filedata()[,5] >= min(newdata$x),4]), 
-                       max(filedata()[filedata()[,4] <= max(newdata$x),5]))
+                        max(filedata()[filedata()[,4] <= max(newdata$x),5]))
           ranges$y <- range(newdata$y)  
           
-        # Case 2: Multiple file types (mixed ProMex/BioPharma with others)
+          # Case 2: Multiple file types (mixed ProMex/BioPharma with others)
         } else if (class(filedata()) == "list") {
           tab <- filedata()
           
@@ -1200,7 +1201,7 @@ server <- function(input, output, clientData, session) {
           ranges$x <- c(minx, maxx)
           ranges$y <- range(newdata$y)  
           
-        # Case 3: Standard single table format
+          # Case 3: Standard single table format
         } else {
           ranges$x <- range(newdata$x)
           ranges$y <- range(newdata$y)      
@@ -1222,7 +1223,7 @@ server <- function(input, output, clientData, session) {
       rangesx <- ranges$x
       rangesy <- ranges$y
       
-    # Scenario 1: Only MS data loaded (no MS/MS identification data)
+      # Scenario 1: Only MS data loaded (no MS/MS identification data)
     } else if (is.null(filedataMS2())) {
       if (class(filedata()) != "list") { # Single data table
         rangesx <- range(filedata()[,1])  # RT range
@@ -1249,12 +1250,12 @@ server <- function(input, output, clientData, session) {
         rangesy <- range(y)  # Combined mass range
       }
       
-    # Scenario 2: Only MS/MS data loaded (no MS trace) OR MS trace disabled
+      # Scenario 2: Only MS/MS data loaded (no MS trace) OR MS trace disabled
     } else if (is.null(filedata()) | input$MSTrace == FALSE) {
-        rangesx <- range(filedataMS2()$MS2file$RT.in.min)
-        rangesy <- range(filedataMS2()$MS2file$Precursor.MHplus.in.Da)
-        
-    # Scenario 3: Both MS and MS/MS data loaded (overlay mode)
+      rangesx <- range(filedataMS2()$MS2file$RT.in.min)
+      rangesy <- range(filedataMS2()$MS2file$Precursor.MHplus.in.Da)
+      
+      # Scenario 3: Both MS and MS/MS data loaded (overlay mode)
     } else {
       if (filetype$ProMex > 0 | filetype$BioPharma > 0) {
         # Combine RT and mass ranges from both MS and MS/MS data
@@ -1305,8 +1306,8 @@ server <- function(input, output, clientData, session) {
               scale_colour_brewer(palette = colval()) + 
               ylab("Molecular Weight (Da)") + 
               xlab("Retention time (min)")
-              
-          # Single file mode with intensity coloring
+            
+            # Single file mode with intensity coloring
           } else {
             g <- ggplot() + 
               geom_point(data = gtab, aes(x = RT, y = Mass, col = log10(intensity), text = paste(RT, "min\n", Mass, "Da\nSignal:", intensity)), alpha = 0.7, size = input$pch) +
@@ -1370,7 +1371,7 @@ server <- function(input, output, clientData, session) {
             PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$RT, "|", PSM$Precursor.MHplus.in.Da)
             MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$RT, "|", MS2$Precursor.MHplus.in.Da)
             print(MS2[MS2$ID %in% PSM$ID,])
-        
+            
             # Retrieve protein IDs in the MS2 table:
             MS2$Master.Protein.Descriptions <- PSM$Master.Protein.Descriptions[match(MS2$ID, PSM$ID)]
             print(head(MS2))
@@ -1515,8 +1516,8 @@ server <- function(input, output, clientData, session) {
     )
     if (input$DataPoints == TRUE) {
       g <- plotInput1() 
-          g <- g + 
-            theme(legend.title = element_blank()) 
+      g <- g + 
+        theme(legend.title = element_blank()) 
       p <- ggplotly(g, tooltip = "text", height = 800) %>%
         layout(dragmode = "select", 
                xaxis=list(fixedrange=TRUE),
@@ -1566,9 +1567,9 @@ server <- function(input, output, clientData, session) {
             theme(legend.direction ="vertical", legend.position="right") 
         }
       } else if (nProtSelection() > 0 & input$MSModeCheck == "MS2") {
-          plotInput1() + 
-            theme(legend.direction ="vertical", legend.position="bottom") +
-            guides(fill=guide_legend(ncol=2))
+        plotInput1() + 
+          theme(legend.direction ="vertical", legend.position="bottom") +
+          guides(fill=guide_legend(ncol=2))
       } else {
         plotInput1()+ 
           theme(legend.direction ="vertical", legend.position="right") 
@@ -1646,7 +1647,7 @@ server <- function(input, output, clientData, session) {
       }
       ggsave(file, plot = g, device = "pdf", width = 10, height = h)
     })
-    
+  
   # PNG download handler - exports the current plot as a PNG file
   output$Download1 <- downloadHandler(
     # Dynamic filename generation for PNG export
@@ -1686,7 +1687,7 @@ server <- function(input, output, clientData, session) {
       }
       ggsave(file, plot = g, device = device)
     })
-    
+  
   # SVG download handler - exports the current plot as a vector SVG file
   output$Download2 <- downloadHandler(
     filename = function(){
@@ -1727,7 +1728,27 @@ server <- function(input, output, clientData, session) {
       }
       ggsave(file, plot = g, device = device)
     })
-} # End of server function
+  
+  # tsv download handler - exports the current MS trace as a table
+  output$Download3 <- downloadHandler( 
+    filename = function(){
+      validate(need(is.null(InputFilesMS2()),
+                    "Only the MS trace will be saved in the exported table."
+      ))
+      paste0("VisioProt-MS_", substring(InputFileMS()$name, first = 1, last = (nchar(InputFileMS()$name)-4)), "_", Sys.Date(), ".tsv")
+    },
+    content = function(file) {
+      gtab <- filedata()
+      write.table(gtab, file = file, sep = "\t", row.names = F)
+    }
+  )
+  
+} 
+
+
+
+
+# End of server function
 
 # ====================
 # APPLICATION LAUNCH

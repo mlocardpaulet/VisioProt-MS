@@ -22,3 +22,5 @@ The fact that you are presently reading this means that you have had knowledge o
         
 * V2.2: July 2020 - adapt to new TopPIC input format for msalign files.
 
+* V2.3: July 2026 - adapt to Proteome Discoverer 3.0 / ProSightPD 4.2 .
+
