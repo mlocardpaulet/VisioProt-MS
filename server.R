@@ -914,7 +914,8 @@ server <- function(input, output, clientData, session) {
       Mass_min = rangesy[1],
       Mass_max = rangesy[2],
       RT_min = rangesx[1],
-      RT_max = rangesx[2]
+      RT_max = rangesx[2],
+      Percentage_signal_threshold = input$IntensityThresh
     )
     summarized_signal(t(input_summarization))
     

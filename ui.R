@@ -360,7 +360,7 @@ ui <- fluidPage(
   # Application footer with copyright information
   tabsetPanel(
     tabPanel(
-      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V2.3</font></footer>')
+      HTML('<footer><font size="0.8">copyright 2017 - CNRS - All rights reserved - VisioProt-MS V2.4</font></footer>')
     )
   )
 )
