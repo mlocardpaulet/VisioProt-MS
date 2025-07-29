@@ -1,0 +1,1 @@
+Protein_name	RT_start	RT_stop	MW	delta_MW
