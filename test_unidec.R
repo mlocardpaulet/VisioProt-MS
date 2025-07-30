@@ -1,6 +1,8 @@
 ## Test unidec output read
 library(bit64)
 
+# setwd("/Users/locard/Documents/GitHub/VisioProt-MS")
+
 # Advanced plotting libraries
 # devtools::install_github('hadley/ggplot2')  # Use development version if needed
 library(ggplot2)    # Grammar of graphics for static plots
@@ -16,7 +18,7 @@ library(data.table)    # High-performance data manipulation and reading
 library(rhdf5)  # For Unidec input compatibility
 
 
-h5f = H5Fopen("files/test/test-unidec-visioprot/OFJMX190516_91.hdf5")
+h5f = H5Fopen("files/test/test-unidec-visioprot/OFJMX190516_91_small_windows.hdf5")
 
 
 
@@ -38,15 +40,15 @@ H5Dread(h5f&'ms_dataset'&'mass_data', bit64conversion = "bit64")
 ## action:
 
 h5closeAll()
-filepath <- "files/test/test-unidec-visioprot/OFJMX190516_91.hdf5"
+filepath <- "files/test/test-unidec-visioprot/OFJMX190516_91_small_windows.hdf5"
 
 ### get all groups (spectra)
 
-dat <- h5ls("files/test/test-unidec-visioprot/OFJMX190516_91.hdf5", recursive = 3)
+dat <- h5ls(filepath, recursive = 3)
 all_md <- sort(unique(dat$group[dat$name == "mass_data"]))
 
 # ### open object:
-# h5f <- H5Fopen("files/test/test-unidec-visioprot/OFJMX190516_91.hdf5")
+# h5f <- H5Fopen(filepath)
 
 ### get RT:
 
@@ -74,7 +76,8 @@ ltab <- lapply(seq_along(all_md), function(x) {
 gtab <- rbindlist(ltab)
 
 g <- ggplot(data = gtab[gtab$Intensity > 500000,], aes(x = RT, y = Mass, col = log10(Intensity))) +
-  geom_point(alpha = 0.3) +
+  geom_point(alpha = 0.3, size = 0.5) +
+  xlim(c(15, 30)) +
   scale_color_viridis_c(direction = -1) +
   theme_bw()
 print(g)
