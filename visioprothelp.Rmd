@@ -166,6 +166,7 @@ Upon checking the box, two buttons appear:
 <br />
 TODO
 <br />
+This button is not accessible when visualizing RT ranges and not points (BioPharma Finder and ProMex exports). 
 <br />
 
 </div>
