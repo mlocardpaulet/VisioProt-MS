@@ -158,6 +158,33 @@ Upon checking the box, two buttons appear:
 
 </div>
 
+#### Sum signal in plot
+
+
+<div class="col2">
+
+<br />
+TODO
+<br />
+<br />
+
+</div>
+<div>
+
+This button sums all point intensities in the plot area. It returns the following values:
+
+- `Sum_intensities` = sum of intensities of the points in the plot area
+- `Prop_sum_intensities` = `Sum_intensities` / sum of intensities of all the points in the plot (including outside of the area) with a `Percentage_signal_threshold` ≥ the one selected when pressing the button.
+- `Point_count` = number of points in the plot area
+- `Mass_min` = minimum mass included in the calculation
+- `Mass_max` = maximum mass included in the calculation
+- `RT_min` = minimum RT included in the calculation
+- `RT_max` = maximum RT included in the calculation
+- `Percentage_signal_threshold` = value set in the `Threshold` field (percentage of top intensities plotted)
+
+</div>
+
+
 ***
 
 ### MS/MS
