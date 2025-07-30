@@ -57,6 +57,9 @@ library(RColorBrewer)  # Color palettes for data visualization
 library(shinyBS)       # Bootstrap components for Shiny (tooltips, modals, etc.)
 library(data.table)    # High-performance data manipulation and reading
 
+# Import file
+library(rhdf5)  # For Unidec input compatibility
+
 # Global application settings
 options(shiny.maxRequestSize=90*1024^2) # Set maximum upload size to 90MB for large MS files
 
