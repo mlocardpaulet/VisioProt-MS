@@ -467,6 +467,7 @@ server <- function(input, output, clientData, session) {
         l[[i]] <- val
       }
       vec <- unlist(l)
+      # print(vec)
       return(vec)
     }
   })
@@ -902,8 +903,8 @@ server <- function(input, output, clientData, session) {
     # Get current plot ranges
     rangesx <- defineranges()[[1]]
     rangesy <- defineranges()[[2]]
-
-        # Make table
+    
+    # Make table
     int_tab <- filedata()
     indexes <- int_tab$Mass <= rangesy[2] & int_tab$Mass >= rangesy[1] &
       int_tab$RT <= rangesx[2] & int_tab$RT >= rangesx[1]
@@ -932,6 +933,16 @@ server <- function(input, output, clientData, session) {
   observeEvent(input$CalcSumReset, { # empty table when press reset
     summarized_signal(NULL)
   })
+  
+  ## To mask button when bars are plotted instead of points:
+  output$show_calcsum <- reactive({
+    if (!is.null(ftype())) {
+      !(ftype() %in% c("BioPharma", "ProMex"))
+    } else {
+      TRUE
+    }
+  })
+  outputOptions(output, "show_calcsum", suspendWhenHidden = FALSE)
   
   # ====================
   # PLOT GENERATION

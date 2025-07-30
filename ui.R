@@ -288,7 +288,8 @@ ui <- fluidPage(
                  # Signal sum for MS Mode
                  #--------------------------------------------------------
                  # Click to calculate the sum of signal in plot window
-                 conditionalPanel(condition="input.MSModeCheck== 'MS'",
+                 # conditionalPanel(condition="input.MSModeCheck== 'MS' && output.filetype.RoWinPro == 0 && !(output.filetype.BioPharma == 0 && output.filetype.ProMex == 0)",
+                 conditionalPanel(condition="input.MSModeCheck== 'MS' && output.show_calcsum",
                                   actionButton("CalcSum", "Sum signal in plot",
                                                style="color: #fff; background-color: #3c3c3c; border-color:  #3c3c3c"),
                                   bsTooltip("CalcSum", 
