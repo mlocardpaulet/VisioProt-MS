@@ -162,6 +162,8 @@ Upon checking the box, two buttons appear:
 
 </div>
 
+***
+
 #### Sum signal in plot
 
 
