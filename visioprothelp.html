@@ -351,7 +351,7 @@ display: none;
 
 <h1 class="title toc-ignore">VisioProt-MS - Utilisation manual</h1>
 <h4 class="author">Toulouse Proteomics Infrastructure</h4>
-<h4 class="date">Wed Jul 30 12:22:39 2025</h4>
+<h4 class="date">Thu Jul 31 12:11:30 2025</h4>
 
 </div>
 
@@ -407,7 +407,13 @@ for MS data followed by an example of VisioProt-MS output.</p>
 files)</em></p>
 <p><a href="./files/Unique/Rowinpro_MS_OEJPA170302_93_Job_1_results.csv">Download
 example</a>.</p>
-<p>The table must have 4 tab-delimited columns without headers.</p>
+<p>The table must have 4 tab-delimited columns without headers. These
+should include:</p>
+<ul>
+<li>“RT” in first position (we assume that this is in minutes)</li>
+<li>“Mass” in second position (we assume that this is in Da)</li>
+<li>“intensity” in third position</li>
+</ul>
 <p><img role="img" src="Figures/RoWinPro.PNG" /> <br /></p>
 <hr />
 <p><strong>Bruker Data Analysis export:</strong> <em>(coma-separated csv

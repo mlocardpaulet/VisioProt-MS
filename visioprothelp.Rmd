@@ -72,7 +72,11 @@ Here are downloadable examples of the head of supported format files for MS data
 
 [Download example](./files/Unique/Rowinpro_MS_OEJPA170302_93_Job_1_results.csv).
 
-The table must have 4 tab-delimited columns without headers.
+The table must have 4 tab-delimited columns without headers. These should include:
+
+- "RT" in first position (we assume that this is in minutes)
+- "Mass" in second position (we assume that this is in Da)
+- "intensity" in third position 
 
 ![](Figures/RoWinPro.PNG) 
 <br />
