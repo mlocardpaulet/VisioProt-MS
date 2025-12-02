@@ -936,10 +936,14 @@ server <- function(input, output, clientData, session) {
   
   ## To mask button when bars are plotted instead of points:
   output$show_calcsum <- reactive({
-    if (!is.null(ftype())) {
-      !(ftype() %in% c("BioPharma", "ProMex"))
+    if (linput() == 1) {
+      if (!is.null(ftype())) {
+        !(ftype() %in% c("BioPharma", "ProMex"))
+      } else {
+        TRUE
+      }
     } else {
-      TRUE
+      FALSE
     }
   })
   outputOptions(output, "show_calcsum", suspendWhenHidden = FALSE)
