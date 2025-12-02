@@ -1050,12 +1050,9 @@ server <- function(input, output, clientData, session) {
             MS2 <- filedataMS2()$MS2
             PSM$ID <- paste0(PSM$Spectrum.File, "|", PSM$RT, "|", PSM$Precursor.MHplus.in.Da)
             MS2$ID <- paste0(MS2$Spectrum.File, "|", MS2$RT, "|", MS2$Precursor.MHplus.in.Da)
-            print(MS2[MS2$ID %in% PSM$ID,])
             
             # Retrieve protein IDs in the MS2 table:
             MS2$Master.Protein.Descriptions <- PSM$Master.Protein.Descriptions[match(MS2$ID, PSM$ID)]
-            print(head(MS2))
-            print(MS2$Master.Protein.Descriptions[!is.na(MS2$Master.Protein.Descriptions)])
             
             # Make table for plot:
             gtabMS2 <- MS2[,c("RT.in.min", "Precursor.MHplus.in.Da", "Master.Protein.Descriptions")]
