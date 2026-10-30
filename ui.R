@@ -21,7 +21,7 @@ ui <- fluidPage(
     
     # Help button that opens documentation in a new browser tab
     column(1, actionButton(inputId='ab1', label="",
-                           icon = icon("fa-solid fa-circle-question"),
+                           icon = icon("circle-question"),
                            onclick ="window.open('https://masstools.ipbs.fr/visioprothelp.html', '_blank')",
                            style="color: #fff; background-color: #673a49; border-color: #000000"),
            bsTooltip("ab1", 
